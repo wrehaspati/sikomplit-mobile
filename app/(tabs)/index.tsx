@@ -9,8 +9,9 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 
 import ThemedSeparator from "@/components/themed-separator";
 import { Image } from "expo-image";
-import { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { router } from "expo-router";
+import { useRef, useState } from "react";
+import { Animated, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
 
 interface IApplyHistory {
@@ -77,6 +78,7 @@ const dumFlyer: IFlyer[] = [
 export default function HomeScreen() {
   const [history, setHistory] = useState<IApplyHistory[] | []>(dumData);
   const [flyers, setFlyers] = useState<IFlyer[] | []>(dumFlyer);
+  const scrollY = useRef(new Animated.Value(0)).current;
   const applySteps = [
     'Pengajuan Disubmit',
     'Konfirmasi Admin',
@@ -169,18 +171,40 @@ export default function HomeScreen() {
   });
 
   return (
-    <ScrollView
+    <Animated.ScrollView
       style={{
         flex: 1,
       }}
-      scrollEventThrottle={16}>
+      scrollEventThrottle={16}
+      onScroll={Animated.event(
+        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+        { useNativeDriver: true }
+      )}>
       {/* Content */}
 
       {/* Welcome Card */}
       <View style={{ marginHorizontal: 23, marginBottom: 20, marginTop: 53 }}>
-        <ThemedText type="title" style={{ marginBottom: 12 }}>
-          Beranda
-        </ThemedText>
+        <Animated.View
+          style={{
+            marginBottom: 12,
+            opacity: scrollY.interpolate({
+              inputRange: [0, 18, 72],
+              outputRange: [1, 0, 0],
+              extrapolate: 'clamp',
+            }),
+            transform: [{
+              translateY: scrollY.interpolate({
+                inputRange: [0, 72],
+                outputRange: [0, 72],
+                extrapolate: 'clamp',
+              }),
+            }],
+          }}
+        >
+          <ThemedText type="title">
+            Beranda
+          </ThemedText>
+        </Animated.View>
         <View style={[
           styles.card, {
             minHeight: responsiveScale(450)
@@ -236,7 +260,12 @@ export default function HomeScreen() {
               <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}>
                 Buat Akun
               </ThemedButton>
-              <ThemedButton variant="light" size="small" style={{ alignSelf: 'flex-end', backgroundColor: Colors.fillTertiary }}>
+              <ThemedButton variant="light" size="small"
+                style={{ alignSelf: 'flex-end', backgroundColor: Colors.fillTertiary }}
+                onPress={() => {
+                  router.navigate({ pathname: '/login' });
+                }}
+              >
                 Masuk
               </ThemedButton>
             </BlurView>
@@ -335,7 +364,7 @@ export default function HomeScreen() {
       </View>
 
       {/* End Content */}
-    </ScrollView >
+    </Animated.ScrollView >
   );
 }
 

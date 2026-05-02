@@ -23,6 +23,10 @@ const MAPPING = {
   'circle.fill': 'circle',
   'document.fill': 'description',
   'envelope.fill': 'email',
+  'lock.shield.fill': 'security',
+  'lock.fill': 'lock',
+  'eye.fill': 'visibility',
+  'eye.slash.fill': 'visibility-off',
 } as IconMapping;
 
 /**

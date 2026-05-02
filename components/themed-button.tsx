@@ -36,7 +36,7 @@ export default function ThemedButton({
       variant === 'light' ? styles.light : undefined,
       variant === 'dark' ? styles.dark : undefined,
       variant === 'link' ? styles.link : undefined,
-    ]}>
+    ]} {...rest}>
       {icon && <View style={{ paddingRight: 4 }}>{icon}</View>}
       <ThemedText type="defaultSemiBold" style={[
         variant === 'primary' ? { color: 'white' } : undefined,
