@@ -40,7 +40,7 @@ export default function RegisterScreen() {
               <ThemedTextInput text="Kata Sandi" placeholder="Masukan kata sandi" autoComplete="new-password"
                 icon={<IconSymbol name="lock.shield.fill" color={Colors.labelSecondary} />} secureTextEntry />
               <ThemedTextInput text="Konfirmasi Kata Sandi" placeholder="Masukan ulang kata sandi" autoComplete="new-password"
-                icon={<IconSymbol name="lock.shield.fill" color={Colors.labelSecondary} />} secureTextEntry />
+                icon={<IconSymbol name="checkmark.shield.fill" color={Colors.labelSecondary} />} secureTextEntry />
               <View style={{ gap: 4 }}>
                 <ThemedButton variant="primary" size="default" style={{ justifyContent: 'center', marginTop: 12 }}
                   onPress={() => { }}>

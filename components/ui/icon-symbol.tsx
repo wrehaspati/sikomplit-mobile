@@ -28,6 +28,8 @@ const MAPPING = {
   'eye.fill': 'visibility',
   'eye.slash.fill': 'visibility-off',
   'person.fill': 'person',
+  'phone.fill': 'phone',
+  'checkmark.shield.fill': 'verified',
 } as IconMapping;
 
 /**
