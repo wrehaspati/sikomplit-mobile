@@ -257,7 +257,11 @@ export default function HomeScreen() {
               </ThemedText>
             </View>
             <BlurView style={styles.callAction} intensity={50} tint="dark">
-              <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}>
+              <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
+                onPress={() => {
+                  router.navigate({ pathname: '/register' });
+                }}
+              >
                 Buat Akun
               </ThemedButton>
               <ThemedButton variant="light" size="small"

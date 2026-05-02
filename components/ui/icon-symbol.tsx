@@ -27,6 +27,7 @@ const MAPPING = {
   'lock.fill': 'lock',
   'eye.fill': 'visibility',
   'eye.slash.fill': 'visibility-off',
+  'person.fill': 'person',
 } as IconMapping;
 
 /**

@@ -29,14 +29,14 @@ export default function LoginScreen() {
             <ThemedButton variant="primary" size="default" style={{ justifyContent: 'center', marginTop: 12 }} onPress={() => { }}>
               Masuk
             </ThemedButton>
-            <Link href="/" dismissTo style={{ textAlign: 'center' }}>
+            <Link href="/reset-password" dismissTo style={{ textAlign: 'center' }}>
               <ThemedText type="link">Lupa Kata Sandi?</ThemedText>
             </Link>
           </View>
         </View>
         <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
           <ThemedButton variant="outline" size="default" style={{ justifyContent: 'center' }} onPress={() => {
-            router.navigate('/');
+            router.navigate("/register");
           }}>
             Buat Akun Baru
           </ThemedButton>
