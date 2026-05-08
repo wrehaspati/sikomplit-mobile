@@ -9,7 +9,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 
 import ThemedSeparator from "@/components/themed-separator";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { useRef, useState } from "react";
 import { Animated, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
@@ -76,7 +76,7 @@ const dumFlyer: IFlyer[] = [
 ]
 
 export default function HomeScreen() {
-  const [history, setHistory] = useState<IApplyHistory[] | []>(dumData);
+  const [history, setHistory] = useState<IApplyHistory[] | []>([]);
   const [flyers, setFlyers] = useState<IFlyer[] | []>(dumFlyer);
   const scrollY = useRef(new Animated.Value(0)).current;
   const applySteps = [
@@ -90,7 +90,7 @@ export default function HomeScreen() {
 
   const HistoryCard = ({ data }: { data: IApplyHistory }) => (
     <ThemedView style={[styles.card, { width: responsiveScale(340), marginHorizontal: 0, marginVertical: 12, marginEnd: 23, padding: 20 }]}>
-      <ThemedView style={styles.badge} lightColor={Colors.vibrantFillTertiary} darkColor={Colors.vibrantFillPrimaryDark}>
+      <ThemedView style={styles.badge} lightColor={Colors.light.fill.vibrant.tertiary} darkColor={Colors.dark.fill.vibrant.primary}>
         <IconSymbol size={10} name="circle.fill" color={Colors.accentBlue} />
         <ThemedText type="footnote">
           {applySteps[data.step - 1]}
@@ -100,7 +100,7 @@ export default function HomeScreen() {
         <ThemedText type="headline" style={{ fontWeight: '600' }}>
           {data.title}
         </ThemedText>
-        <ThemedText type="caption" style={{ color: Colors.labelSecondary }}>
+        <ThemedText type="caption" style={{ color: Colors.light.text.secondary }}>
           Diajukan pada {data.date}
         </ThemedText>
       </View>
@@ -119,7 +119,7 @@ export default function HomeScreen() {
 
   const EmptyHistory = () => (
     <ThemedView style={[styles.card, { width: responsiveScale(340), padding: 20, marginVertical: 12 }]}>
-      <ThemedView style={styles.badge} lightColor={Colors.vibrantFillTertiary} darkColor={Colors.vibrantFillPrimaryDark}>
+      <ThemedView style={styles.badge} lightColor={Colors.light.fill.vibrant.tertiary} darkColor={Colors.dark.fill.vibrant.primary}>
         <IconSymbol size={10} name="circle.fill" color={Colors.accentBlue} />
         <ThemedText type="footnote">
           Tidak Ditemukan
@@ -129,15 +129,15 @@ export default function HomeScreen() {
         <ThemedText type="title4" style={{ fontWeight: '600' }}>
           Belum ada riwayat pengajuan
         </ThemedText>
-        <ThemedText type="caption" style={{ color: Colors.labelSecondary }}>
+        <ThemedText type="caption" style={{ color: Colors.light.text.secondary }}>
           Silahkan mengajukan permohonan dan lihat riwayat pengajuan Anda di sini.
         </ThemedText>
       </View>
       <View>
         <View style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'flex-end', marginTop: 12 }}>
-          <ThemedText type="caption" style={{ fontWeight: '600', color: Colors.accentBlue }}>
+          <Link href="/form" style={{ fontWeight: '600', color: Colors.accentBlue }}>
             Klik untuk mulai
-          </ThemedText>
+          </Link>
         </View>
       </View>
     </ThemedView >
@@ -246,13 +246,13 @@ export default function HomeScreen() {
           {/* Card Content */}
           <View style={{ flex: 1, justifyContent: 'flex-end', borderRadius: Radius.default }}>
             <View style={styles.cardContainer}>
-              <ThemedText type="subheadline" style={{ color: Colors.labelTertiary, fontWeight: '600' }}>
+              <ThemedText type="subheadline" style={{ color: Colors.light.text.tertiary, fontWeight: '600' }}>
                 SELAMAT DATANG DI
               </ThemedText>
               <ThemedText type="title" style={{ color: 'white' }}>
                 SIKOMPLIT
               </ThemedText>
-              <ThemedText type="tightFootnote" style={{ color: Colors.labelTertiary, textAlign: 'justify' }}>
+              <ThemedText type="tightFootnote" style={{ color: Colors.light.text.tertiary, textAlign: 'justify' }}>
                 Sistem Rekomendasi Penelitian (SIKOMPLIT) adalah sistem informasi yang dirancang untuk memudahkan pelayanan terpadu di masyarakat khususnya dalam penerbitan surat rekomendasi
               </ThemedText>
             </View>
@@ -265,7 +265,7 @@ export default function HomeScreen() {
                 Buat Akun
               </ThemedButton>
               <ThemedButton variant="light" size="small"
-                style={{ alignSelf: 'flex-end', backgroundColor: Colors.fillTertiary }}
+                style={{ alignSelf: 'flex-end', backgroundColor: Colors.light.fill.tertiary }}
                 onPress={() => {
                   router.navigate({ pathname: '/login' });
                 }}
@@ -302,15 +302,15 @@ export default function HomeScreen() {
         </View>
         <ThemedView style={[styles.card, { marginTop: 20 }]}>
           <View style={{ display: 'flex', flexDirection: 'row', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 }} >
-            <IconSymbol size={responsiveScale(48)} name="document.fill" color={Colors.vibrantFillSecondary} />
+            <IconSymbol size={responsiveScale(48)} name="document.fill" color={Colors.light.fill.vibrant.secondary} />
             <View style={{ flex: 1, minWidth: 0, marginStart: 12 }}>
-              <ThemedText type="caption" style={{ color: Colors.labelTertiary, fontWeight: '600' }}>
+              <ThemedText type="caption" style={{ color: Colors.light.text.tertiary, fontWeight: '600' }}>
                 DOKUMEN PEDOMAN
               </ThemedText>
               <ThemedText type="headline" style={{ fontWeight: '600', marginBottom: 4, flexShrink: 1 }}>
                 Surat Pernyataan Laporan Akhir
               </ThemedText>
-              <ThemedText type="caption" style={{ color: Colors.labelSecondary, flexShrink: 1, textAlign: 'justify' }}>
+              <ThemedText type="caption" style={{ color: Colors.light.text.secondary, flexShrink: 1, textAlign: 'justify' }}>
                 Pedoman ini berisi informasi penting mengenai format dan persyaratan yang harus dipenuhi dalam pengajuan rekomendasi penelitian.
               </ThemedText>
             </View>
@@ -360,7 +360,7 @@ export default function HomeScreen() {
           </ThemedButton>
         </View>
         <View>
-          <ThemedSeparator lightColor={Colors.vibrantFillSecondaryDark} style={{ marginTop: 12 }} />
+          <ThemedSeparator lightColor={Colors.light.fill.vibrant.secondary} style={{ marginTop: 12 }} />
           <ThemedButton variant="link" style={{ alignSelf: 'flex-start' }}>
             Syarat dan Ketentuan Layanan
           </ThemedButton>

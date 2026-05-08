@@ -10,7 +10,12 @@ const tintColorDark = '#fff';
 
 export const Colors = {
   light: {
-    text: '#1A1A1A',
+    text: {
+      primary: '#1A1A1A',
+      secondary: '#727272',
+      tertiary: '#BFBFBF',
+      quarternary: '#D9D9D9',
+    },
     background: '#fff',
     secondary: '#E0E0E0',
     separator: '#C6C6C8',
@@ -18,9 +23,24 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    fill: {
+      primary: 'rgba(8, 3, 3, 0.2)',
+      secondary: 'rgba(120, 120, 128, 0.16)',
+      tertiary: 'rgba(118, 118, 128, 0.12)',
+      vibrant: {
+        primary: '#CCCCCC',
+        secondary: '#E0E0E0',
+        tertiary: '#EDEDED',
+      }
+    }
   },
   dark: {
-    text: '#ECEDEE',
+    text: {
+      primary: '#FFFFFF',
+      secondary: '#999999',
+      tertiary: '#404040',
+      quarternary: '#262626',
+    },
     background: '#151718',
     secondary: '#1F1F1F',
     separator: '#C6C6C8',
@@ -28,21 +48,19 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    fill: {
+      primary: 'rgba(120, 120, 120, 0.20)',
+      secondary: 'rgba(120, 120, 128, 0.16)',
+      tertiary: 'rgba(118, 118, 128, 0.12)',
+      vibrant: {
+        primary: '#333333',
+        secondary: '#1F1F1F',
+        tertiary: '#121212',
+      }
+    }
   },
   accentBlue: '#0088FF',
   accentRed: '#FF383C',
-  fillPrimary: 'rgba(8, 3, 3, 0.2)',
-  fillSecondary: 'rgba(120, 120, 128, 0.16)',
-  fillTertiary: 'rgba(118, 118, 128, 0.12)',
-  labelSecondary: '#727272',
-  labelTertiary: '#BFBFBF',
-  vibrantFillPrimary: '#CCCCCC',
-  vibrantFillPrimaryDark: '#333333',
-  vibrantFillSecondary: '#E0E0E0',
-  vibrantFillSecondaryDark: '#1F1F1F',
-  vibrantFillTertiary: '#EDEDED',
-  vibrantFillTertiaryDark: '#121212',
-  vibrantControlSecondary: '#727272',
   backgroundSecondary: '#F2F2F7',
 };
 

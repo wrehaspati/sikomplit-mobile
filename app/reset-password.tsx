@@ -15,12 +15,12 @@ export default function ResetPasswordScreen() {
         <View style={{ alignItems: 'center', flex: 1, width: '100%', gap: 12 }}>
           <ThemedText type="title" style={{ textAlign: 'center' }}>Reset Kata Sandi</ThemedText>
           <ThemedText type="subheadline" style={{ textAlign: 'center' }}
-            darkColor={Colors.labelSecondary} lightColor={Colors.labelSecondary}>
+            darkColor={Colors.text.secondary} lightColor={Colors.text.secondary}>
             Masukan email untuk mereset kata sandi Anda
           </ThemedText>
           <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
             <ThemedTextInput text="Email" placeholder="Masukan email" autoComplete="email"
-              icon={<IconSymbol name="envelope.fill" color={Colors.labelSecondary} />} />
+              icon={<IconSymbol name="envelope.fill" color={Colors.text.secondary} />} />
             <ThemedButton variant="primary" size="default" style={{ justifyContent: 'center', marginTop: 12 }} onPress={() => { }}>
               Reset Kata Sandi
             </ThemedButton>
