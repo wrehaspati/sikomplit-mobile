@@ -1,3 +1,5 @@
+import Combobox from '@/components/combobox';
+import SelectCard from '@/components/select-card';
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
@@ -6,7 +8,6 @@ import { responsiveScale } from "@/constants/scaling";
 import { Colors, Radius } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import { Checkbox } from 'expo-checkbox';
 import * as DocumentPicker from 'expo-document-picker';
 import { Image } from "expo-image";
@@ -34,10 +35,10 @@ export default function Form() {
   const [phone, setPhone] = useState('');
   const [nik, setNik] = useState('');
   const [birthDate, setBirthDate] = useState<Date | null>(null);
-  const [selectedGender, setGender] = useState();
-  const [selectedLastEducation, setLastEducation] = useState();
-  const [selectedOccupation, setOccupation] = useState();
-  const [selectedPurpose, setPurpose] = useState();
+  const [selectedGender, setGender] = useState<string | null>(null);
+  const [selectedLastEducation, setLastEducation] = useState<string | null>(null);
+  const [selectedOccupation, setOccupation] = useState<string | null>(null);
+  const [selectedPurpose, setPurpose] = useState<string | null>(null);
   const [selectedRequestLetter, setRequestLetter] = useState<SelectedFile | null>(null);
   const [selectedProposalLetter, setProposalLetter] = useState<SelectedFile | null>(null);
   const [selectedConductLetter, setConductLetter] = useState<SelectedFile | null>(null);
@@ -139,8 +140,8 @@ export default function Form() {
 
   return (
     <ScrollView style={{ paddingVertical: 20 }} contentInsetAdjustmentBehavior="automatic">
-      <View style={{ gap: 8, paddingHorizontal: 23, paddingBottom: responsiveScale(100) }}>
-        <ThemedView style={[styles.card, { gap: 4 }]}>
+      <View style={{ gap: 8, paddingHorizontal: 24, paddingBottom: responsiveScale(100) }}>
+        <ThemedView style={[styles.card, { gap: 8, marginBottom: 8 }]}>
           <ThemedText type="title4" style={{}}>
             Formulir Rekomendasi Penelitian
           </ThemedText>
@@ -153,12 +154,12 @@ export default function Form() {
           <ThemedButton variant="secondary" icon={(<Image source={require('@/assets/images/whatsapp.png')} style={{ width: 20, height: 20, marginEnd: 4, marginStart: -2 }} />)} size="small" style={{ alignSelf: 'flex-start' }}>
             Whatsapp
           </ThemedButton>
-          <ThemedText type="caption" darkColor={Colors.accentRed} lightColor={Colors.accentRed} style={{ marginTop: 8 }}>
+          <ThemedText type="caption" darkColor={Colors.accentRed} lightColor={Colors.accentRed}>
             Kolom *) wajib diisi
           </ThemedText>
         </ThemedView>
         {step === 1 && (
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: 16 }}>
             {/* Email */}
             <ThemedView style={styles.card}>
               <ThemedTextInput text="Email" variant="transparent" placeholder="Masukan email" value={email} onChangeText={setEmail} autoComplete="email"
@@ -218,15 +219,14 @@ export default function Form() {
                   {' *'}
                 </Text>
               </ThemedText>
-              <Picker
+              <SelectCard
+                options={[
+                  { label: 'Laki-laki', value: 'men' },
+                  { label: 'Perempuan', value: 'women' },
+                ]}
                 selectedValue={selectedGender}
-                onValueChange={(itemValue, itemIndex) =>
-                  setGender(itemValue)
-                }>
-                <Picker.Item label="Pilih jenis kelamin" value="" enabled={false} />
-                <Picker.Item label="Laki-laki" value="men" />
-                <Picker.Item label="Perempuan" value="women" />
-              </Picker>
+                onValueChange={(value) => setGender(value)}
+              />
             </ThemedView>
             {/* Pendidikan Terakhir */}
             <ThemedView style={styles.card}>
@@ -236,18 +236,17 @@ export default function Form() {
                   {' *'}
                 </Text>
               </ThemedText>
-              <Picker
+              <SelectCard
+                options={[
+                  { label: 'SMA/SMK', value: 'sma' },
+                  { label: 'Diploma', value: 'diploma' },
+                  { label: 'S1', value: 's1' },
+                  { label: 'S2', value: 's2' },
+                  { label: 'S3', value: 's3' },
+                ]}
                 selectedValue={selectedLastEducation}
-                onValueChange={(itemValue, itemIndex) =>
-                  setLastEducation(itemValue)
-                }>
-                <Picker.Item label="Pilih pendidikan terakhir" value="" enabled={false} />
-                <Picker.Item label="SMA/SMK" value="sma" />
-                <Picker.Item label="Diploma" value="diploma" />
-                <Picker.Item label="S1" value="s1" />
-                <Picker.Item label="S2" value="s2" />
-                <Picker.Item label="S3" value="s3" />
-              </Picker>
+                onValueChange={(value: string) => setLastEducation(value)}
+              />
             </ThemedView>
             {/* Pekerjaan */}
             <ThemedView style={styles.card}>
@@ -257,16 +256,30 @@ export default function Form() {
                   {' *'}
                 </Text>
               </ThemedText>
-              <Picker
+              <Combobox
+                options={[
+                  { label: 'Pegawai Negeri', value: 'government_employee' },
+                  { label: 'Pegawai Swasta', value: 'private_employee' },
+                  { label: 'Wiraswasta', value: 'entrepreneur' },
+                  { label: 'Pelajar/Mahasiswa', value: 'student' },
+                  { label: 'Lainnya', value: 'other' },
+                  { label: 'Pegawai Negeri', value: 'government_employee2' },
+                  { label: 'Pegawai Swasta', value: 'private_employee2' },
+                  { label: 'Wiraswasta', value: 'entrepreneur2' },
+                  { label: 'Pelajar/Mahasiswa', value: 'student2' },
+                  { label: 'Lainnya', value: 'other2' },
+                  { label: 'Pegawai Negeri', value: 'government_employee3' },
+                  { label: 'Pegawai Swasta', value: 'private_employee3' },
+                  { label: 'Wiraswasta', value: 'entrepreneur3' },
+                  { label: 'Pelajar/Mahasiswa', value: 'student3' },
+                  { label: 'Lainnya', value: 'other3' },
+                ]}
                 selectedValue={selectedOccupation}
-                onValueChange={(itemValue, itemIndex) =>
-                  setOccupation(itemValue)
-                }>
-                <Picker.Item label="Pilih pekerjaan" value="" enabled={false} />
-                <Picker.Item label="Pegawai Negeri" value="government_employee" />
-                <Picker.Item label="Pegawai Swasta" value="private_employee" />
-                <Picker.Item label="Wiraswasta" value="entrepreneur" />
-              </Picker>
+                onValueChange={(value) => setOccupation(value)}
+                placeholder="Pilih pekerjaan"
+                searchPlaceholder="Cari pekerjaan"
+                titlePlaceholder="Pilih Pekerjaan Anda"
+              />
             </ThemedView>
             {/* Pekerjaan */}
             <ThemedView style={styles.card}>
@@ -276,17 +289,18 @@ export default function Form() {
                   {' *'}
                 </Text>
               </ThemedText>
-              <Picker
+              <SelectCard
+                options={[
+                  { label: 'Permohonan Data Awal/Studi Pendahuluan', value: '1' },
+                  { label: 'Penelitian Tugas Akhir', value: '2' },
+                  { label: 'Penelitian dengan pendanaan APBD/APBN', value: '3' },
+                  { label: 'Penelitian mendapatkan SKP dari DPMPTSP', value: '4' },
+                ]}
                 selectedValue={selectedPurpose}
-                onValueChange={(itemValue, itemIndex) =>
-                  setPurpose(itemValue)
-                }>
-                <Picker.Item label="Pilih tujuan pengajuan" value="" enabled={false} />
-                <Picker.Item label="Permohonan Data Awal/Studi Pendahuluan" value="1" />
-                <Picker.Item label="Penelitian Tugas Akhir" value="2" />
-                <Picker.Item label="Penelitian dengan pendanaan APBD/APBN" value="3" />
-                <Picker.Item label="Penelitian mendapatkan SKP dari DPMPTSP" value="4" />
-              </Picker>
+                column={1}
+                textAlign='flex-start'
+                onValueChange={(value) => setPurpose(value)}
+              />
             </ThemedView>
             {/* Birthdate Modal */}
             <Modal
@@ -319,14 +333,16 @@ export default function Form() {
                         </ThemedText>
                       </Pressable>
                     </View>
-                    <DateTimePicker
-                      value={draftBirthDate}
-                      mode="date"
-                      display="spinner"
-                      onChange={handleIOSDateChange}
-                      maximumDate={today}
-                      style={{ backgroundColor }}
-                    />
+                    <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                      <DateTimePicker
+                        value={draftBirthDate}
+                        mode="date"
+                        display="spinner"
+                        onChange={handleIOSDateChange}
+                        maximumDate={today}
+                        style={{ backgroundColor }}
+                      />
+                    </View>
                   </SafeAreaView>
                 </Pressable>
               </Pressable>
@@ -411,25 +427,30 @@ export default function Form() {
         )}
         {step === 3 && (
           <View style={{ gap: 8 }}>
-            <ThemedView style={[styles.card, { gap: 12 }]}>
+            <ThemedView style={[styles.card, { gap: 16 }]}>
               <ThemedText type="subheadline">
                 Dengan mengisi formulir ini, Anda menyetujui syarat dan ketentuan yang berlaku. Pastikan semua informasi yang Anda berikan akurat dan lengkap untuk mempercepat proses pengajuan. Pengajuan akan kami proses dalam waktu 1x24 jam, dan selesai dalam waktu 3 Hari Kerja.
               </ThemedText>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-                <Checkbox value={isCheckedOne} onValueChange={setCheckedOne} style={{ marginTop: 4 }} />
-                <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-                  Saya mengetahui bahwa proses pengajuan membutuhkan waktu maximal 3 hari kerja
-                </ThemedText>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
+                <Checkbox hitSlop={10} value={isCheckedOne} onValueChange={setCheckedOne} style={{ marginTop: 4 }} />
+                <Pressable style={{ flex: 1, minWidth: 0 }} onPress={() => setCheckedOne(!isCheckedOne)}>
+                  <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
+                    Saya mengetahui bahwa proses pengajuan membutuhkan waktu maximal 3 hari kerja
+                  </ThemedText>
+                </Pressable>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-                <Checkbox value={isCheckedTwo} onValueChange={setCheckedTwo} style={{ marginTop: 4 }} />
-                <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-                  Saya menyetujui bahwa segala bentuk pengajuan ini akan menjadi hak milik dinas
-                </ThemedText>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
+                <Checkbox hitSlop={10} value={isCheckedTwo} onValueChange={setCheckedTwo} style={{ marginTop: 4 }} />
+                <Pressable style={{ flex: 1, minWidth: 0 }} onPress={() => setCheckedTwo(!isCheckedTwo)}>
+                  <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
+                    Saya menyetujui bahwa segala bentuk pengajuan ini akan menjadi hak milik dinas
+                  </ThemedText>
+                </Pressable>
               </View>
             </ThemedView>
           </View>
-        )}
+        )
+        }
         <View style={{ marginStart: 20 }}>
           <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
             Langkah {step} dari 3
@@ -462,8 +483,8 @@ export default function Form() {
             </ThemedButton>
           )}
         </View>
-      </View>
-    </ScrollView>
+      </View >
+    </ScrollView >
   );
 }
 
@@ -476,7 +497,7 @@ const styles = StyleSheet.create({
   },
   dateField: {
     borderRadius: Radius.default,
-    paddingHorizontal: 18,
+    paddingHorizontal: 24,
     paddingVertical: 16,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
@@ -510,7 +531,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginVertical: 8,
   },
   fileCard: {
     borderRadius: Radius.default,

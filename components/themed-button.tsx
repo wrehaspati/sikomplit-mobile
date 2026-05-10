@@ -40,6 +40,7 @@ export default function ThemedButton({
       {icon && <View style={{ paddingRight: 4 }}>{icon}</View>}
       <ThemedText type="defaultSemiBold" style={[
         variant === 'primary' ? { color: 'white' } : undefined,
+        variant === 'secondary' ? { color: Colors.light.text.primary } : undefined,
         variant === 'outline' ? { color: Colors.accentBlue } : undefined,
         variant === 'light' ? { color: Colors.light.text.primary } : undefined,
         variant === 'dark' ? { color: Colors.dark.text.primary } : undefined,

@@ -4,9 +4,9 @@ import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RegisterScreen() {
@@ -14,7 +14,7 @@ export default function RegisterScreen() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 23 }}>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 24 }}>
         <View style={{ alignItems: 'center', flex: 1, width: '100%', gap: 12 }}>
           <ThemedText type="title" style={{ textAlign: 'center' }}>Daftar Akun</ThemedText>
           <ThemedText type="subheadline" style={{ textAlign: 'center' }}
@@ -55,11 +55,11 @@ export default function RegisterScreen() {
           )}
         </View>
         <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
-          <Link href="/" dismissTo style={{ textAlign: 'center' }}>
-            <ThemedText type="link">
+          <Pressable onPress={() => { router.navigate("/"); }} hitSlop={10} style={{ alignSelf: 'center' }}>
+            <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
               Syarat dan Ketentuan
             </ThemedText>
-          </Link>
+          </Pressable>
         </View>
       </SafeAreaView>
     </ThemedView>

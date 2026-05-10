@@ -6,14 +6,14 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { responsiveScale } from "@/constants/scaling";
 import { Colors } from "@/constants/theme";
 import { Image } from "expo-image";
-import { Link, router } from "expo-router";
-import { View } from "react-native";
+import { router } from "expo-router";
+import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoginScreen() {
   return (
     <ThemedView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 23 }}>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 24 }}>
         <View style={{ alignItems: 'center', flex: 1, width: '100%', gap: 12 }}>
           <Image source={require('@/assets/images/app-icon-wide.webp')} style={{ width: '100%', height: responsiveScale(120), marginBottom: 20 }} contentFit="contain" contentPosition={'center'} />
           <ThemedText type="title" style={{ textAlign: 'center' }}>Masuk</ThemedText>
@@ -29,9 +29,11 @@ export default function LoginScreen() {
             <ThemedButton variant="primary" size="default" style={{ justifyContent: 'center', marginTop: 12 }} onPress={() => { }}>
               Masuk
             </ThemedButton>
-            <Link href="/reset-password" dismissTo style={{ textAlign: 'center' }}>
-              <ThemedText type="link">Lupa Kata Sandi?</ThemedText>
-            </Link>
+            <Pressable onPress={() => { router.navigate("/reset-password"); }} hitSlop={10} style={{ alignSelf: 'center' }}>
+              <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
+                Lupa Kata Sandi?
+              </ThemedText>
+            </Pressable>
           </View>
         </View>
         <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
