@@ -40,10 +40,10 @@ export default function ThemedButton({
       {icon && <View style={{ paddingRight: 4 }}>{icon}</View>}
       <ThemedText type="defaultSemiBold" style={[
         variant === 'primary' ? { color: 'white' } : undefined,
-        variant === 'secondary' ? { color: Colors.vibrantControlSecondary } : undefined,
+        variant === 'secondary' ? { color: Colors.light.text.primary } : undefined,
         variant === 'outline' ? { color: Colors.accentBlue } : undefined,
-        variant === 'light' ? { color: Colors.light.text } : undefined,
-        variant === 'dark' ? { color: Colors.dark.text } : undefined,
+        variant === 'light' ? { color: Colors.light.text.primary } : undefined,
+        variant === 'dark' ? { color: Colors.dark.text.primary } : undefined,
         variant === 'link' ? { color: Colors.accentBlue } : undefined,
       ]}>
         {rest.children}
@@ -54,14 +54,17 @@ export default function ThemedButton({
 
 const styles = {
   shadow: {
-    boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)'
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 1,
   },
   default: {
     paddingVertical: responsiveScale(12),
     paddingHorizontal: responsiveScale(24),
     borderRadius: 25,
     alignItems: 'center',
-
   },
   small: {
     paddingVertical: responsiveScale(6),
@@ -73,12 +76,13 @@ const styles = {
     backgroundColor: Colors.accentBlue,
   },
   secondary: {
-    backgroundColor: Colors.fillSecondary,
+    backgroundColor: Colors.light.fill.vibrant.secondary,
   },
   outline: {
     borderWidth: 2,
     backgroundColor: 'transparent',
     borderColor: Colors.accentBlue,
+    shadowColor: 'transparent',
   },
   light: {
     backgroundColor: Colors.light.background,
@@ -89,6 +93,6 @@ const styles = {
   link: {
     backgroundColor: 'transparent',
     paddingHorizontal: 0,
-    boxShadow: 'none',
+    shadowColor: 'transparent',
   }
 } as const;
