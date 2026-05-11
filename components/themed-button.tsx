@@ -63,13 +63,13 @@ const styles = {
   default: {
     paddingVertical: responsiveScale(12),
     paddingHorizontal: responsiveScale(24),
-    borderRadius: 25,
+    borderRadius: 24,
     alignItems: 'center',
   },
   small: {
     paddingVertical: responsiveScale(6),
     paddingHorizontal: responsiveScale(20),
-    borderRadius: 25,
+    borderRadius: 24,
     alignItems: 'center',
   },
   primary: {
