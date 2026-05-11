@@ -16,6 +16,7 @@ export type ThemedTextInputProps = TextInputProps & {
   inputStyle?: StyleProp<ViewStyle>;
   icon?: ReactNode;
   required?: boolean;
+  errorMessage?: string;
 };
 
 export default function ThemedTextInput({
@@ -27,6 +28,7 @@ export default function ThemedTextInput({
   title,
   icon,
   required,
+  errorMessage,
   ...props
 }: ThemedTextInputProps) {
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'secondary');
@@ -57,7 +59,8 @@ export default function ThemedTextInput({
         hasContainerIcon ? [styles.withIconContainer, { backgroundColor: withIconContainerColor }] : null,
         variant === 'transparent' ? { backgroundColor: 'transparent' } : null,
         { borderRadius: variant === 'transparent' ? 0 : Radius.default },
-        inputStyle
+        inputStyle,
+        errorMessage && { borderColor: Colors.accentRed, borderWidth: 1 },
       ]}>
         {hasContainerIcon && <View style={{ marginRight: 8 }}>{icon}</View>}
         <TextInput
@@ -82,6 +85,11 @@ export default function ThemedTextInput({
           </View>
         )}
       </ThemedView>
+      {errorMessage && (
+        <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
+          {errorMessage}
+        </Text>
+      )}
     </View >
   );
 }

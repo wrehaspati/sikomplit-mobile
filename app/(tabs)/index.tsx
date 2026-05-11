@@ -8,6 +8,7 @@ import { BlurView } from "expo-blur";
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import ThemedSeparator from "@/components/themed-separator";
+import { useAuth } from "@/contexts/auth-context";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
@@ -76,6 +77,8 @@ const dumFlyer: IFlyer[] = [
 ]
 
 export default function HomeScreen() {
+  const auth = useAuth();
+  console.log('Auth state in HomeScreen:', auth?.state);
   const [history, setHistory] = useState<IApplyHistory[] | []>([]);
   const [flyers, setFlyers] = useState<IFlyer[] | []>(dumFlyer);
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -258,23 +261,35 @@ export default function HomeScreen() {
                 Sistem Rekomendasi Penelitian (SIKOMPLIT) adalah sistem informasi yang dirancang untuk memudahkan pelayanan terpadu di masyarakat khususnya dalam penerbitan surat rekomendasi
               </ThemedText>
             </View>
-            <BlurView style={styles.callAction} intensity={50} tint="dark">
-              <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
-                onPress={() => {
-                  router.navigate({ pathname: '/register' });
-                }}
-              >
-                Buat Akun
-              </ThemedButton>
-              <ThemedButton variant="light" size="small"
-                style={{ alignSelf: 'flex-end', backgroundColor: Colors.light.fill.tertiary }}
-                onPress={() => {
-                  router.navigate({ pathname: '/login' });
-                }}
-              >
-                Masuk
-              </ThemedButton>
-            </BlurView>
+            {auth?.state.user ? (
+              <BlurView style={styles.callAction} intensity={50} tint="dark">
+                <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
+                  onPress={() => {
+                    router.navigate({ pathname: '/form' });
+                  }}
+                >
+                  Ajukan Rekomendasi
+                </ThemedButton>
+              </BlurView>
+            ) : (
+              <BlurView style={styles.callAction} intensity={50} tint="dark">
+                <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
+                  onPress={() => {
+                    router.navigate({ pathname: '/register' });
+                  }}
+                >
+                  Buat Akun
+                </ThemedButton>
+                <ThemedButton variant="light" size="small"
+                  style={{ alignSelf: 'flex-end', backgroundColor: Colors.light.fill.tertiary }}
+                  onPress={() => {
+                    router.navigate({ pathname: '/login' });
+                  }}
+                >
+                  Masuk
+                </ThemedButton>
+              </BlurView>
+            )}
           </View>
         </View>
       </View>
