@@ -22,9 +22,9 @@ export default function LoginScreen() {
             Masuk untuk melanjutkan ke SIKOMPLIT
           </ThemedText>
           <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
-            <ThemedTextInput text="Email" placeholder="Masukan email" autoComplete="email"
+            <ThemedTextInput title="Email" placeholder="Masukan email" autoComplete="email"
               icon={<IconSymbol name="envelope.fill" color={Colors.light.text.secondary} />} />
-            <ThemedTextInput text="Password" placeholder="Masukan kata sandi" autoComplete="password"
+            <ThemedTextInput title="Password" placeholder="Masukan kata sandi" autoComplete="password"
               icon={<IconSymbol name="lock.shield.fill" color={Colors.light.text.secondary} />} secureTextEntry />
             <ThemedButton variant="primary" size="default" style={{ justifyContent: 'center', marginTop: 12 }} onPress={() => { }}>
               Masuk

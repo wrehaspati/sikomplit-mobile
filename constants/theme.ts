@@ -61,6 +61,7 @@ export const Colors = {
   },
   accentBlue: '#0088FF',
   accentRed: '#FF383C',
+  accentYellow: '#FFCC00',
   backgroundSecondary: '#F2F2F7',
 };
 

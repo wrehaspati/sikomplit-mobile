@@ -162,22 +162,22 @@ export default function Form() {
           <View style={{ gap: 16 }}>
             {/* Email */}
             <ThemedView style={styles.card}>
-              <ThemedTextInput text="Email" variant="transparent" placeholder="Masukan email" value={email} onChangeText={setEmail} autoComplete="email"
+              <ThemedTextInput title="Email" variant="transparent" placeholder="Masukan email" value={email} onChangeText={setEmail} autoComplete="email"
                 keyboardType="email-address" lightColor={backgroundColor} darkColor={backgroundColor} underline required />
             </ThemedView>
             {/* Nama Lengkap */}
             <ThemedView style={styles.card}>
-              <ThemedTextInput text="Nama Lengkap" variant="transparent" placeholder="Masukan nama lengkap" value={fullname} onChangeText={setFullname} autoComplete="name"
+              <ThemedTextInput title="Nama Lengkap" variant="transparent" placeholder="Masukan nama lengkap" value={fullname} onChangeText={setFullname} autoComplete="name"
                 lightColor={backgroundColor} darkColor={backgroundColor} underline required />
             </ThemedView>
             {/* Nomor Telepon */}
             <ThemedView style={styles.card}>
-              <ThemedTextInput text="Nomor Telepon" variant="transparent" placeholder="Masukan nomor telepon" value={phone} onChangeText={setPhone} autoComplete="tel" keyboardType="phone-pad"
+              <ThemedTextInput title="Nomor Telepon" variant="transparent" placeholder="Masukan nomor telepon" value={phone} onChangeText={setPhone} autoComplete="tel" keyboardType="phone-pad"
                 lightColor={backgroundColor} darkColor={backgroundColor} underline required />
             </ThemedView>
             {/* NIK */}
             <ThemedView style={styles.card}>
-              <ThemedTextInput text="Nomor Induk Kependudukan (NIK)" variant="transparent" placeholder="Masukan nomor induk kependudukan" value={nik} onChangeText={setNik} autoComplete="off" keyboardType="number-pad"
+              <ThemedTextInput title="Nomor Induk Kependudukan (NIK)" variant="transparent" placeholder="Masukan nomor induk kependudukan" value={nik} onChangeText={setNik} autoComplete="off" keyboardType="number-pad"
                 lightColor={backgroundColor} darkColor={backgroundColor} underline required />
             </ThemedView>
             {/* Tanggal Lahir */}

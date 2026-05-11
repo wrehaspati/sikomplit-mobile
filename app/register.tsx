@@ -23,9 +23,9 @@ export default function RegisterScreen() {
           </ThemedText>
           {step === 1 && (
             <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
-              <ThemedTextInput text="Nama Lengkap" placeholder="Masukan nama lengkap" autoComplete="name"
+              <ThemedTextInput title="Nama Lengkap" placeholder="Masukan nama lengkap" autoComplete="name"
                 icon={<IconSymbol name="person.fill" color={Colors.light.text.secondary} />} />
-              <ThemedTextInput text="Nomor Telepon" placeholder="Masukan nomor telepon" autoComplete="tel"
+              <ThemedTextInput title="Nomor Telepon" placeholder="Masukan nomor telepon" autoComplete="tel"
                 icon={<IconSymbol name="phone.fill" color={Colors.light.text.secondary} />} />
               <ThemedButton variant="primary" size="default" style={{ justifyContent: 'center', marginTop: 12 }}
                 onPress={() => setStep(2)}>
@@ -35,11 +35,11 @@ export default function RegisterScreen() {
           )}
           {step === 2 && (
             <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
-              <ThemedTextInput text="Email" placeholder="Masukan email" autoComplete="email"
+              <ThemedTextInput title="Email" placeholder="Masukan email" autoComplete="email"
                 icon={<IconSymbol name="envelope.fill" color={Colors.light.text.secondary} />} />
-              <ThemedTextInput text="Kata Sandi" placeholder="Masukan kata sandi" autoComplete="new-password"
+              <ThemedTextInput title="Kata Sandi" placeholder="Masukan kata sandi" autoComplete="new-password"
                 icon={<IconSymbol name="lock.shield.fill" color={Colors.light.text.secondary} />} secureTextEntry />
-              <ThemedTextInput text="Konfirmasi Kata Sandi" placeholder="Masukan ulang kata sandi" autoComplete="new-password"
+              <ThemedTextInput title="Konfirmasi Kata Sandi" placeholder="Masukan ulang kata sandi" autoComplete="new-password"
                 icon={<IconSymbol name="checkmark.shield.fill" color={Colors.light.text.secondary} />} secureTextEntry />
               <View style={{ gap: 4 }}>
                 <ThemedButton variant="primary" size="default" style={{ justifyContent: 'center', marginTop: 12 }}

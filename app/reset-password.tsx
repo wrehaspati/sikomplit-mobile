@@ -18,7 +18,7 @@ export default function ResetPasswordScreen() {
             Masukan email untuk mereset kata sandi Anda
           </ThemedText>
           <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
-            <ThemedTextInput text="Email" placeholder="Masukan email" autoComplete="email"
+            <ThemedTextInput title="Email" placeholder="Masukan email" autoComplete="email"
               icon={<IconSymbol name="envelope.fill" color={Colors.light.text.secondary} />} />
             <ThemedButton variant="primary" size="default" style={{ justifyContent: 'center', marginTop: 12 }} onPress={() => { }}>
               Reset Kata Sandi
