@@ -22,6 +22,7 @@ export default function RootLayout() {
           <Stack.Screen name="login" options={{ presentation: 'card', title: 'Masuk SIKOMPLIT' }} />
           <Stack.Screen name="register" options={{ presentation: 'card', title: 'Daftar SIKOMPLIT' }} />
           <Stack.Screen name="reset-password" options={{ presentation: 'card', title: 'Reset Kata Sandi' }} />
+          <Stack.Screen name="email-verify" options={{ presentation: 'card', title: 'Verifikasi Email' }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

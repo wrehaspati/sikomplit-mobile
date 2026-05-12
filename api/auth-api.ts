@@ -11,3 +11,13 @@ export const loginUser = async (credentials: ICredentials): Promise<{ token: str
   if (!data.data) throw new Error(data.message);
   return { token: data.token, user: data.data };
 }
+
+export const registerUser = async (credentials: ICredentials & { name: string, phone: string }): Promise<{ user: ISession }> => {
+  const { data } = await api.post<ApiResponse<ISession>>('/user/auth/register', credentials);
+  if (!data.data) throw new Error(data.message);
+  return { user: data.data };
+}
+
+export const verifyEmail = async (email: string): Promise<void> => {
+  await api.post('/user/auth/resend-verify-email', { email });
+}

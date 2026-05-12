@@ -4,11 +4,12 @@ import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
@@ -24,16 +25,18 @@ const RegisterSchema = z.object({
 });
 
 export default function RegisterScreen() {
+  const auth = useAuth();
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof RegisterSchema>>({
     resolver: zodResolver(RegisterSchema),
     mode: "onTouched",
     defaultValues: {
-      name: "",
-      phone: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
+      name: "Userx1",
+      phone: "081234567890",
+      email: "userx1@example.com",
+      password: "password",
+      confirmPassword: "password",
     },
   });
 
@@ -45,7 +48,25 @@ export default function RegisterScreen() {
   };
 
   const onSubmit = async (values: z.infer<typeof RegisterSchema>) => {
-    console.log("register", values);
+    if (isLoading) return;
+    setIsLoading(isLoading => !isLoading);
+    try {
+      if (!auth) return;
+      await auth.register({ name: values.name, phone: values.phone, email: values.email, password: values.password });
+      router.canDismiss() && router.dismissTo({ pathname: "/email-verify", params: { email: values.email } });
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        Alert.alert("Email Sudah Digunakan", "Email atau nomor telepon yang Anda gunakan sudah terdaftar.", [
+          { text: "Login", onPress: () => router.dismissTo({ pathname: "/login", params: { email: values.email } }) },
+          { text: "Ubah", style: "cancel" },
+        ]);
+      } else {
+        const code = error.code || error.status || "UNKNOWN_ERROR";
+        Alert.alert(code, "Terjadi kesalahan saat mencoba daftar. Silakan hubungi administrator.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -152,7 +173,19 @@ export default function RegisterScreen() {
               <View style={{ gap: 4 }}>
                 <ThemedButton variant="primary" size="default" style={{ justifyContent: 'center', marginTop: 12 }}
                   onPress={form.handleSubmit(onSubmit)}>
-                  Daftar
+                  {isLoading ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <ThemedText type="defaultSemiBold">
+                        {" "}
+                      </ThemedText>
+                      <ActivityIndicator size="small" color="white" />
+                      <ThemedText type="defaultSemiBold">
+                        {" "}
+                      </ThemedText>
+                    </View>
+                  ) : (
+                    'Daftar'
+                  )}
                 </ThemedButton>
                 <ThemedButton variant="secondary" size="default" style={{ justifyContent: 'center', marginTop: 12 }}
                   onPress={() => setStep(1)}>
@@ -163,7 +196,7 @@ export default function RegisterScreen() {
           )}
         </View>
         <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
-          <Pressable onPress={() => { router.navigate("/"); }} hitSlop={10} style={{ alignSelf: 'center' }}>
+          <Pressable onPress={() => { }} hitSlop={10} style={{ alignSelf: 'center' }}>
             <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
               Syarat dan Ketentuan
             </ThemedText>

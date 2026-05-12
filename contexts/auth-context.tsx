@@ -1,5 +1,5 @@
 import { api } from '@/api/api-client';
-import { loginUser } from '@/api/auth-api';
+import { loginUser, registerUser } from '@/api/auth-api';
 import { ICredentials, ISession } from '@/types/session';
 import * as SecureStore from 'expo-secure-store';
 import { createContext, useContext, useEffect, useReducer } from 'react';
@@ -11,7 +11,7 @@ interface IAuthState {
 }
 
 interface IAuthAction {
-  type: 'RESTORE_TOKEN' | 'SIGN_IN' | 'SIGN_OUT';
+  type: 'RESTORE_TOKEN' | 'SIGN_IN' | 'SIGN_OUT' | 'REGISTER';
   token?: string | null;
   user?: ISession | null;
 }
@@ -20,6 +20,7 @@ interface IAuthContext {
   state: IAuthState;
   signIn: (credentials: ICredentials) => Promise<{ token: string; user: ISession }>;
   signOut: () => Promise<void>;
+  register: (credentials: ICredentials & { name: string, phone: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<IAuthContext | null>(null);
@@ -31,6 +32,7 @@ function authReducer(state: IAuthState, action: IAuthAction) {
     case 'RESTORE_TOKEN': return { ...state, token: action.token || null, isLoading: false, user: action.user || null };
     case 'SIGN_IN': return { ...state, user: action.user || null, token: action.token || null };
     case 'SIGN_OUT': return { ...state, user: null, token: null };
+    case 'REGISTER': return { ...state, user: null, token: null };
     default: return state;
   }
 }
@@ -70,6 +72,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await SecureStore.deleteItemAsync('access_token');
       dispatch({ type: 'SIGN_OUT' });
     },
+    register: async (credentials: ICredentials & { name: string, phone: string }) => {
+      await registerUser(credentials);
+      dispatch({ type: 'REGISTER' });
+    }
   };
 
   return (
