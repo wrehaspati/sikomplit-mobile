@@ -21,3 +21,7 @@ export const registerUser = async (credentials: ICredentials & { name: string, p
 export const verifyEmail = async (email: string): Promise<void> => {
   await api.post('/user/auth/resend-verify-email', { email });
 }
+
+export const resetPassword = async (email: string): Promise<void> => {
+  await api.post('/user/auth/send-reset-password', { email });
+}

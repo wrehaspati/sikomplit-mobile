@@ -125,9 +125,7 @@ export default function VerifyEmailScreen() {
                 size="default"
                 style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row', marginTop: 12 }}
                 onPress={() => router.canDismiss() && router.dismissTo("/login")}>
-                <ThemedText type="defaultSemiBold">
-                  Kembali ke Login
-                </ThemedText>
+                Kembali ke Login
               </ThemedButton>
             </View>
           </View>
