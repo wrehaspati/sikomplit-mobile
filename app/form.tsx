@@ -7,13 +7,16 @@ import { ThemedView } from "@/components/themed-view";
 import { responsiveScale } from "@/constants/scaling";
 import { Colors, Radius } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Checkbox } from 'expo-checkbox';
 import * as DocumentPicker from 'expo-document-picker';
 import { Image } from "expo-image";
 import { useState } from "react";
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Controller, useForm } from 'react-hook-form';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { z, ZodError } from 'zod';
 
 type SelectedFile = {
   name: string;
@@ -21,6 +24,81 @@ type SelectedFile = {
   size?: number | null;
   mimeType?: string | null;
 };
+
+const fileBaseSchema = z.object({
+  research_type_id: z.string().optional(),
+  application_letter: z.any(),
+  research_proposal: z.any(),
+  ethics_clearance_letter: z.any(),
+  final_report_statement_letter: z.any(),
+})
+
+const fileSchema = fileBaseSchema.superRefine((data, ctx) => {
+  const fileValid = (file: File | undefined, maxSizeMB: number) =>
+    file instanceof File &&
+    file.type === "application/pdf" &&
+    file.size <= maxSizeMB * 1024 * 1024;
+
+  if (!fileValid(data.application_letter, 2)) {
+    ctx.addIssue({
+      path: ['application_letter'],
+      message: "Surat permohonan harus berupa PDF maksimal 2MB",
+      code: "custom",
+    });
+  }
+
+  if (data.research_type_id !== '1' && !fileValid(data.research_proposal, 2)) {
+    ctx.addIssue({
+      path: ['research_proposal'],
+      message: "Proposal penelitian harus berupa PDF maksimal 2MB",
+      code: "custom",
+    });
+  }
+
+  if (data.research_type_id !== '1' && !fileValid(data.ethics_clearance_letter, 2)) {
+    ctx.addIssue({
+      path: ['ethics_clearance_letter'],
+      message: "Surat etik wajib dan harus berupa PDF maksimal 2MB",
+      code: "custom",
+    });
+  }
+
+  if (data.research_type_id !== '1' && !fileValid(data.final_report_statement_letter, 2)) {
+    ctx.addIssue({
+      path: ['final_report_statement_letter'],
+      message: "Surat pernyataan wajib dan harus berupa PDF maksimal 2MB",
+      code: "custom",
+    });
+  }
+})
+
+const FormSchema = [
+  z.object({
+    name: z.string().trim().min(1, { message: "Nama lengkap harus diisi." }),
+    email: z.email({
+      message: "Periksa kembali email yang Anda masukkan.",
+    }).trim(),
+    phone: z.string().trim().min(1, { message: "Nomor telepon harus diisi." }),
+    national_identity_number: z.string().trim().min(1, { message: "NIK harus diisi." }),
+    date_of_birth: z.date({ error: "Tanggal lahir harus diisi." }),
+    gender: z.enum(['pria', 'wanita'], { error: () => ({ message: "Jenis kelamin harus dipilih." }) }),
+    last_education: z.string().trim().min(1, { message: "Pendidikan terakhir harus dipilih." }),
+    occupation: z.string().trim().min(1, { message: "Pekerjaan harus dipilih." }),
+    research_type_id: z.string().min(1, { message: "Jenis penelitian wajib dipilih." }),
+  }),
+  fileSchema,
+  z.object({
+    agree1: z.boolean().refine(val => val === true, 'Harus disetujui'),
+    agree2: z.boolean().refine(val => val === true, 'Harus disetujui'),
+  }),
+];
+
+const fullSchema = z.intersection(
+  z.intersection(FormSchema[0], fileSchema),
+  FormSchema[2]
+);
+
+export type FormDataType = z.infer<typeof fullSchema>
 
 export default function Form() {
   const backgroundColor = useThemeColor({}, 'background');
@@ -46,6 +124,24 @@ export default function Form() {
   const [isCheckedOne, setCheckedOne] = useState(false);
   const [isCheckedTwo, setCheckedTwo] = useState(false);
 
+  const form = useForm<FormDataType>({
+    resolver: zodResolver(fullSchema),
+    mode: 'onTouched',
+    defaultValues: {
+      name: 'user',
+      email: 'userx1@example.com',
+      phone: '08123456789',
+      national_identity_number: '1234567890123456',
+      last_education: 'sma',
+      occupation: 'mahasiswa',
+      gender: undefined,
+      date_of_birth: undefined,
+      research_type_id: '',
+      agree1: false,
+      agree2: false,
+    }
+  })
+
   const formatBirthDate = (value: Date | null) => {
     if (!value) {
       return 'Pilih tanggal lahir';
@@ -67,7 +163,7 @@ export default function Form() {
         maximumDate: today,
         onChange: (event: DateTimePickerEvent, selectedDate?: Date) => {
           if (event.type === 'set' && selectedDate) {
-            setBirthDate(selectedDate);
+            form.setValue('date_of_birth', selectedDate, { shouldTouch: true, shouldDirty: true });
           }
         },
       });
@@ -123,19 +219,31 @@ export default function Form() {
     </View>
   )
 
-  // const formStep1Valid = fullname.trim() !== '' && email.trim() !== '' && phone.trim() !== '' && nik.trim() !== '' && birthDate !== null && selectedGender && selectedLastEducation && selectedOccupation && selectedPurpose;
-  const formStep3Valid = isCheckedOne && isCheckedTwo;
-
   const changeStep = (newStep: number) => {
-    // if (newStep === 2 && !formStep1Valid) {
-    //   Alert.alert('Form belum lengkap', 'Silakan lengkapi semua kolom yang wajib diisi sebelum melanjutkan ke langkah berikutnya.');
-    //   return;
-    // }
-    if ((step === 3 && !formStep3Valid) && newStep !== 2) {
-      Alert.alert('Perhatian Pengguna', 'Anda harus mengetahui dan menyetujui syarat dan ketentuan yang berlaku sebelum mengirim pengajuan. Mohon centang kedua kolom pernyataan untuk melanjutkan.');
+    const values = form.getValues();
+    if (newStep < step) {
+      setStep(newStep)
+      return;
+    };
+    const currentSchema = FormSchema[step - 1];
+    try {
+      currentSchema.parse(values);
+      setStep(newStep);
+      return;
+    } catch (err: any) {
+      const zodErrors = z.treeifyError<ZodError>(err);
+      if (zodErrors.properties) {
+        Object.entries(zodErrors.properties).forEach(([field, fieldError]: [string, any]) => {
+          const errorMessage = fieldError?.errors?.[0] || "Invalid";
+          console.log(`Setting error for ${field}: ${errorMessage}`);
+          form.setError(field as keyof FormDataType, {
+            type: "manual",
+            message: errorMessage,
+          });
+        });
+      }
       return;
     }
-    setStep(newStep);
   }
 
   return (
@@ -162,145 +270,264 @@ export default function Form() {
           <View style={{ gap: 16 }}>
             {/* Email */}
             <ThemedView style={styles.card}>
-              <ThemedTextInput title="Email" variant="transparent" placeholder="Masukan email" value={email} onChangeText={setEmail} autoComplete="email"
-                keyboardType="email-address" lightColor={backgroundColor} darkColor={backgroundColor} underline required />
+              <Controller
+                control={form.control}
+                name="email"
+                render={({ field, fieldState }) => (
+                  <ThemedTextInput
+                    title="Email"
+                    variant="transparent"
+                    placeholder="Masukan email"
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    errorMessage={fieldState.error?.message}
+                    autoComplete="email"
+                    keyboardType="email-address"
+                    lightColor={backgroundColor}
+                    darkColor={backgroundColor}
+                    underline
+                    required />
+                )} />
             </ThemedView>
             {/* Nama Lengkap */}
             <ThemedView style={styles.card}>
-              <ThemedTextInput title="Nama Lengkap" variant="transparent" placeholder="Masukan nama lengkap" value={fullname} onChangeText={setFullname} autoComplete="name"
-                lightColor={backgroundColor} darkColor={backgroundColor} underline required />
+              <Controller
+                control={form.control}
+                name="name"
+                render={({ field, fieldState }) => (
+                  <ThemedTextInput
+                    title="Nama Lengkap"
+                    variant="transparent"
+                    placeholder="Masukan nama lengkap"
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    autoComplete="name"
+                    lightColor={backgroundColor}
+                    darkColor={backgroundColor}
+                    underline
+                    errorMessage={fieldState.error?.message}
+                    required />
+                )} />
             </ThemedView>
             {/* Nomor Telepon */}
             <ThemedView style={styles.card}>
-              <ThemedTextInput title="Nomor Telepon" variant="transparent" placeholder="Masukan nomor telepon" value={phone} onChangeText={setPhone} autoComplete="tel" keyboardType="phone-pad"
-                lightColor={backgroundColor} darkColor={backgroundColor} underline required />
+              <Controller
+                control={form.control}
+                name="phone"
+                render={({ field, fieldState }) => (
+                  <ThemedTextInput
+                    title="Nomor Telepon"
+                    variant="transparent"
+                    placeholder="Masukan nomor telepon"
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    autoComplete="tel"
+                    keyboardType="phone-pad"
+                    lightColor={backgroundColor}
+                    darkColor={backgroundColor}
+                    errorMessage={fieldState.error?.message}
+                    underline
+                    required />
+                )} />
             </ThemedView>
             {/* NIK */}
             <ThemedView style={styles.card}>
-              <ThemedTextInput title="Nomor Induk Kependudukan (NIK)" variant="transparent" placeholder="Masukan nomor induk kependudukan" value={nik} onChangeText={setNik} autoComplete="off" keyboardType="number-pad"
-                lightColor={backgroundColor} darkColor={backgroundColor} underline required />
+              <Controller
+                control={form.control}
+                name="national_identity_number"
+                render={({ field, fieldState }) => (
+                  <ThemedTextInput
+                    title="Nomor Induk Kependudukan (NIK)"
+                    variant="transparent"
+                    placeholder="Masukan nomor induk kependudukan"
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    autoComplete="off"
+                    keyboardType="number-pad"
+                    lightColor={backgroundColor}
+                    darkColor={backgroundColor}
+                    errorMessage={fieldState.error?.message}
+                    underline
+                    required />
+                )} />
             </ThemedView>
             {/* Tanggal Lahir */}
             <ThemedView style={styles.card}>
-              <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                Tanggal Lahir
-                <Text style={{ color: Colors.accentRed }}>
-                  {' *'}
-                </Text>
-              </ThemedText>
-              <Pressable
-                accessibilityRole="button"
-                onPress={openBirthDatePicker}
-                style={({ pressed }) => [
-                  styles.dateField,
-                  { backgroundColor },
-                  pressed && styles.dateFieldPressed,
-                ]}
-              >
-                <View style={styles.dateFieldContent}>
-                  <ThemedText
-                    type={birthDate ? 'default' : 'default'}
-                    lightColor={birthDate ? undefined : Colors.light.text.tertiary}
-                    darkColor={birthDate ? undefined : Colors.dark.text.tertiary}
-                  >
-                    {formatBirthDate(birthDate)}
-                  </ThemedText>
-                  <ThemedText lightColor={Colors.light.text.secondary} darkColor={Colors.dark.text.secondary}>
-                    ▾
-                  </ThemedText>
-                </View>
-              </Pressable>
+              <Controller
+                control={form.control}
+                name="date_of_birth"
+                render={({ field, fieldState }) => (
+                  <>
+                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+                      Tanggal Lahir
+                      <Text style={{ color: Colors.accentRed }}>
+                        {' *'}
+                      </Text>
+                    </ThemedText>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={openBirthDatePicker}
+                      style={({ pressed }) => [
+                        styles.dateField,
+                        fieldState.error ? { borderColor: Colors.accentRed, borderWidth: 1 } : null,
+                        { backgroundColor },
+                        pressed && styles.dateFieldPressed,
+                      ]}
+                    >
+                      <View style={styles.dateFieldContent}>
+                        <ThemedText
+                          type={'default'}
+                          lightColor={field.value ? undefined : Colors.light.text.secondary}
+                          darkColor={field.value ? undefined : Colors.dark.text.secondary}
+                        >
+                          {formatBirthDate(field.value)}
+                        </ThemedText>
+                        <ThemedText lightColor={Colors.light.text.secondary} darkColor={Colors.dark.text.secondary}>
+                          ▾
+                        </ThemedText>
+                      </View>
+                    </Pressable>
+                    {fieldState.error?.message && (
+                      <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
+                        {fieldState.error.message}
+                      </Text>
+                    )}
+                  </>
+                )} />
+
             </ThemedView>
             {/* Jenis Kelamin */}
             <ThemedView style={styles.card}>
-              <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                Jenis Kelamin
-                <Text style={{ color: Colors.accentRed }}>
-                  {' *'}
-                </Text>
-              </ThemedText>
-              <SelectCard
-                options={[
-                  { label: 'Laki-laki', value: 'men' },
-                  { label: 'Perempuan', value: 'women' },
-                ]}
-                selectedValue={selectedGender}
-                onValueChange={(value) => setGender(value)}
-              />
+              <Controller
+                control={form.control}
+                name="gender"
+                render={({ field, fieldState }) => (
+                  <>
+                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+                      Jenis Kelamin
+                      <Text style={{ color: Colors.accentRed }}>
+                        {' *'}
+                      </Text>
+                    </ThemedText>
+                    <SelectCard
+                      options={[
+                        { label: 'Laki-laki', value: 'pria' },
+                        { label: 'Perempuan', value: 'wanita' },
+                      ]}
+                      selectedValue={field.value}
+                      onError={!!fieldState.error}
+                      onValueChange={field.onChange}
+                    />
+                    {fieldState.error?.message && (
+                      <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
+                        {fieldState.error.message}
+                      </Text>
+                    )}
+                  </>
+                )} />
             </ThemedView>
             {/* Pendidikan Terakhir */}
             <ThemedView style={styles.card}>
-              <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                Pendidikan Terakhir
-                <Text style={{ color: Colors.accentRed }}>
-                  {' *'}
-                </Text>
-              </ThemedText>
-              <SelectCard
-                options={[
-                  { label: 'SMA/SMK', value: 'sma' },
-                  { label: 'Diploma', value: 'diploma' },
-                  { label: 'S1', value: 's1' },
-                  { label: 'S2', value: 's2' },
-                  { label: 'S3', value: 's3' },
-                ]}
-                selectedValue={selectedLastEducation}
-                onValueChange={(value: string) => setLastEducation(value)}
-              />
+              <Controller
+                control={form.control}
+                name="last_education"
+                render={({ field, fieldState }) => (
+                  <>
+                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+                      Pendidikan Terakhir
+                      <Text style={{ color: Colors.accentRed }}>
+                        {' *'}
+                      </Text>
+                    </ThemedText>
+                    <SelectCard
+                      options={[
+                        { label: 'SMA/SMK', value: 'sma' },
+                        { label: 'Diploma', value: 'diploma' },
+                        { label: 'S1', value: 's1' },
+                        { label: 'S2', value: 's2' },
+                        { label: 'S3', value: 's3' },
+                      ]}
+                      onError={!!fieldState.error}
+                      selectedValue={field.value}
+                      onValueChange={field.onChange}
+                    />
+                  </>
+                )} />
             </ThemedView>
             {/* Pekerjaan */}
             <ThemedView style={styles.card}>
-              <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                Pekerjaan
-                <Text style={{ color: Colors.accentRed }}>
-                  {' *'}
-                </Text>
-              </ThemedText>
-              <Combobox
-                options={[
-                  { label: 'Pegawai Negeri', value: 'government_employee' },
-                  { label: 'Pegawai Swasta', value: 'private_employee' },
-                  { label: 'Wiraswasta', value: 'entrepreneur' },
-                  { label: 'Pelajar/Mahasiswa', value: 'student' },
-                  { label: 'Lainnya', value: 'other' },
-                  { label: 'Pegawai Negeri', value: 'government_employee2' },
-                  { label: 'Pegawai Swasta', value: 'private_employee2' },
-                  { label: 'Wiraswasta', value: 'entrepreneur2' },
-                  { label: 'Pelajar/Mahasiswa', value: 'student2' },
-                  { label: 'Lainnya', value: 'other2' },
-                  { label: 'Pegawai Negeri', value: 'government_employee3' },
-                  { label: 'Pegawai Swasta', value: 'private_employee3' },
-                  { label: 'Wiraswasta', value: 'entrepreneur3' },
-                  { label: 'Pelajar/Mahasiswa', value: 'student3' },
-                  { label: 'Lainnya', value: 'other3' },
-                ]}
-                selectedValue={selectedOccupation}
-                onValueChange={(value) => setOccupation(value)}
-                placeholder="Pilih pekerjaan"
-                searchPlaceholder="Cari pekerjaan"
-                titlePlaceholder="Pilih Pekerjaan Anda"
-              />
+              <Controller
+                control={form.control}
+                name="occupation"
+                render={({ field, fieldState }) => (
+                  <>
+                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+                      Pekerjaan
+                      <Text style={{ color: Colors.accentRed }}>
+                        {' *'}
+                      </Text>
+                    </ThemedText>
+                    <Combobox
+                      options={[
+                        { label: 'Pegawai Negeri', value: 'government_employee' },
+                        { label: 'Pegawai Swasta', value: 'private_employee' },
+                        { label: 'Wiraswasta', value: 'entrepreneur' },
+                        { label: 'Pelajar/Mahasiswa', value: 'student' },
+                        { label: 'Lainnya', value: 'other' },
+                        { label: 'Pegawai Negeri', value: 'government_employee2' },
+                        { label: 'Pegawai Swasta', value: 'private_employee2' },
+                        { label: 'Wiraswasta', value: 'entrepreneur2' },
+                        { label: 'Pelajar/Mahasiswa', value: 'student2' },
+                        { label: 'Lainnya', value: 'other2' },
+                        { label: 'Pegawai Negeri', value: 'government_employee3' },
+                        { label: 'Pegawai Swasta', value: 'private_employee3' },
+                        { label: 'Wiraswasta', value: 'entrepreneur3' },
+                        { label: 'Pelajar/Mahasiswa', value: 'student3' },
+                        { label: 'Lainnya', value: 'other3' },
+                      ]}
+                      selectedValue={field.value}
+                      onValueChange={field.onChange}
+                      errorMessage={fieldState.error?.message}
+                      placeholder="Pilih pekerjaan"
+                      searchPlaceholder="Cari pekerjaan"
+                      titlePlaceholder="Pilih Pekerjaan Anda"
+                    />
+                  </>
+                )} />
             </ThemedView>
             {/* Pekerjaan */}
             <ThemedView style={styles.card}>
-              <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                Tujuan Pengajuan
-                <Text style={{ color: Colors.accentRed }}>
-                  {' *'}
-                </Text>
-              </ThemedText>
-              <SelectCard
-                options={[
-                  { label: 'Permohonan Data Awal/Studi Pendahuluan', value: '1' },
-                  { label: 'Penelitian Tugas Akhir', value: '2' },
-                  { label: 'Penelitian dengan pendanaan APBD/APBN', value: '3' },
-                  { label: 'Penelitian mendapatkan SKP dari DPMPTSP', value: '4' },
-                ]}
-                selectedValue={selectedPurpose}
-                column={1}
-                textAlign='flex-start'
-                onValueChange={(value) => setPurpose(value)}
-              />
+              <Controller
+                control={form.control}
+                name="research_type_id"
+                render={({ field, fieldState }) => (
+                  <>
+                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+                      Tujuan Pengajuan
+                      <Text style={{ color: Colors.accentRed }}>
+                        {' *'}
+                      </Text>
+                    </ThemedText>
+                    <SelectCard
+                      options={[
+                        { label: 'Permohonan Data Awal/Studi Pendahuluan', value: '1' },
+                        { label: 'Penelitian Tugas Akhir', value: '2' },
+                        { label: 'Penelitian dengan pendanaan APBD/APBN', value: '3' },
+                        { label: 'Penelitian mendapatkan SKP dari DPMPTSP', value: '4' },
+                      ]}
+                      selectedValue={field.value}
+                      column={1}
+                      onError={!!fieldState.error}
+                      textAlign='flex-start'
+                      onValueChange={field.onChange}
+                    />
+                    {fieldState.error?.message && (
+                      <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
+                        {fieldState.error.message}
+                      </Text>
+                    )}
+                  </>
+                )} />
             </ThemedView>
             {/* Birthdate Modal */}
             <Modal
