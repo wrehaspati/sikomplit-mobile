@@ -7,11 +7,14 @@ import { Colors, Radius } from "@/constants/theme";
 import { BlurView } from "expo-blur";
 import { useVideoPlayer, VideoView } from 'expo-video';
 
+import { publishedSubmission } from "@/api/submission-api";
+import ImagePreviewModal from "@/components/image-preview-modal";
 import ThemedSeparator from "@/components/themed-separator";
 import { useAuth } from "@/contexts/auth-context";
+import { IPublishedSubmission } from "@/types/submission";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
 
@@ -78,9 +81,10 @@ const dumFlyer: IFlyer[] = [
 
 export default function HomeScreen() {
   const auth = useAuth();
-  console.log('Auth state in HomeScreen:', auth?.state);
   const [history, setHistory] = useState<IApplyHistory[] | []>([]);
-  const [flyers, setFlyers] = useState<IFlyer[] | []>(dumFlyer);
+  const [flyers, setFlyers] = useState<IPublishedSubmission[]>();
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
   const scrollY = useRef(new Animated.Value(0)).current;
   const applySteps = [
     'Pengajuan Disubmit',
@@ -90,6 +94,18 @@ export default function HomeScreen() {
     'Rekomendasi Diterbitkan',
     'Menunggu Hasil Penelitian',
   ]
+
+  useEffect(() => {
+    const fetchSubmissionHistory = async () => {
+      await publishedSubmission().then(res => {
+        setFlyers(res);
+      }).catch(err => {
+        console.error('Error fetching submission history:', err);
+        setHistory([]);
+      });
+    }
+    fetchSubmissionHistory();
+  }, []);
 
   const HistoryCard = ({ data }: { data: IApplyHistory }) => (
     <ThemedView style={[styles.card, { width: responsiveScale(340), marginHorizontal: 0, marginVertical: 12, marginEnd: 24, padding: 20 }]}>
@@ -157,17 +173,10 @@ export default function HomeScreen() {
     </ScrollView>
   );
 
-  const FlyerCard = ({ data }: { data: IFlyer }) => (
-    <Image source={{ uri: data.link }} style={{ width: responsiveScale(200), height: responsiveScale(300) }} contentFit="contain" contentPosition={"left top"} />
-  );
-
-  const FlyerWarp = (data: IFlyer[]) => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, paddingStart: 24, paddingEnd: 24, gap: 12 }}
-      decelerationRate="normal">
-      {data.map((element, index) => (
-        <FlyerCard key={index} data={element} />
-      ))}
-    </ScrollView>
+  const FlyerCard = ({ data }: { data: IPublishedSubmission }) => (
+    <Pressable onPress={() => { setPreviewUri(data.flyer); setPreviewVisible(true); }}>
+      <Image source={{ uri: data.flyer }} style={{ width: responsiveScale(200), height: responsiveScale(300) }} contentFit="contain" contentPosition={"left top"} />
+    </Pressable>
   );
 
   const player = useVideoPlayer(videoSource, player => {
@@ -357,7 +366,12 @@ export default function HomeScreen() {
         <ThemedText type="title3" style={{ marginHorizontal: 24, marginBottom: 12 }}>
           Pilihan Terbaik Kami
         </ThemedText>
-        {FlyerWarp(flyers)}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, paddingStart: 24, paddingEnd: 24, gap: 12 }}
+          decelerationRate="normal">
+          {flyers && flyers.map((element, index) => (
+            <FlyerCard key={index} data={element} />
+          ))}
+        </ScrollView>
         <ThemedSeparator style={{ marginHorizontal: 24 }} />
         <Pressable onPress={() => { }} hitSlop={10} style={{ alignSelf: 'flex-start', paddingVertical: 12, marginHorizontal: 24 }}>
           <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
@@ -394,6 +408,7 @@ export default function HomeScreen() {
       </View>
 
       {/* End Content */}
+      <ImagePreviewModal visible={previewVisible} uri={previewUri} onClose={() => { setPreviewVisible(false); setPreviewUri(undefined); }} />
     </Animated.ScrollView >
   );
 }
