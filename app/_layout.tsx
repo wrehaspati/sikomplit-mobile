@@ -23,6 +23,7 @@ export default function RootLayout() {
           <Stack.Screen name="register" options={{ presentation: 'card', title: 'Daftar SIKOMPLIT' }} />
           <Stack.Screen name="reset-password" options={{ presentation: 'card', title: 'Reset Kata Sandi' }} />
           <Stack.Screen name="email-verify" options={{ presentation: 'card', title: 'Verifikasi Email' }} />
+          <Stack.Screen name="fullscreen-alert" options={{ presentation: 'fullScreenModal', headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

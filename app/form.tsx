@@ -1,4 +1,5 @@
 import { applySubmission } from '@/api/submission-api';
+import { FullscreenAlert } from '@/components/alert';
 import Combobox from '@/components/combobox';
 import SelectCard from '@/components/select-card';
 import ThemedButton from "@/components/themed-button";
@@ -14,10 +15,9 @@ import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from 
 import { Checkbox } from 'expo-checkbox';
 import * as DocumentPicker from 'expo-document-picker';
 import { Image } from "expo-image";
-import { router } from 'expo-router';
 import { useState } from "react";
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from 'zod';
 
@@ -143,10 +143,11 @@ const fullSchema = z.intersection(
 // Infer the TypeScript type for the form data based on the full validation schema
 export type FormDataType = z.infer<typeof fullSchema>
 
-export default function Form() {
+export default function FormScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const today = new Date();
   const defaultBirthDate = new Date(2000, 0, 1);
+  const [isLoading, setIsLoading] = useState(false);
   const [draftBirthDate, setDraftBirthDate] = useState<Date>(defaultBirthDate);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [step, setStep] = useState(1);
@@ -336,16 +337,21 @@ export default function Form() {
         last_education: data.last_education,
         occupation: data.occupation,
       };
-
+      setIsLoading(true);
       await applySubmission(payload);
-      Alert.alert("Sukses", "Rekomendasi penelitian berhasil diajukan.");
       form.reset();
-      router.dismissTo({
-        pathname: '/'
-      });
+      FullscreenAlert({
+        title: "Berhasil Terkirim",
+        description: "Rekomendasi penelitian telah berhasil diajukan. Permohonan akan diproses selama 3 hari kerja. Silakan untuk selalu mengecek status pengajuan.",
+        type: "success",
+        buttonHref: "/",
+        buttonText: "Kembali ke Beranda",
+      })
     } catch (error) {
       console.error('Submission failed:', (error as any).response?.data?.message || error);
       Alert.alert("Error", "Terjadi kesalahan saat mengajukan rekomendasi. Silakan coba lagi nanti.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -364,7 +370,13 @@ export default function Form() {
           <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary} style={{ textAlign: 'left' }}>
             Jika Anda memiliki pertanyaan atau membutuhkan bantuan, hubungi kami melalui tombol Whatsapp di bawah.
           </ThemedText>
-          <ThemedButton variant="secondary" icon={(<Image source={require('@/assets/images/whatsapp.png')} style={{ width: 20, height: 20, marginEnd: 4, marginStart: -2 }} />)} size="small" style={{ alignSelf: 'flex-start' }}>
+          <ThemedButton
+            variant="secondary"
+            icon={(<Image source={require('@/assets/images/whatsapp.png')} style={{ width: 20, height: 20, marginEnd: 4, marginStart: -2 }} />)}
+            size="small"
+            style={{ alignSelf: 'flex-start' }}
+            onPress={() => { }}
+          >
             Whatsapp
           </ThemedButton>
           <ThemedText type="caption" darkColor={Colors.accentRed} lightColor={Colors.accentRed}>
@@ -822,10 +834,26 @@ export default function Form() {
             </ThemedButton>
           )}
           {step === 3 && (
-            <ThemedButton variant="primary" onPress={() => {
-              form.handleSubmit(onSubmit)();
-            }}>
-              Kirim
+            <ThemedButton
+              variant="primary"
+              disabled={isLoading}
+              onPress={() => {
+                form.handleSubmit(onSubmit)();
+              }}
+            >
+              {isLoading ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <ThemedText type="defaultSemiBold">
+                    {" "}
+                  </ThemedText>
+                  <ActivityIndicator size="small" color="white" />
+                  <ThemedText type="defaultSemiBold">
+                    {" "}
+                  </ThemedText>
+                </View>
+              ) : (
+                'Kirim'
+              )}
             </ThemedButton>
           )}
         </View>
