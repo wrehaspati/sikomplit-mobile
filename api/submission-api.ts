@@ -3,35 +3,48 @@ import { IPublishedSubmission, ISubmissionData, ISubmissionPost, ISubmissionUplo
 import { File } from 'expo-file-system';
 import { api } from "./api-client";
 
+/**
+ * Fetches the active user submissions.
+ * @returns User in progress submission data
+ */
 export const activeSubmission = async (): Promise<ISubmissionData[]> => {
   const { data } = await api.get<ApiResponse<ISubmissionData[]>>(`/user/recommendations`);
   if (!data.data) throw new Error(data.message);
   return data.data;
 }
 
+/**
+ * Fetches the published submissions.
+ * @returns Published submission data
+ */
 export const publishedSubmission = async (): Promise<IPublishedSubmission[]> => {
   const { data } = await api.get<ApiResponse<IPublishedSubmission[]>>('/researches');
   if (!data.data) throw new Error(data.message);
   return data.data;
 }
 
-type SubmissionFileField = keyof Pick<ISubmissionPost, 'application_letter' | 'research_proposal' | 'ethics_clearance_letter' | 'final_report_statement_letter'>;
-
-const encodeFile = async (file?: ISubmissionUploadFile) => {
-  if (!file?.uri) {
-    return undefined;
-  }
-
-  const base64 = await new File(file.uri).base64();
-
-  return {
-    name: file.name,
-    mimeType: file.mimeType ?? 'application/pdf',
-    base64,
-  };
-};
-
+/**
+ * Submits a new research recommendation application.
+ * @param data - The submission data.
+ * @returns The response from the server containing the submitted data.
+ */
 export const applySubmission = async (data: ISubmissionPost): Promise<ApiResponse<ISubmissionData>> => {
+  type SubmissionFileField = keyof Pick<ISubmissionPost, 'application_letter' | 'research_proposal' | 'ethics_clearance_letter' | 'final_report_statement_letter'>;
+
+  const encodeFile = async (file?: ISubmissionUploadFile) => {
+    if (!file?.uri) {
+      return undefined;
+    }
+
+    const base64 = await new File(file.uri).base64();
+
+    return {
+      name: file.name,
+      mimeType: file.mimeType ?? 'application/pdf',
+      base64,
+    };
+  };
+
   const payload = {
     research_type_id: data.research_type_id,
     name: data.name,

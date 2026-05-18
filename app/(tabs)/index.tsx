@@ -29,6 +29,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
 
+  // Fetch published submissions
   const fetchPublishedSubmissions = async () => {
     try {
       const res = await publishedSubmission();
@@ -38,6 +39,7 @@ export default function HomeScreen() {
     }
   };
 
+  // Fetch user submissions
   const fetchUserSubmission = async () => {
     try {
       const res = await activeSubmission();
@@ -47,7 +49,7 @@ export default function HomeScreen() {
     }
   };
 
-
+  // Handler for pull-to-refresh action
   const handleRefresh = async () => {
     setRefreshing(true);
     if (auth?.state.user) {
@@ -57,10 +59,16 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  // Fetch data on component mount
   useEffect(() => {
     fetchPublishedSubmissions();
     fetchUserSubmission();
   }, [auth]);
+
+  const player = useVideoPlayer(videoSource, player => {
+    player.loop = true;
+    player.play();
+  });
 
   const HistoryCard = ({ data }: { data: ISubmissionData }) => (
     <ThemedView style={[styles.card, { width: responsiveScale(340), marginHorizontal: 0, marginVertical: 12, marginEnd: 24, padding: 20 }]}>
@@ -134,10 +142,6 @@ export default function HomeScreen() {
     </Pressable>
   );
 
-  const player = useVideoPlayer(videoSource, player => {
-    player.loop = true;
-    player.play();
-  });
 
   return (
     <Animated.ScrollView

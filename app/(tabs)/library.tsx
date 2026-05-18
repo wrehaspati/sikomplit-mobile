@@ -1,3 +1,4 @@
+import { publishedSubmission } from "@/api/submission-api";
 import ThemedButton from "@/components/themed-button";
 import ThemedSeparator from "@/components/themed-separator";
 import { ThemedText } from "@/components/themed-text";
@@ -6,9 +7,13 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, Radius } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { IPublishedSubmission } from "@/types/submission";
 import { Image } from "expo-image";
-import { useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, View } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Pressable, RefreshControl, StyleSheet, View } from "react-native";
+
+const BOOKMARK_STORAGE_KEY = 'library-bookmarks';
 
 export default function Library() {
   const backgroundColor = useThemeColor({}, 'background');
@@ -16,13 +21,63 @@ export default function Library() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const searchFocusAnim = useRef(new Animated.Value(0)).current;
   const [query, setQuery] = useState('');
-
-  // Temporary handlers for bookmarks
+  const [refreshing, setRefreshing] = useState(false);
+  const [published, setPublished] = useState<IPublishedSubmission[]>();
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
+  const [bookmarksLoaded, setBookmarksLoaded] = useState(false);
+
+  // Fetch published submissions
+  const fetchPublishedSubmissions = async () => {
+    try {
+      const res = await publishedSubmission();
+      setPublished(res);
+    } catch {
+      setPublished([]);
+    }
+  };
+
+  // Handler for bookmark toggle
   const handleBookmark = (id: string) => {
     setBookmarkedIds((prev) => prev.includes(id) ? prev.filter((bid) => bid !== id) : [...prev, id]);
-  }
+  };
 
+  // Load bookmarks from secure storage on mount
+  useEffect(() => {
+    const loadBookmarks = async () => {
+      try {
+        const storedBookmarks = await SecureStore.getItemAsync(BOOKMARK_STORAGE_KEY);
+        if (storedBookmarks) {
+          const parsedBookmarks = JSON.parse(storedBookmarks);
+          if (Array.isArray(parsedBookmarks)) {
+            setBookmarkedIds(parsedBookmarks.filter((bookmarkId): bookmarkId is string => typeof bookmarkId === 'string'));
+          }
+        }
+      } catch {
+        setBookmarkedIds([]);
+      } finally {
+        setBookmarksLoaded(true);
+      }
+    };
+
+    loadBookmarks();
+  }, []);
+
+  // Save bookmarks to secure storage whenever they change
+  useEffect(() => {
+    if (!bookmarksLoaded) {
+      return;
+    }
+
+    const saveBookmarks = async () => {
+      try {
+        await SecureStore.setItemAsync(BOOKMARK_STORAGE_KEY, JSON.stringify(bookmarkedIds));
+      } catch { }
+    };
+
+    saveBookmarks();
+  }, [bookmarkedIds, bookmarksLoaded]);
+
+  // Handlers for search input focus and blur animations
   const handleSearchFocus = () => {
     Animated.timing(searchFocusAnim, {
       toValue: -40,
@@ -32,6 +87,7 @@ export default function Library() {
     scrollY.setValue(20);
   };
 
+  // Handlers for search input focus and blur animations
   const handleSearchBlur = () => {
     Animated.timing(searchFocusAnim, {
       toValue: 0,
@@ -39,6 +95,54 @@ export default function Library() {
       useNativeDriver: true,
     }).start();
     scrollY.setValue(0);
+  };
+
+  // Handler for pull-to-refresh action
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchPublishedSubmissions();
+    setRefreshing(false);
+  };
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchPublishedSubmissions();
+  }, []);
+
+  const renderCard = (item: IPublishedSubmission) => {
+    return (
+      <ThemedView style={styles.card} key={item.id}>
+        <View style={styles.container}>
+          <View style={styles.cardImage}>
+            <Image source={{ uri: item.flyer }} contentFit="fill" style={{ width: '100%', height: '100%', borderRadius: 8 }} />
+          </View>
+          <View style={styles.cardContent}>
+            <View>
+              <View style={{ justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
+                <ThemedText type="caption" style={{ marginRight: 8 }}>
+                  Terbit pada {new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </ThemedText>
+                <Pressable style={{ padding: 4, borderRadius: 4 }} onPress={() => handleBookmark(item.id)} hitSlop={20}>
+                  {bookmarkedIds.includes(item.id) ? (
+                    <IconSymbol name="star.fill" color={Colors.accentYellow} size={20} style={{ shadowColor: Colors.accentYellow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 }} />
+                  ) : (
+                    <IconSymbol name="star" color={Colors.light.icon} size={20} />
+                  )}
+                </Pressable>
+              </View>
+              <ThemedText type="subheadline" style={{ marginBottom: 4, fontWeight: '600', textTransform: 'uppercase' }}>
+                {item.title}
+              </ThemedText>
+            </View>
+            <View>
+              <ThemedSeparator style={{ marginVertical: 8 }} />
+              <ThemedButton variant="secondary" size="small" onPress={() => { }} style={styles.detailButton}>
+                Lihat Detail
+              </ThemedButton>
+            </View>
+          </View>
+        </View>
+      </ThemedView>
+    )
   };
 
   return (
@@ -50,7 +154,10 @@ export default function Library() {
       onScroll={Animated.event(
         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
         { useNativeDriver: true }
-      )}>
+      )}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+      }>
       <View style={{ marginHorizontal: 24, marginBottom: 20, marginTop: 54 }}>
 
         {/* Content */}
@@ -100,38 +207,11 @@ export default function Library() {
 
         {/* Search Results */}
         <View>
-          <ThemedView style={styles.card}>
-            <View style={styles.container}>
-              <View style={styles.cardImage}>
-                <Image source={require('@/assets/images/example.jpg')} contentFit="fill" style={{ width: '100%', height: '100%', borderRadius: 8 }} />
-              </View>
-              <View style={styles.cardContent}>
-                <View>
-                  <View style={{ justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
-                    <ThemedText type="caption" style={{ marginRight: 8 }}>
-                      Terbit pada 12 Maret 2026
-                    </ThemedText>
-                    <Pressable style={{ padding: 4, borderRadius: 4 }} onPress={() => handleBookmark('example-id')} hitSlop={20}>
-                      {bookmarkedIds.includes('example-id') ? (
-                        <IconSymbol name="star.fill" color={Colors.accentYellow} size={20} style={{ shadowColor: Colors.accentYellow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 }} />
-                      ) : (
-                        <IconSymbol name="star" color={Colors.light.icon} size={20} />
-                      )}
-                    </Pressable>
-                  </View>
-                  <ThemedText type="subheadline" style={{ marginBottom: 4, fontWeight: '600' }}>
-                    APLIKASI METODE MOXIBUSI DENGAN ACUPRESSURE DAN AROMATERAPI ESSENTIAL OIL TERHADAP PENGURANGAN NYERI DAN PERCEPATAN DILATARI SERVIK KALA 1 PERSANINAN
-                  </ThemedText>
-                </View>
-                <View>
-                  <ThemedSeparator style={{ marginVertical: 8 }} />
-                  <ThemedButton variant="secondary" size="small" onPress={() => { }} style={styles.detailButton}>
-                    Lihat Detail
-                  </ThemedButton>
-                </View>
-              </View>
-            </View>
-          </ThemedView>
+          {published?.length === 0 ? (
+            <ThemedText type="default" style={{ textAlign: 'center' }}>
+              Belum ada penelitian yang dipublikasikan.
+            </ThemedText>
+          ) : published?.filter((item) => item.title.toLowerCase().includes(query.toLowerCase())).map(renderCard)}
         </View>
       </View>
     </Animated.ScrollView>
