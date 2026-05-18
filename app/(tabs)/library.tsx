@@ -15,7 +15,7 @@ import { Animated, Pressable, RefreshControl, StyleSheet, View } from "react-nat
 
 const BOOKMARK_STORAGE_KEY = 'library-bookmarks';
 
-export default function Library() {
+export default function LibraryScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'text.secondary');
   const scrollY = useRef(new Animated.Value(0)).current;
