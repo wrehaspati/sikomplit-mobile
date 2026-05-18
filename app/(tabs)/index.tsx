@@ -7,110 +7,84 @@ import { Colors, Radius } from "@/constants/theme";
 import { BlurView } from "expo-blur";
 import { useVideoPlayer, VideoView } from 'expo-video';
 
+import { activeSubmission, publishedSubmission } from "@/api/submission-api";
+import ImagePreviewModal from "@/components/image-preview-modal";
 import ThemedSeparator from "@/components/themed-separator";
+import { useAuth } from "@/contexts/auth-context";
+import { IPublishedSubmission, ISubmissionData } from "@/types/submission";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useRef, useState } from "react";
-import { Animated, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
-
-interface IApplyHistory {
-  id: number;
-  title: string;
-  step: number;
-  date: string;
-}
-
-interface IFlyer {
-  id: number;
-  link: string;
-}
 
 const videoSource = 'https://youtu.be/emlZdBVVbMQ';
 
-// Dummy data for demonstration purposes
-const dumData: IApplyHistory[] = [
-  {
-    id: 1,
-    title: 'Permohonan Data Awal',
-    step: 3,
-    date: '12 Juni 2024',
-  },
-  {
-    id: 2,
-    title: 'Permohonan Mendapatkan SKP',
-    step: 2,
-    date: '15 Juni 2024',
-  },
-  {
-    id: 3,
-    title: 'Tugas Akhir Penelitian',
-    step: 1,
-    date: '20 Juni 2024',
-  },
-  {
-    id: 4,
-    title: 'Tugas Akhir Penelitian',
-    step: 1,
-    date: '20 Juni 2024',
-  }
-]
-
-const dumFlyer: IFlyer[] = [
-  {
-    id: 1,
-    link: 'https://placehold.co/1024x1536/jpg',
-  },
-  {
-    id: 2,
-    link: 'https://placehold.co/1024x1536/jpg',
-  },
-  {
-    id: 3,
-    link: 'https://placehold.co/1024x1536/jpg',
-  },
-  {
-    id: 4,
-    link: 'https://placehold.co/1024x1536/jpg',
-  },
-]
-
 export default function HomeScreen() {
-  const [history, setHistory] = useState<IApplyHistory[] | []>([]);
-  const [flyers, setFlyers] = useState<IFlyer[] | []>(dumFlyer);
+  const auth = useAuth();
+  const [userSubmissions, setUserSubmissions] = useState<ISubmissionData[] | []>([]);
+  const [flyers, setFlyers] = useState<IPublishedSubmission[]>();
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
+  const [refreshing, setRefreshing] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
-  const applySteps = [
-    'Pengajuan Disubmit',
-    'Konfirmasi Admin',
-    'Menunggu Revisi',
-    'Proses Disposisi',
-    'Rekomendasi Diterbitkan',
-    'Menunggu Hasil Penelitian',
-  ]
 
-  const HistoryCard = ({ data }: { data: IApplyHistory }) => (
+  const fetchPublishedSubmissions = async () => {
+    try {
+      const res = await publishedSubmission();
+      setFlyers(res);
+    } catch {
+      setFlyers([]);
+    }
+  };
+
+  const fetchUserSubmission = async () => {
+    try {
+      const res = await activeSubmission();
+      setUserSubmissions(res);
+    } catch {
+      setUserSubmissions([]);
+    }
+  };
+
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    if (auth?.state.user) {
+      await fetchUserSubmission();
+    }
+    await fetchPublishedSubmissions();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchPublishedSubmissions();
+    fetchUserSubmission();
+  }, [auth]);
+
+  const HistoryCard = ({ data }: { data: ISubmissionData }) => (
     <ThemedView style={[styles.card, { width: responsiveScale(340), marginHorizontal: 0, marginVertical: 12, marginEnd: 24, padding: 20 }]}>
       <ThemedView style={styles.badge} lightColor={Colors.light.fill.vibrant.tertiary} darkColor={Colors.dark.fill.vibrant.primary}>
         <IconSymbol size={10} name="circle.fill" color={Colors.accentBlue} />
         <ThemedText type="footnote">
-          {applySteps[data.step - 1]}
+          {data.progress_status}
         </ThemedText>
       </ThemedView>
       <View style={{ marginTop: 12, gap: 4 }}>
         <ThemedText type="headline" style={{ fontWeight: '600' }}>
-          {data.title}
+          {data.research_type.split('/')[0]}
         </ThemedText>
         <ThemedText type="caption" style={{ color: Colors.light.text.secondary }}>
-          Diajukan pada {data.date}
+          Diajukan pada {new Date(data.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
         </ThemedText>
       </View>
       <View>
         <View style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginTop: 12 }}>
-          <ThemedText type="caption" style={{ fontWeight: '600' }}>
+          <ThemedText type="caption" style={{ fontWeight: '600', color: Colors.accentBlue }}>
             Tekan untuk melihat detail
           </ThemedText>
-          <ThemedText type="caption" style={{ fontWeight: '600', color: Colors.accentBlue }}>
-            Tahap ke {data.step} dari {applySteps.length}
+          <ThemedText type="caption" style={{ fontWeight: '800', color: Colors.light.text.tertiary }}>
+            {data.request_number}
           </ThemedText>
         </View>
       </View>
@@ -145,7 +119,7 @@ export default function HomeScreen() {
     </ThemedView >
   );
 
-  const HistoryWrapper = (data: IApplyHistory[]) => (
+  const HistoryWrapper = (data: ISubmissionData[]) => (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, marginStart: 24, paddingEnd: 24 }}
       snapToAlignment="center" snapToInterval={responsiveScale(340) + 24} decelerationRate="fast">
       {data.map(element => (
@@ -154,17 +128,10 @@ export default function HomeScreen() {
     </ScrollView>
   );
 
-  const FlyerCard = ({ data }: { data: IFlyer }) => (
-    <Image source={{ uri: data.link }} style={{ width: responsiveScale(200), height: responsiveScale(300) }} contentFit="contain" contentPosition={"left top"} />
-  );
-
-  const FlyerWarp = (data: IFlyer[]) => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, paddingStart: 24, paddingEnd: 24, gap: 12 }}
-      decelerationRate="normal">
-      {data.map((element, index) => (
-        <FlyerCard key={index} data={element} />
-      ))}
-    </ScrollView>
+  const FlyerCard = ({ data }: { data: IPublishedSubmission }) => (
+    <Pressable onPress={() => { setPreviewUri(data.flyer); setPreviewVisible(true); }}>
+      <Image priority={"high"} source={{ uri: data.flyer }} style={{ width: responsiveScale(200), height: responsiveScale(300) }} contentFit="contain" loading="lazy" contentPosition={"left top"} />
+    </Pressable>
   );
 
   const player = useVideoPlayer(videoSource, player => {
@@ -181,7 +148,10 @@ export default function HomeScreen() {
       onScroll={Animated.event(
         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
         { useNativeDriver: true }
-      )}>
+      )}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+      }>
       {/* Content */}
 
       {/* Welcome Card */}
@@ -258,23 +228,35 @@ export default function HomeScreen() {
                 Sistem Rekomendasi Penelitian (SIKOMPLIT) adalah sistem informasi yang dirancang untuk memudahkan pelayanan terpadu di masyarakat khususnya dalam penerbitan surat rekomendasi
               </ThemedText>
             </View>
-            <BlurView style={styles.callAction} intensity={50} tint="dark">
-              <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
-                onPress={() => {
-                  router.navigate({ pathname: '/register' });
-                }}
-              >
-                Buat Akun
-              </ThemedButton>
-              <ThemedButton variant="light" size="small"
-                style={{ alignSelf: 'flex-end', backgroundColor: Colors.light.fill.tertiary }}
-                onPress={() => {
-                  router.navigate({ pathname: '/login' });
-                }}
-              >
-                Masuk
-              </ThemedButton>
-            </BlurView>
+            {auth?.state.user ? (
+              <BlurView style={styles.callAction} intensity={50} tint="dark">
+                <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
+                  onPress={() => {
+                    router.navigate({ pathname: '/form' });
+                  }}
+                >
+                  Ajukan Rekomendasi
+                </ThemedButton>
+              </BlurView>
+            ) : (
+              <BlurView style={styles.callAction} intensity={50} tint="dark">
+                <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
+                  onPress={() => {
+                    router.navigate({ pathname: '/register' });
+                  }}
+                >
+                  Buat Akun
+                </ThemedButton>
+                <ThemedButton variant="light" size="small"
+                  style={{ alignSelf: 'flex-end', backgroundColor: Colors.light.fill.tertiary }}
+                  onPress={() => {
+                    router.navigate({ pathname: '/login' });
+                  }}
+                >
+                  Masuk
+                </ThemedButton>
+              </BlurView>
+            )}
           </View>
         </View>
       </View>
@@ -285,7 +267,7 @@ export default function HomeScreen() {
         <ThemedText type="title3" style={{ marginHorizontal: 24 }}>
           Riwayat Pengajuan
         </ThemedText>
-        {HistoryWrapper(history)}
+        {HistoryWrapper(userSubmissions)}
       </View>
       {/* End History Section */}
 
@@ -342,7 +324,12 @@ export default function HomeScreen() {
         <ThemedText type="title3" style={{ marginHorizontal: 24, marginBottom: 12 }}>
           Pilihan Terbaik Kami
         </ThemedText>
-        {FlyerWarp(flyers)}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, paddingStart: 24, paddingEnd: 24, gap: 12 }}
+          decelerationRate="normal">
+          {flyers && flyers.map((element, index) => (
+            <FlyerCard key={index} data={element} />
+          ))}
+        </ScrollView>
         <ThemedSeparator style={{ marginHorizontal: 24 }} />
         <Pressable onPress={() => { }} hitSlop={10} style={{ alignSelf: 'flex-start', paddingVertical: 12, marginHorizontal: 24 }}>
           <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
@@ -379,6 +366,7 @@ export default function HomeScreen() {
       </View>
 
       {/* End Content */}
+      <ImagePreviewModal visible={previewVisible} uri={previewUri} onClose={() => { setPreviewVisible(false); setPreviewUri(undefined); }} />
     </Animated.ScrollView >
   );
 }

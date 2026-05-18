@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const unstable_settings = {
@@ -13,15 +14,30 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Beranda' }} />
+    <AuthProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <StatusBar style="auto" />
+        <RootLayoutNav />
+      </ThemeProvider>
+    </AuthProvider>
+  );
+}
+
+function RootLayoutNav() {
+  const auth = useAuth();
+  return (
+    <Stack>
+      <Stack.Protected guard={!auth?.state}>
         <Stack.Screen name="form" options={{ presentation: 'card', title: 'Formulir Rekomendasi' }} />
+      </Stack.Protected>
+      <Stack.Protected guard={!!auth?.state}>
         <Stack.Screen name="login" options={{ presentation: 'card', title: 'Masuk SIKOMPLIT' }} />
         <Stack.Screen name="register" options={{ presentation: 'card', title: 'Daftar SIKOMPLIT' }} />
         <Stack.Screen name="reset-password" options={{ presentation: 'card', title: 'Reset Kata Sandi' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+        <Stack.Screen name="email-verify" options={{ presentation: 'card', title: 'Verifikasi Email' }} />
+      </Stack.Protected>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Beranda' }} />
+      <Stack.Screen name="fullscreen-alert" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+    </Stack>
   );
 }

@@ -19,13 +19,14 @@ export default function ThemedButton({
   variant = 'themed',
   size = 'default',
   icon,
+  disabled = false,
   ...rest
 }: ThemedButtonProps) {
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
 
   return (
-    <TouchableOpacity style={[
-      { backgroundColor, flexDirection: 'row', alignItems: 'center' },
+    <TouchableOpacity disabled={disabled} style={[
+      { backgroundColor, flexDirection: 'row', alignItems: 'center', opacity: disabled ? 0.6 : 1 },
       styles.shadow,
       style,
       size === 'default' ? styles.default : undefined,
@@ -57,8 +58,7 @@ const styles = {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 1,
+    shadowRadius: 10
   },
   default: {
     paddingVertical: responsiveScale(12),
