@@ -34,6 +34,7 @@ const MAPPING = {
   'magnifyingglass': 'search',
   'star': 'star-outline',
   'star.fill': 'star',
+  'x.circle.fill': 'cancel',
 } as IconMapping;
 
 /**

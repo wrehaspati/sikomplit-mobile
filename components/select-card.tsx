@@ -15,9 +15,10 @@ type Props<T = string> = {
   onValueChange: (value: T) => void;
   column?: number;
   textAlign?: 'flex-start' | 'flex-end' | 'center';
+  onError?: boolean;
 };
 
-export default function SelectCard<T = string>({ options, selectedValue, onValueChange, column = 2, textAlign = 'center' }: Props<T>) {
+export default function SelectCard<T = string>({ options, selectedValue, onValueChange, onError, column = 2, textAlign = 'center' }: Props<T>) {
   const backgroundColor = useThemeColor({}, 'background');
 
   return (
@@ -33,6 +34,7 @@ export default function SelectCard<T = string>({ options, selectedValue, onValue
               styles.optionCard,
               { backgroundColor, flexBasis: `${100 / column - 2}%`, alignItems: textAlign },
               selected && styles.optionSelected,
+              onError ? { borderColor: Colors.accentRed, borderWidth: 1 } : null,
               pressed && styles.pressed,
             ]}
           >
