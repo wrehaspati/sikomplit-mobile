@@ -30,6 +30,10 @@ const MAPPING = {
   'person.fill': 'person',
   'phone.fill': 'phone',
   'checkmark.shield.fill': 'verified',
+  'book.fill': 'book',
+  'magnifyingglass': 'search',
+  'star': 'star-outline',
+  'star.fill': 'star',
 } as IconMapping;
 
 /**

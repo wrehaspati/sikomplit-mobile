@@ -1,7 +1,8 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radius } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import type { ReactNode } from 'react';
 import { useState } from "react";
-import { StyleSheet, TextInput, TextInputProps, TouchableOpacity, View } from "react-native";
+import { StyleProp, StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View, ViewStyle } from "react-native";
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
 import { IconSymbol } from "./ui/icon-symbol";
@@ -11,48 +12,85 @@ export type ThemedTextInputProps = TextInputProps & {
   darkColor?: string;
   variant?: 'transparent' | 'default';
   underline?: boolean;
-  text?: string;
-  icon?: React.ReactNode;
+  title?: string;
+  inputStyle?: StyleProp<ViewStyle>;
+  icon?: ReactNode;
+  required?: boolean;
+  errorMessage?: string;
 };
 
-export default function ThemedTextInput({ lightColor, darkColor, variant = 'default', underline = false, text, icon, ...props }: ThemedTextInputProps) {
+export default function ThemedTextInput({
+  lightColor,
+  darkColor,
+  variant = 'default',
+  underline = false,
+  inputStyle,
+  title,
+  icon,
+  required,
+  errorMessage,
+  ...props
+}: ThemedTextInputProps) {
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'secondary');
-  const textColor = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const textColor = useThemeColor({}, 'text.primary');
+  const underlineColor = useThemeColor({}, 'fill.vibrant.secondary');
+  const withIconContainerColor = useThemeColor({}, 'fill.tertiary');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const hasInlineIcon = Boolean(icon && variant === 'transparent');
+  const hasContainerIcon = Boolean(icon && variant !== 'transparent');
+  const isSecureTextEntry = Boolean(props.secureTextEntry);
 
   return (
     <View>
-      {text && (
-        <ThemedText type="subheadline" style={{ marginBottom: 4, fontWeight: '600' }} darkColor={Colors.labelSecondary}
-          lightColor={Colors.labelSecondary}>
-          {text}
-        </ThemedText>
+      {title && (
+        <View style={{ marginBottom: 4, flexDirection: 'row', alignItems: 'center' }}>
+          {hasInlineIcon && icon}
+          <ThemedText type="defaultSemiBold">
+            {title}
+            {required && (
+              <Text style={{ color: Colors.accentRed }}>
+                {' *'}
+              </Text>
+            )}
+          </ThemedText>
+        </View>
       )}
-      <ThemedView style={icon ? styles.withIconContainer : null}>
-        {icon && <View style={{ marginRight: 8 }}>{icon}</View>}
+      <ThemedView style={[
+        hasContainerIcon ? [styles.withIconContainer, { backgroundColor: withIconContainerColor }] : null,
+        variant === 'transparent' ? { backgroundColor: 'transparent' } : null,
+        { borderRadius: variant === 'transparent' ? 0 : Radius.default },
+        inputStyle,
+        errorMessage && { borderColor: Colors.accentRed, borderWidth: 1 },
+      ]}>
+        {hasContainerIcon && <View style={{ marginRight: 8 }}>{icon}</View>}
         <TextInput
           {...props}
-          style={[props.style, { backgroundColor, color: textColor },
+          style={[{ backgroundColor, color: textColor, paddingVertical: 18 }, props.style,
           variant === 'transparent' && styles.transparent,
           (variant === 'default' && !icon) && styles.default,
-          icon ? styles.withIcon : null,
-          underline && styles.underline
+          hasContainerIcon ? styles.withIcon : null,
+          underline && { borderBottomWidth: 1, borderBottomColor: underlineColor }
           ]}
-          secureTextEntry={props.secureTextEntry && !isPasswordVisible}
+          secureTextEntry={isSecureTextEntry && !isPasswordVisible}
         />
-        {props.secureTextEntry && (
+        {isSecureTextEntry && (
           <View style={{ position: 'absolute', right: 16 }}>
-            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon}>
+            <TouchableOpacity onPress={() => setIsPasswordVisible((value) => !value)} style={styles.eyeIcon}>
               {isPasswordVisible ?
-                <IconSymbol name="eye.fill" color={Colors.labelSecondary} />
+                <IconSymbol name="eye.fill" color={Colors.light.text.secondary} />
                 :
-                <IconSymbol name="eye.slash.fill" color={Colors.labelSecondary} />
+                <IconSymbol name="eye.slash.fill" color={Colors.dark.text.secondary} />
               }
             </TouchableOpacity>
           </View>
         )}
       </ThemedView>
-    </View>
+      {errorMessage && (
+        <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
+          {errorMessage}
+        </Text>
+      )}
+    </View >
   );
 }
 
@@ -60,25 +98,26 @@ const styles = StyleSheet.create({
   transparent: {
     backgroundColor: 'transparent',
     width: '100%',
-    paddingTop: 12,
-    paddingBottom: 8,
     fontSize: 16,
-    lineHeight: 24,
+    paddingBottom: 4,
+    marginVertical: 12,
   },
   default: {
     width: '100%',
-    paddingVertical: 12,
+    paddingVertical: 18,
     paddingLeft: 16,
     fontSize: 16,
-    borderRadius: 8,
-  },
-  underline: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.vibrantFillSecondaryDark,
+    borderRadius: Radius.default,
+    borderWidth: 1,
+    borderColor: Colors.light.fill.secondary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 1,
   },
   withIcon: {
     width: '100%',
-    paddingVertical: 18,
     fontSize: 16,
     backgroundColor: 'transparent',
   },
@@ -86,8 +125,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: Colors.fillTertiary,
+    borderRadius: Radius.default,
+    borderWidth: 1,
+    borderColor: Colors.light.fill.secondary,
   },
   eyeIcon: {
     padding: 10,

@@ -8,10 +8,11 @@ import { BlurView } from "expo-blur";
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import ThemedSeparator from "@/components/themed-separator";
+import { useAuth } from "@/contexts/auth-context";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
-import { Animated, ScrollView, StyleSheet, View } from "react-native";
+import { Animated, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
 
 interface IApplyHistory {
@@ -76,7 +77,9 @@ const dumFlyer: IFlyer[] = [
 ]
 
 export default function HomeScreen() {
-  const [history, setHistory] = useState<IApplyHistory[] | []>(dumData);
+  const auth = useAuth();
+  console.log('Auth state in HomeScreen:', auth?.state);
+  const [history, setHistory] = useState<IApplyHistory[] | []>([]);
   const [flyers, setFlyers] = useState<IFlyer[] | []>(dumFlyer);
   const scrollY = useRef(new Animated.Value(0)).current;
   const applySteps = [
@@ -89,8 +92,8 @@ export default function HomeScreen() {
   ]
 
   const HistoryCard = ({ data }: { data: IApplyHistory }) => (
-    <ThemedView style={[styles.card, { width: responsiveScale(340), marginHorizontal: 0, marginVertical: 12, marginEnd: 23, padding: 20 }]}>
-      <ThemedView style={styles.badge} lightColor={Colors.vibrantFillTertiary} darkColor={Colors.vibrantFillPrimaryDark}>
+    <ThemedView style={[styles.card, { width: responsiveScale(340), marginHorizontal: 0, marginVertical: 12, marginEnd: 24, padding: 20 }]}>
+      <ThemedView style={styles.badge} lightColor={Colors.light.fill.vibrant.tertiary} darkColor={Colors.dark.fill.vibrant.primary}>
         <IconSymbol size={10} name="circle.fill" color={Colors.accentBlue} />
         <ThemedText type="footnote">
           {applySteps[data.step - 1]}
@@ -100,7 +103,7 @@ export default function HomeScreen() {
         <ThemedText type="headline" style={{ fontWeight: '600' }}>
           {data.title}
         </ThemedText>
-        <ThemedText type="caption" style={{ color: Colors.labelSecondary }}>
+        <ThemedText type="caption" style={{ color: Colors.light.text.secondary }}>
           Diajukan pada {data.date}
         </ThemedText>
       </View>
@@ -119,7 +122,7 @@ export default function HomeScreen() {
 
   const EmptyHistory = () => (
     <ThemedView style={[styles.card, { width: responsiveScale(340), padding: 20, marginVertical: 12 }]}>
-      <ThemedView style={styles.badge} lightColor={Colors.vibrantFillTertiary} darkColor={Colors.vibrantFillPrimaryDark}>
+      <ThemedView style={styles.badge} lightColor={Colors.light.fill.vibrant.tertiary} darkColor={Colors.dark.fill.vibrant.primary}>
         <IconSymbol size={10} name="circle.fill" color={Colors.accentBlue} />
         <ThemedText type="footnote">
           Tidak Ditemukan
@@ -129,23 +132,25 @@ export default function HomeScreen() {
         <ThemedText type="title4" style={{ fontWeight: '600' }}>
           Belum ada riwayat pengajuan
         </ThemedText>
-        <ThemedText type="caption" style={{ color: Colors.labelSecondary }}>
+        <ThemedText type="caption" style={{ color: Colors.light.text.secondary }}>
           Silahkan mengajukan permohonan dan lihat riwayat pengajuan Anda di sini.
         </ThemedText>
       </View>
       <View>
         <View style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'flex-end', marginTop: 12 }}>
-          <ThemedText type="caption" style={{ fontWeight: '600', color: Colors.accentBlue }}>
-            Klik untuk mulai
-          </ThemedText>
+          <Pressable onPress={() => router.push('/form')} hitSlop={10}>
+            <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
+              Ajukan Sekarang
+            </ThemedText>
+          </Pressable>
         </View>
       </View>
     </ThemedView >
   );
 
   const HistoryWrapper = (data: IApplyHistory[]) => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, marginStart: 23, paddingEnd: 23 }}
-      snapToAlignment="center" snapToInterval={responsiveScale(340) + 23} decelerationRate="fast">
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, marginStart: 24, paddingEnd: 24 }}
+      snapToAlignment="center" snapToInterval={responsiveScale(340) + 24} decelerationRate="fast">
       {data.map(element => (
         <HistoryCard key={element.id} data={element} />
       )).concat(data.length === 0 ? <EmptyHistory key="empty" /> : [])}
@@ -157,7 +162,7 @@ export default function HomeScreen() {
   );
 
   const FlyerWarp = (data: IFlyer[]) => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, paddingStart: 23, paddingEnd: 23, gap: 12 }}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, paddingStart: 24, paddingEnd: 24, gap: 12 }}
       decelerationRate="normal">
       {data.map((element, index) => (
         <FlyerCard key={index} data={element} />
@@ -183,7 +188,7 @@ export default function HomeScreen() {
       {/* Content */}
 
       {/* Welcome Card */}
-      <View style={{ marginHorizontal: 23, marginBottom: 20, marginTop: 53 }}>
+      <View style={{ marginHorizontal: 24, marginBottom: 20, marginTop: 54 }}>
         <Animated.View
           style={{
             marginBottom: 12,
@@ -246,41 +251,53 @@ export default function HomeScreen() {
           {/* Card Content */}
           <View style={{ flex: 1, justifyContent: 'flex-end', borderRadius: Radius.default }}>
             <View style={styles.cardContainer}>
-              <ThemedText type="subheadline" style={{ color: Colors.labelTertiary, fontWeight: '600' }}>
+              <ThemedText type="subheadline" style={{ color: Colors.light.text.tertiary, fontWeight: '600' }}>
                 SELAMAT DATANG DI
               </ThemedText>
               <ThemedText type="title" style={{ color: 'white' }}>
                 SIKOMPLIT
               </ThemedText>
-              <ThemedText type="tightFootnote" style={{ color: Colors.labelTertiary, textAlign: 'justify' }}>
+              <ThemedText type="tightFootnote" style={{ color: Colors.light.text.tertiary, textAlign: 'justify' }}>
                 Sistem Rekomendasi Penelitian (SIKOMPLIT) adalah sistem informasi yang dirancang untuk memudahkan pelayanan terpadu di masyarakat khususnya dalam penerbitan surat rekomendasi
               </ThemedText>
             </View>
-            <BlurView style={styles.callAction} intensity={50} tint="dark">
-              <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
-                onPress={() => {
-                  router.navigate({ pathname: '/register' });
-                }}
-              >
-                Buat Akun
-              </ThemedButton>
-              <ThemedButton variant="light" size="small"
-                style={{ alignSelf: 'flex-end', backgroundColor: Colors.fillTertiary }}
-                onPress={() => {
-                  router.navigate({ pathname: '/login' });
-                }}
-              >
-                Masuk
-              </ThemedButton>
-            </BlurView>
+            {auth?.state.user ? (
+              <BlurView style={styles.callAction} intensity={50} tint="dark">
+                <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
+                  onPress={() => {
+                    router.navigate({ pathname: '/form' });
+                  }}
+                >
+                  Ajukan Rekomendasi
+                </ThemedButton>
+              </BlurView>
+            ) : (
+              <BlurView style={styles.callAction} intensity={50} tint="dark">
+                <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
+                  onPress={() => {
+                    router.navigate({ pathname: '/register' });
+                  }}
+                >
+                  Buat Akun
+                </ThemedButton>
+                <ThemedButton variant="light" size="small"
+                  style={{ alignSelf: 'flex-end', backgroundColor: Colors.light.fill.tertiary }}
+                  onPress={() => {
+                    router.navigate({ pathname: '/login' });
+                  }}
+                >
+                  Masuk
+                </ThemedButton>
+              </BlurView>
+            )}
           </View>
         </View>
       </View>
       {/* End Welcome Card */}
 
       {/* History Section */}
-      <View style={{ marginBottom: 7 }}>
-        <ThemedText type="title3" style={{ marginHorizontal: 23 }}>
+      <View>
+        <ThemedText type="title3" style={{ marginHorizontal: 24 }}>
           Riwayat Pengajuan
         </ThemedText>
         {HistoryWrapper(history)}
@@ -288,7 +305,10 @@ export default function HomeScreen() {
       {/* End History Section */}
 
       {/* Guide Section */}
-      <View style={{ marginBottom: 20, marginHorizontal: 23 }}>
+      <View style={{
+        marginBottom: 44,
+        marginHorizontal: 24
+      }}>
         <ThemedText type="title3" style={{ marginBottom: 12 }}>
           Dukungan Penggunaan
         </ThemedText>
@@ -302,24 +322,26 @@ export default function HomeScreen() {
         </View>
         <ThemedView style={[styles.card, { marginTop: 20 }]}>
           <View style={{ display: 'flex', flexDirection: 'row', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 }} >
-            <IconSymbol size={responsiveScale(48)} name="document.fill" color={Colors.vibrantFillSecondary} />
+            <IconSymbol size={responsiveScale(48)} name="document.fill" color={Colors.light.fill.vibrant.secondary} />
             <View style={{ flex: 1, minWidth: 0, marginStart: 12 }}>
-              <ThemedText type="caption" style={{ color: Colors.labelTertiary, fontWeight: '600' }}>
+              <ThemedText type="caption" style={{ color: Colors.light.text.tertiary, fontWeight: '600' }}>
                 DOKUMEN PEDOMAN
               </ThemedText>
               <ThemedText type="headline" style={{ fontWeight: '600', marginBottom: 4, flexShrink: 1 }}>
                 Surat Pernyataan Laporan Akhir
               </ThemedText>
-              <ThemedText type="caption" style={{ color: Colors.labelSecondary, flexShrink: 1, textAlign: 'justify' }}>
+              <ThemedText type="caption" style={{ color: Colors.light.text.secondary, flexShrink: 1, textAlign: 'justify' }}>
                 Pedoman ini berisi informasi penting mengenai format dan persyaratan yang harus dipenuhi dalam pengajuan rekomendasi penelitian.
               </ThemedText>
             </View>
           </View>
           <View style={{ marginHorizontal: 20, paddingBottom: 10 }}>
             <ThemedSeparator />
-            <ThemedButton variant="link" style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }}>
-              Tampilkan Dokumen
-            </ThemedButton>
+            <Pressable onPress={() => { }} hitSlop={10} style={{ alignSelf: 'flex-start', paddingVertical: 12 }}>
+              <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
+                Tampilkan Dokumen
+              </ThemedText>
+            </Pressable>
           </View>
         </ThemedView >
       </View>
@@ -327,24 +349,26 @@ export default function HomeScreen() {
 
       {/* Flyer Section */}
       <ThemedView style={{
-        marginBottom: 43,
-        paddingVertical: 23,
-        marginTop: 20,
+        marginBottom: 44,
+        paddingTop: 44,
+        paddingBottom: 24,
         boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.1)'
       }}>
-        <ThemedText type="title3" style={{ marginHorizontal: 23, marginBottom: 12 }}>
+        <ThemedText type="title3" style={{ marginHorizontal: 24, marginBottom: 12 }}>
           Pilihan Terbaik Kami
         </ThemedText>
         {FlyerWarp(flyers)}
-        <ThemedSeparator style={{ marginHorizontal: 23 }} />
-        <ThemedButton variant="link" style={{ alignSelf: 'flex-start', marginHorizontal: 23 }}>
-          Lihat Semua Pustaka Digital
-        </ThemedButton>
+        <ThemedSeparator style={{ marginHorizontal: 24 }} />
+        <Pressable onPress={() => { }} hitSlop={10} style={{ alignSelf: 'flex-start', paddingVertical: 12, marginHorizontal: 24 }}>
+          <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
+            Lihat Semua Pustaka Digital
+          </ThemedText>
+        </Pressable>
       </ThemedView>
       {/* End Flyer Section */}
 
       {/* Support Section */}
-      <View style={{ marginBottom: 40, marginHorizontal: 23, gap: 12 }}>
+      <View style={{ marginBottom: 40, marginHorizontal: 24, gap: 12 }}>
         <ThemedText type="title3">
           Bantuan Layanan
         </ThemedText>
@@ -360,10 +384,12 @@ export default function HomeScreen() {
           </ThemedButton>
         </View>
         <View>
-          <ThemedSeparator lightColor={Colors.vibrantFillSecondaryDark} style={{ marginTop: 12 }} />
-          <ThemedButton variant="link" style={{ alignSelf: 'flex-start' }}>
-            Syarat dan Ketentuan Layanan
-          </ThemedButton>
+          <ThemedSeparator lightColor={Colors.dark.fill.vibrant.primary} style={{ marginTop: 12 }} />
+          <Pressable onPress={() => { }} hitSlop={10} style={{ alignSelf: 'flex-start', paddingVertical: 12 }}>
+            <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
+              Syarat dan Ketentuan Layanan
+            </ThemedText>
+          </Pressable>
         </View>
       </View>
 
