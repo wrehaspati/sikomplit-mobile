@@ -3,8 +3,10 @@ import { IPublishedSubmission, ISubmissionData, ISubmissionPost, ISubmissionUplo
 import { File } from 'expo-file-system';
 import { api } from "./api-client";
 
-export const activeSubmission = async (id: number): Promise<void> => {
-  // TODO: Implement API call to activate submission
+export const activeSubmission = async (): Promise<ISubmissionData[]> => {
+  const { data } = await api.get<ApiResponse<ISubmissionData[]>>(`/user/recommendations`);
+  if (!data.data) throw new Error(data.message);
+  return data.data;
 }
 
 export const publishedSubmission = async (): Promise<IPublishedSubmission[]> => {
