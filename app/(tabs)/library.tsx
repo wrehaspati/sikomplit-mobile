@@ -25,6 +25,7 @@ export default function Library() {
   const [published, setPublished] = useState<IPublishedSubmission[]>();
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
   const [bookmarksLoaded, setBookmarksLoaded] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Fetch published submissions
   const fetchPublishedSubmissions = async () => {
@@ -79,6 +80,7 @@ export default function Library() {
 
   // Handlers for search input focus and blur animations
   const handleSearchFocus = () => {
+    setIsSearchFocused(true);
     Animated.timing(searchFocusAnim, {
       toValue: -40,
       duration: 300,
@@ -93,7 +95,7 @@ export default function Library() {
       toValue: 0,
       duration: 300,
       useNativeDriver: true,
-    }).start();
+    }).start(() => setIsSearchFocused(false));
     scrollY.setValue(0);
   };
 
@@ -144,6 +146,10 @@ export default function Library() {
       </ThemedView>
     )
   };
+
+  const filteredSuggestions = (published ?? []).filter((item) =>
+    item.title.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 6);
 
   return (
     <Animated.ScrollView
@@ -205,14 +211,51 @@ export default function Library() {
           />
         </Animated.View>
 
-        {/* Search Results */}
-        <View>
-          {published?.length === 0 ? (
-            <ThemedText type="default" style={{ textAlign: 'center' }}>
-              Belum ada penelitian yang dipublikasikan.
+        {/* Search Suggestions / Results */}
+        {isSearchFocused ? (
+          <Animated.View style={[styles.suggestionPanel, { backgroundColor }, { transform: [{ translateY: searchFocusAnim }] }]}>
+            <ThemedText type="caption" style={styles.suggestionHeader}>
+              {filteredSuggestions.length > 0 ? 'Hasil ditemukan:' : 'Tidak ada hasil ditemukan'}
             </ThemedText>
-          ) : published?.filter((item) => item.title.toLowerCase().includes(query.toLowerCase())).map(renderCard)}
-        </View>
+
+            {filteredSuggestions.length > 0 ? (
+              filteredSuggestions.map((item) => (
+                <Pressable
+                  key={item.id}
+                  style={styles.suggestionItem}
+                  onPress={() => setQuery(item.title)}
+                >
+                  <View style={styles.suggestionTextBlock}>
+                    <ThemedText type="subheadline" style={styles.suggestionTitle}>
+                      {item.title}
+                    </ThemedText>
+                    <ThemedText type="caption">
+                      Terbit pada {new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </ThemedText>
+                  </View>
+
+                  <IconSymbol
+                    name={bookmarkedIds.includes(item.id) ? 'star.fill' : 'star'}
+                    color={bookmarkedIds.includes(item.id) ? Colors.accentYellow : Colors.light.icon}
+                    size={18}
+                  />
+                </Pressable>
+              ))
+            ) : (
+              <ThemedText type="subheadline" style={styles.noSuggestionText}>
+                Coba kata kunci lain atau periksa ejaan judul.
+              </ThemedText>
+            )}
+          </Animated.View>
+        ) : (
+          <View>
+            {published?.length === 0 ? (
+              <ThemedText type="default" style={{ textAlign: 'center' }}>
+                Belum ada penelitian yang dipublikasikan.
+              </ThemedText>
+            ) : published?.filter((item) => item.title.toLowerCase().includes(query.toLowerCase())).map(renderCard)}
+          </View>
+        )}
       </View>
     </Animated.ScrollView>
   );
@@ -254,5 +297,43 @@ const styles = StyleSheet.create({
   },
   detailButton: {
     alignSelf: 'flex-end',
+  }
+  ,
+  suggestionPanel: {
+    borderRadius: Radius.default,
+    marginTop: 4,
+    marginBottom: 8,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  suggestionHeader: {
+    marginVertical: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  suggestionItem: {
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.fill.secondary,
+  },
+  suggestionTextBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  suggestionTitle: {
+    marginBottom: 2,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  noSuggestionText: {
+    paddingVertical: 12,
   }
 });
