@@ -57,9 +57,10 @@ export default function ThemedTextInput({
       )}
       <ThemedView style={[
         hasContainerIcon ? [styles.withIconContainer, { backgroundColor: withIconContainerColor }] : null,
-        variant === 'transparent' ? styles.transparentContainer : null,
+        variant === 'transparent' ? { backgroundColor: 'transparent' } : null,
+        { borderRadius: variant === 'transparent' ? 0 : Radius.default },
         inputStyle,
-        (errorMessage && variant !== 'transparent') && { borderColor: Colors.accentRed, borderWidth: 1 },
+        errorMessage && { borderColor: Colors.accentRed, borderWidth: 1 },
       ]}>
         {hasContainerIcon && <View style={{ marginRight: 8 }}>{icon}</View>}
         <TextInput
@@ -68,8 +69,7 @@ export default function ThemedTextInput({
           variant === 'transparent' && styles.transparent,
           (variant === 'default' && !icon) && styles.default,
           hasContainerIcon ? styles.withIcon : null,
-          underline && { borderBottomWidth: 1, borderBottomColor: underlineColor },
-          (errorMessage && underline) && { borderBottomColor: Colors.accentRed },
+          underline && { borderBottomWidth: 1, borderBottomColor: underlineColor }
           ]}
           secureTextEntry={isSecureTextEntry && !isPasswordVisible}
         />
@@ -84,12 +84,12 @@ export default function ThemedTextInput({
             </TouchableOpacity>
           </View>
         )}
-        {errorMessage && (
-          <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
-            {errorMessage}
-          </Text>
-        )}
       </ThemedView>
+      {errorMessage && (
+        <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
+          {errorMessage}
+        </Text>
+      )}
     </View >
   );
 }
@@ -100,10 +100,7 @@ const styles = StyleSheet.create({
     width: '100%',
     fontSize: 16,
     paddingBottom: 4,
-  },
-  transparentContainer: {
-    backgroundColor: 'transparent',
-    paddingBottom: 8,
+    marginVertical: 12,
   },
   default: {
     width: '100%',

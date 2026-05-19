@@ -16,13 +16,11 @@ type Props<T = string> = {
   placeholder?: string;
   searchPlaceholder?: string;
   titlePlaceholder?: string;
-  errorMessage?: string;
 };
 
 export default function Combobox<T = string>({
   options,
   selectedValue,
-  errorMessage,
   onValueChange,
   titlePlaceholder,
   placeholder = 'Pilih',
@@ -48,20 +46,15 @@ export default function Combobox<T = string>({
     <>
       <Pressable
         onPress={() => setOpen(true)}
-        style={({ pressed }) => [styles.trigger, { backgroundColor }, errorMessage && { borderColor: Colors.accentRed }, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.trigger, { backgroundColor }, pressed && styles.pressed]}
       >
-        <ThemedText type={'default'} lightColor={selectedLabel ? undefined : Colors.light.text.secondary} darkColor={selectedLabel ? undefined : Colors.dark.text.secondary}>
+        <ThemedText type={'default'} lightColor={selectedLabel ? undefined : Colors.light.text.tertiary} darkColor={selectedLabel ? undefined : Colors.dark.text.tertiary}>
           {selectedLabel ?? placeholder}
         </ThemedText>
         <ThemedText lightColor={Colors.light.text.secondary} darkColor={Colors.dark.text.secondary}>
           ▾
         </ThemedText>
       </Pressable>
-      {errorMessage && (
-        <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
-          {errorMessage}
-        </Text>
-      )}
 
       <Modal animationType="fade" transparent visible={open} onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>

@@ -7,84 +7,129 @@ import { Colors, Radius } from "@/constants/theme";
 import { BlurView } from "expo-blur";
 import { useVideoPlayer, VideoView } from 'expo-video';
 
-import { activeSubmission, publishedSubmission } from "@/api/submission-api";
+import { publishedSubmission } from "@/api/submission-api";
 import ImagePreviewModal from "@/components/image-preview-modal";
 import ThemedSeparator from "@/components/themed-separator";
 import { useAuth } from "@/contexts/auth-context";
-import { IPublishedSubmission, ISubmissionData } from "@/types/submission";
+import { IPublishedSubmission } from "@/types/submission";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Animated, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
+
+interface IApplyHistory {
+  id: number;
+  title: string;
+  step: number;
+  date: string;
+}
+
+interface IFlyer {
+  id: number;
+  link: string;
+}
 
 const videoSource = 'https://youtu.be/emlZdBVVbMQ';
 
+// Dummy data for demonstration purposes
+const dumData: IApplyHistory[] = [
+  {
+    id: 1,
+    title: 'Permohonan Data Awal',
+    step: 3,
+    date: '12 Juni 2024',
+  },
+  {
+    id: 2,
+    title: 'Permohonan Mendapatkan SKP',
+    step: 2,
+    date: '15 Juni 2024',
+  },
+  {
+    id: 3,
+    title: 'Tugas Akhir Penelitian',
+    step: 1,
+    date: '20 Juni 2024',
+  },
+  {
+    id: 4,
+    title: 'Tugas Akhir Penelitian',
+    step: 1,
+    date: '20 Juni 2024',
+  }
+]
+
+const dumFlyer: IFlyer[] = [
+  {
+    id: 1,
+    link: 'https://placehold.co/1024x1536/jpg',
+  },
+  {
+    id: 2,
+    link: 'https://placehold.co/1024x1536/jpg',
+  },
+  {
+    id: 3,
+    link: 'https://placehold.co/1024x1536/jpg',
+  },
+  {
+    id: 4,
+    link: 'https://placehold.co/1024x1536/jpg',
+  },
+]
+
 export default function HomeScreen() {
   const auth = useAuth();
-  const [userSubmissions, setUserSubmissions] = useState<ISubmissionData[] | []>([]);
+  const [history, setHistory] = useState<IApplyHistory[] | []>([]);
   const [flyers, setFlyers] = useState<IPublishedSubmission[]>();
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
-  const [refreshing, setRefreshing] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
-
-  const fetchPublishedSubmissions = async () => {
-    try {
-      const res = await publishedSubmission();
-      setFlyers(res);
-    } catch {
-      setFlyers([]);
-    }
-  };
-
-  const fetchUserSubmission = async () => {
-    try {
-      const res = await activeSubmission();
-      setUserSubmissions(res);
-    } catch {
-      setUserSubmissions([]);
-    }
-  };
-
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    if (auth?.state.user) {
-      await fetchUserSubmission();
-    }
-    await fetchPublishedSubmissions();
-    setRefreshing(false);
-  };
+  const applySteps = [
+    'Pengajuan Disubmit',
+    'Konfirmasi Admin',
+    'Menunggu Revisi',
+    'Proses Disposisi',
+    'Rekomendasi Diterbitkan',
+    'Menunggu Hasil Penelitian',
+  ]
 
   useEffect(() => {
-    fetchPublishedSubmissions();
-    fetchUserSubmission();
-  }, [auth]);
+    const fetchSubmissionHistory = async () => {
+      await publishedSubmission().then(res => {
+        setFlyers(res);
+      }).catch(err => {
+        console.error('Error fetching submission history:', err);
+        setHistory([]);
+      });
+    }
+    fetchSubmissionHistory();
+  }, []);
 
-  const HistoryCard = ({ data }: { data: ISubmissionData }) => (
+  const HistoryCard = ({ data }: { data: IApplyHistory }) => (
     <ThemedView style={[styles.card, { width: responsiveScale(340), marginHorizontal: 0, marginVertical: 12, marginEnd: 24, padding: 20 }]}>
       <ThemedView style={styles.badge} lightColor={Colors.light.fill.vibrant.tertiary} darkColor={Colors.dark.fill.vibrant.primary}>
         <IconSymbol size={10} name="circle.fill" color={Colors.accentBlue} />
         <ThemedText type="footnote">
-          {data.progress_status}
+          {applySteps[data.step - 1]}
         </ThemedText>
       </ThemedView>
       <View style={{ marginTop: 12, gap: 4 }}>
         <ThemedText type="headline" style={{ fontWeight: '600' }}>
-          {data.research_type.split('/')[0]}
+          {data.title}
         </ThemedText>
         <ThemedText type="caption" style={{ color: Colors.light.text.secondary }}>
-          Diajukan pada {new Date(data.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+          Diajukan pada {data.date}
         </ThemedText>
       </View>
       <View>
         <View style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginTop: 12 }}>
-          <ThemedText type="caption" style={{ fontWeight: '600', color: Colors.accentBlue }}>
+          <ThemedText type="caption" style={{ fontWeight: '600' }}>
             Tekan untuk melihat detail
           </ThemedText>
-          <ThemedText type="caption" style={{ fontWeight: '800', color: Colors.light.text.tertiary }}>
-            {data.request_number}
+          <ThemedText type="caption" style={{ fontWeight: '600', color: Colors.accentBlue }}>
+            Tahap ke {data.step} dari {applySteps.length}
           </ThemedText>
         </View>
       </View>
@@ -119,7 +164,7 @@ export default function HomeScreen() {
     </ThemedView >
   );
 
-  const HistoryWrapper = (data: ISubmissionData[]) => (
+  const HistoryWrapper = (data: IApplyHistory[]) => (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, marginStart: 24, paddingEnd: 24 }}
       snapToAlignment="center" snapToInterval={responsiveScale(340) + 24} decelerationRate="fast">
       {data.map(element => (
@@ -130,7 +175,7 @@ export default function HomeScreen() {
 
   const FlyerCard = ({ data }: { data: IPublishedSubmission }) => (
     <Pressable onPress={() => { setPreviewUri(data.flyer); setPreviewVisible(true); }}>
-      <Image priority={"high"} source={{ uri: data.flyer }} style={{ width: responsiveScale(200), height: responsiveScale(300) }} contentFit="contain" loading="lazy" contentPosition={"left top"} />
+      <Image source={{ uri: data.flyer }} style={{ width: responsiveScale(200), height: responsiveScale(300) }} contentFit="contain" contentPosition={"left top"} />
     </Pressable>
   );
 
@@ -148,10 +193,7 @@ export default function HomeScreen() {
       onScroll={Animated.event(
         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
         { useNativeDriver: true }
-      )}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }>
+      )}>
       {/* Content */}
 
       {/* Welcome Card */}
@@ -267,7 +309,7 @@ export default function HomeScreen() {
         <ThemedText type="title3" style={{ marginHorizontal: 24 }}>
           Riwayat Pengajuan
         </ThemedText>
-        {HistoryWrapper(userSubmissions)}
+        {HistoryWrapper(history)}
       </View>
       {/* End History Section */}
 

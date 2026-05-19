@@ -58,7 +58,8 @@ const styles = {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
-    shadowRadius: 10
+    shadowRadius: 10,
+    elevation: 1,
   },
   default: {
     paddingVertical: responsiveScale(12),

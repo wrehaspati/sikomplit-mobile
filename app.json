@@ -1,17 +1,13 @@
 {
   "expo": {
-    "name": "SIKOMPLIT Mobile",
-    "description": "Aplikasi pelayanan pengajuan rekomendasi penelitian pada Dinas Kesehatan Kota Denpasar",
+    "name": "sikomplit-mobile",
     "slug": "sikomplit-mobile",
-    "sdkVersion": "55.0.0",
     "version": "1.0.0",
-    "platforms": [
-      "android"
-    ],
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sikomplitmobile",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
@@ -22,8 +18,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "package": "com.dereyn.sikomplitmobile"
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
@@ -44,16 +40,7 @@
         }
       ],
       "expo-video",
-      "expo-secure-store",
-      [
-        "expo-file-system",
-        {
-          "supportsOpeningDocumentsInPlace": true,
-          "enableFileSharing": true
-        }
-      ],
-      "@react-native-community/datetimepicker",
-      "expo-web-browser"
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
