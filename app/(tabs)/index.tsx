@@ -136,12 +136,20 @@ export default function HomeScreen() {
     </ScrollView>
   );
 
-  const FlyerCard = ({ data }: { data: IPublishedSubmission }) => (
-    <Pressable onPress={() => { setPreviewUri(data.flyer); setPreviewVisible(true); }}>
-      <Image priority={"high"} source={{ uri: data.flyer }} style={{ width: responsiveScale(200), height: responsiveScale(300) }} contentFit="contain" loading="lazy" contentPosition={"left top"} />
-    </Pressable>
-  );
-
+  const FlyerCard = ({ data }: { data: IPublishedSubmission }) => {
+    return (
+      <Pressable onPress={() => { setPreviewUri(data.flyer); setPreviewVisible(true); }}>
+        <View style={styles.flyerContainer}>
+          <Image
+            style={styles.flyerImage}
+            source={data.flyer}
+            contentFit="cover"
+            transition={1000}
+          />
+        </View>
+      </Pressable>
+    )
+  };
 
   return (
     <Animated.ScrollView
@@ -326,7 +334,7 @@ export default function HomeScreen() {
         boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.1)'
       }}>
         <ThemedText type="title3" style={{ marginHorizontal: 24, marginBottom: 12 }}>
-          Pilihan Terbaik Kami
+          Pilihan Topik Terbaik
         </ThemedText>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, paddingStart: 24, paddingEnd: 24, gap: 12 }}
           decelerationRate="normal">
@@ -335,10 +343,11 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
         <ThemedSeparator style={{ marginHorizontal: 24 }} />
-        <Pressable onPress={() => { }} hitSlop={10} style={{ alignSelf: 'flex-start', paddingVertical: 12, marginHorizontal: 24 }}>
+        <Pressable onPress={() => { router.navigate('/library'); }} hitSlop={10} style={{ alignSelf: 'flex-start', paddingVertical: 12, marginHorizontal: 24, display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
           <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
-            Lihat Semua Pustaka Digital
+            Menuju Pustaka Digital
           </ThemedText>
+          <IconSymbol name="chevron.right" size={20} color={Colors.accentBlue} style={{ marginStart: 4 }} />
         </Pressable>
       </ThemedView>
       {/* End Flyer Section */}
@@ -362,7 +371,7 @@ export default function HomeScreen() {
         <View>
           <ThemedSeparator lightColor={Colors.dark.fill.vibrant.primary} style={{ marginTop: 12 }} />
           <Pressable onPress={() => { }} hitSlop={10} style={{ alignSelf: 'flex-start', paddingVertical: 12 }}>
-            <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
+            <ThemedText type="defaultSemiBold" lightColor={Colors.light.text.secondary} darkColor={Colors.light.text.secondary}>
               Syarat dan Ketentuan Layanan
             </ThemedText>
           </Pressable>
@@ -422,5 +431,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3
-  }
+  },
+  flyerContainer: {
+    width: responsiveScale(200),
+    height: responsiveScale(300),
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flyerImage: {
+    flex: 1,
+    backgroundColor: Colors.light.fill.tertiary,
+    width: '100%',
+  },
 });

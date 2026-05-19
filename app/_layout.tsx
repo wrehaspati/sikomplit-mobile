@@ -27,16 +27,16 @@ function RootLayoutNav() {
   const auth = useAuth();
   return (
     <Stack>
-      <Stack.Protected guard={!auth?.state}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Beranda' }} />
+      <Stack.Protected guard={!!auth?.state}>
         <Stack.Screen name="form" options={{ presentation: 'card', title: 'Formulir Rekomendasi' }} />
       </Stack.Protected>
-      <Stack.Protected guard={!!auth?.state}>
+      <Stack.Protected guard={!auth?.state}>
         <Stack.Screen name="login" options={{ presentation: 'card', title: 'Masuk SIKOMPLIT' }} />
         <Stack.Screen name="register" options={{ presentation: 'card', title: 'Daftar SIKOMPLIT' }} />
         <Stack.Screen name="reset-password" options={{ presentation: 'card', title: 'Reset Kata Sandi' }} />
         <Stack.Screen name="email-verify" options={{ presentation: 'card', title: 'Verifikasi Email' }} />
       </Stack.Protected>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Beranda' }} />
       <Stack.Screen name="fullscreen-alert" options={{ presentation: 'fullScreenModal', headerShown: false }} />
     </Stack>
   );

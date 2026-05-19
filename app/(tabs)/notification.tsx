@@ -4,8 +4,8 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, Radius } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { downloadAndOpenDocument } from "@/services/document";
 import { ISubmissionData } from "@/types/submission";
-import { openBrowserAsync, WebBrowserPresentationStyle } from "expo-web-browser";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -65,6 +65,7 @@ export default function NotificationScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selectedSubmission, setSelectedSubmission] = useState<ISubmissionData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
 
   // Fetch user submissions
   const fetchUserSubmission = async () => {
@@ -176,7 +177,7 @@ export default function NotificationScreen() {
     return /^https?:\/\//i.test(value);
   };
 
-  // Function to open a document URL, with platform-specific handling
+  // Function to open a document URL using authenticated download + open
   const openDocument = async (url?: string | null) => {
     if (!isValidHttpUrl(url)) {
       Alert.alert("Dokumen tidak tersedia", "Tautan dokumen tidak valid atau belum tersedia.");
@@ -186,10 +187,21 @@ export default function NotificationScreen() {
     const safeUrl = url as string;
 
     try {
-      await openBrowserAsync(safeUrl, {
-        presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
+      setDownloadProgressMap((s) => ({ ...s, [safeUrl]: 0 }));
+      await downloadAndOpenDocument(safeUrl, (p) => {
+        setDownloadProgressMap((s) => ({ ...s, [safeUrl]: p }));
+      });
+      setDownloadProgressMap((s) => {
+        const copy = { ...s };
+        delete copy[safeUrl];
+        return copy;
       });
     } catch {
+      setDownloadProgressMap((s) => {
+        const copy = { ...s };
+        if (safeUrl in copy) delete copy[safeUrl];
+        return copy;
+      });
       Alert.alert("Gagal membuka dokumen", "Silakan coba lagi beberapa saat.");
     }
   };
@@ -241,6 +253,8 @@ export default function NotificationScreen() {
   // Component to display a document row with a label and a link to open the document if available
   const DocumentRow = ({ label, url }: { label: string; url?: string | null }) => {
     const available = isValidHttpUrl(url);
+    const progress = url ? downloadProgressMap[url] ?? null : null;
+    const isDownloading = progress !== null && progress >= 0 && progress < 1;
 
     return (
       <Pressable
@@ -259,7 +273,13 @@ export default function NotificationScreen() {
             </ThemedText>
           </View>
         </View>
-        {available && <IconSymbol name="chevron.right" size={16} color={Colors.accentBlue} />}
+        {isDownloading ? (
+          <ThemedText type="caption" style={{ color: Colors.accentBlue, fontWeight: '700' }}>
+            {Math.round((progress ?? 0) * 100)}%
+          </ThemedText>
+        ) : (
+          available && <IconSymbol name="chevron.right" size={16} color={Colors.accentBlue} />
+        )}
       </Pressable>
     );
   };

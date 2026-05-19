@@ -115,7 +115,7 @@ export default function LibraryScreen() {
       <ThemedView style={styles.card} key={item.id}>
         <View style={styles.container}>
           <View style={styles.cardImage}>
-            <Image source={{ uri: item.flyer }} contentFit="fill" style={{ width: '100%', height: '100%', borderRadius: 8 }} />
+            <Image source={{ uri: item.flyer }} contentFit="fill" contentPosition="center" style={{ width: '100%', height: '100%', borderRadius: 8, backgroundColor: Colors.light.fill.secondary }} />
           </View>
           <View style={styles.cardContent}>
             <View>
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     width: '30%',
-    height: 170,
+    height: 150,
   },
   cardContent: {
     flex: 1,
