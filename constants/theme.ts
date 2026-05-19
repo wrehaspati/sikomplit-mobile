@@ -70,6 +70,8 @@ export const Radius = {
   default: 20,
 }
 
+export const SCREEN_MARGIN_HORIZONTAL = 24;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

@@ -1,4 +1,3 @@
-import { responsiveScale } from "@/constants/scaling";
 import { Colors } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { TouchableOpacity, TouchableOpacityProps, View } from "react-native";
@@ -40,6 +39,7 @@ export default function ThemedButton({
     ]} {...rest}>
       {icon && <View style={{ paddingRight: 4 }}>{icon}</View>}
       <ThemedText type="defaultSemiBold" style={[
+        size === 'small' ? styles.smallText : undefined,
         variant === 'primary' ? { color: 'white' } : undefined,
         variant === 'secondary' ? { color: Colors.light.text.primary } : undefined,
         variant === 'outline' ? { color: Colors.accentBlue } : undefined,
@@ -61,16 +61,19 @@ const styles = {
     shadowRadius: 10
   },
   default: {
-    paddingVertical: responsiveScale(12),
-    paddingHorizontal: responsiveScale(24),
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 24,
     alignItems: 'center',
   },
   small: {
-    paddingVertical: responsiveScale(6),
-    paddingHorizontal: responsiveScale(20),
+    paddingVertical: 6,
+    paddingHorizontal: 20,
     borderRadius: 24,
     alignItems: 'center',
+  },
+  smallText: {
+    fontSize: 14,
   },
   primary: {
     backgroundColor: Colors.accentBlue,

@@ -2,23 +2,25 @@ import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { responsiveScale } from "@/constants/scaling";
-import { Colors, Radius } from "@/constants/theme";
+import { Colors, Radius, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
 import { BlurView } from "expo-blur";
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { activeSubmission, publishedSubmission } from "@/api/submission-api";
 import ImagePreviewModal from "@/components/image-preview-modal";
+import ParallaxScrollView from "@/components/parallax-scroll-view";
 import ThemedSeparator from "@/components/themed-separator";
 import { useAuth } from "@/contexts/auth-context";
 import { IPublishedSubmission, ISubmissionData } from "@/types/submission";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
 
 const videoSource = 'https://youtu.be/emlZdBVVbMQ';
+
+const FIRST_CARD_HEIGHT = 400;
 
 export default function HomeScreen() {
   const auth = useAuth();
@@ -27,7 +29,6 @@ export default function HomeScreen() {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
-  const scrollY = useRef(new Animated.Value(0)).current;
 
   // Fetch published submissions
   const fetchPublishedSubmissions = async () => {
@@ -65,13 +66,14 @@ export default function HomeScreen() {
     fetchUserSubmission();
   }, [auth]);
 
+  // Initialize video player
   const player = useVideoPlayer(videoSource, player => {
     player.loop = true;
     player.play();
   });
 
   const HistoryCard = ({ data }: { data: ISubmissionData }) => (
-    <ThemedView style={[styles.card, { width: responsiveScale(340), marginHorizontal: 0, marginVertical: 12, marginEnd: 24, padding: 20 }]}>
+    <ThemedView style={[styles.card, { width: 340, marginHorizontal: 0, marginVertical: 12, marginEnd: 24, padding: 20 }]}>
       <ThemedView style={styles.badge} lightColor={Colors.light.fill.vibrant.tertiary} darkColor={Colors.dark.fill.vibrant.primary}>
         <IconSymbol size={10} name="circle.fill" color={Colors.accentBlue} />
         <ThemedText type="footnote">
@@ -100,7 +102,7 @@ export default function HomeScreen() {
   );
 
   const EmptyHistory = () => (
-    <ThemedView style={[styles.card, { width: responsiveScale(340), padding: 20, marginVertical: 12 }]}>
+    <ThemedView style={[styles.card, { width: 340, padding: 20, marginVertical: 12 }]}>
       <ThemedView style={styles.badge} lightColor={Colors.light.fill.vibrant.tertiary} darkColor={Colors.dark.fill.vibrant.primary}>
         <IconSymbol size={10} name="circle.fill" color={Colors.accentBlue} />
         <ThemedText type="footnote">
@@ -127,15 +129,6 @@ export default function HomeScreen() {
     </ThemedView >
   );
 
-  const HistoryWrapper = (data: ISubmissionData[]) => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, marginStart: 24, paddingEnd: 24 }}
-      snapToAlignment="center" snapToInterval={responsiveScale(340) + 24} decelerationRate="fast">
-      {data.map(element => (
-        <HistoryCard key={element.id} data={element} />
-      )).concat(data.length === 0 ? <EmptyHistory key="empty" /> : [])}
-    </ScrollView>
-  );
-
   const FlyerCard = ({ data }: { data: IPublishedSubmission }) => {
     return (
       <Pressable onPress={() => { setPreviewUri(data.flyer); setPreviewVisible(true); }}>
@@ -152,148 +145,121 @@ export default function HomeScreen() {
   };
 
   return (
-    <Animated.ScrollView
-      style={{
-        flex: 1,
-      }}
-      scrollEventThrottle={16}
-      onScroll={Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-        { useNativeDriver: true }
-      )}
+    <ParallaxScrollView
+      title="Beranda"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }>
       {/* Content */}
 
-      {/* Welcome Card */}
-      <View style={{ marginHorizontal: 24, marginBottom: 20, marginTop: 54 }}>
-        <Animated.View
-          style={{
-            marginBottom: 12,
-            opacity: scrollY.interpolate({
-              inputRange: [0, 18, 72],
-              outputRange: [1, 0, 0],
-              extrapolate: 'clamp',
-            }),
-            transform: [{
-              translateY: scrollY.interpolate({
-                inputRange: [0, 72],
-                outputRange: [0, 72],
-                extrapolate: 'clamp',
-              }),
-            }],
-          }}
-        >
-          <ThemedText type="title">
-            Beranda
-          </ThemedText>
-        </Animated.View>
-        <View style={[
-          styles.card, {
-            minHeight: responsiveScale(450)
-          }]}>
-          <Image
-            source={require('@/assets/images/card-bg.webp')}
-            style={styles.cardBackground}
-            contentFit="cover"
-          />
-          <Image
-            source={require('@/assets/images/app-icon.webp')}
-            style={styles.logoIcon}
-          />
-          <View style={styles.vectorWave}>
-            <Svg width="100%" height="100%" viewBox="0 0 422 276" style={StyleSheet.absoluteFillObject}>
-              <Defs>
-                <Filter id="blur">
-                  <FeGaussianBlur stdDeviation="8" />
-                </Filter>
-                <LinearGradient
-                  id="paint0_linear_114_324"
-                  x1="211"
-                  y1="0"
-                  x2="211"
-                  y2="219.998"
-                  gradientUnits="userSpaceOnUse">
-                  <Stop stopColor="#000000" stopOpacity="0.3" />
-                  <Stop offset="1" stopColor="#000000" stopOpacity="1" />
-                </LinearGradient>
-              </Defs>
-              <Path
-                d="M233.354 40.1323C71.7758 -25.3362 17.6288 0.0686264 0 40.1323V276H422V63.6662C419.274 95.8852 333.5 80.7095 233.354 40.1323Z"
-                fill="url(#paint0_linear_114_324)"
-                fillOpacity="1"
-                filter="url(#blur)"
-              />
-            </Svg>
+      {/* First Card */}
+      <View style={[
+        styles.card, {
+          minHeight: FIRST_CARD_HEIGHT,
+          marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+        }]}>
+        <Image
+          source={require('@/assets/images/card-bg.webp')}
+          style={styles.cardBackground}
+          contentFit="cover"
+        />
+        <Image
+          source={require('@/assets/images/app-icon.webp')}
+          style={styles.logoIcon}
+        />
+        <View style={styles.vectorWave}>
+          <Svg viewBox="0 0 422 0" style={StyleSheet.absoluteFill}>
+            <Defs>
+              <Filter id="blur">
+                <FeGaussianBlur stdDeviation="8" />
+              </Filter>
+              <LinearGradient
+                id="paint0_linear_114_324"
+                x1="211"
+                y1="0"
+                x2="211"
+                y2="219.998"
+                gradientUnits="userSpaceOnUse">
+                <Stop stopColor="#000000" stopOpacity="0.2" />
+                <Stop offset="1" stopColor="#000000" stopOpacity="1" />
+              </LinearGradient>
+            </Defs>
+            <Path
+              d="M233.354 40.1323C71.7758 -25.3362 17.6288 0.0686264 0 40.1323V276H422V63.6662C419.274 95.8852 533.5 80.7095 233.354 40.1323Z"
+              fill="url(#paint0_linear_114_324)"
+              fillOpacity="1"
+              filter="url(#blur)"
+            />
+          </Svg>
+        </View>
+        {/* Card Content */}
+        <View style={{ flex: 1, justifyContent: 'flex-end', borderRadius: Radius.default }}>
+          <View style={styles.cardContainer}>
+            <ThemedText type="subheadline" style={{ color: Colors.light.text.quarternary, fontWeight: '600' }}>
+              SELAMAT DATANG DI
+            </ThemedText>
+            <ThemedText type="title" style={{ color: 'white' }}>
+              SIKOMPLIT
+            </ThemedText>
+            <ThemedText type="caption" style={{ color: Colors.light.text.quarternary, textAlign: 'left' }}>
+              Aplikasi Sistem Pengajuan Rekomendasi Penelitian Dinas Kesehatan Kota Denpasar
+            </ThemedText>
           </View>
-          {/* Card Content */}
-          <View style={{ flex: 1, justifyContent: 'flex-end', borderRadius: Radius.default }}>
-            <View style={styles.cardContainer}>
-              <ThemedText type="subheadline" style={{ color: Colors.light.text.tertiary, fontWeight: '600' }}>
-                SELAMAT DATANG DI
-              </ThemedText>
-              <ThemedText type="title" style={{ color: 'white' }}>
-                SIKOMPLIT
-              </ThemedText>
-              <ThemedText type="tightFootnote" style={{ color: Colors.light.text.tertiary, textAlign: 'justify' }}>
-                Sistem Rekomendasi Penelitian (SIKOMPLIT) adalah sistem informasi yang dirancang untuk memudahkan pelayanan terpadu di masyarakat khususnya dalam penerbitan surat rekomendasi
-              </ThemedText>
-            </View>
-            {auth?.state.user ? (
-              <BlurView style={styles.callAction} intensity={50} tint="dark">
-                <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
-                  onPress={() => {
-                    router.navigate({ pathname: '/form' });
-                  }}
-                >
-                  Ajukan Rekomendasi
-                </ThemedButton>
-              </BlurView>
-            ) : (
-              <BlurView style={styles.callAction} intensity={50} tint="dark">
-                <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
-                  onPress={() => {
-                    router.navigate({ pathname: '/register' });
-                  }}
-                >
-                  Buat Akun
-                </ThemedButton>
-                <ThemedButton variant="light" size="small"
-                  style={{ alignSelf: 'flex-end', backgroundColor: Colors.light.fill.tertiary }}
-                  onPress={() => {
-                    router.navigate({ pathname: '/login' });
-                  }}
-                >
-                  Masuk
-                </ThemedButton>
-              </BlurView>
-            )}
-          </View>
+          {auth?.state.user ? (
+            <BlurView style={styles.callAction} intensity={50} tint="dark">
+              <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
+                onPress={() => {
+                  router.navigate({ pathname: '/form' });
+                }}
+              >
+                Ajukan Rekomendasi
+              </ThemedButton>
+            </BlurView>
+          ) : (
+            <BlurView style={styles.callAction} intensity={50} tint="dark">
+              <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
+                onPress={() => {
+                  router.navigate({ pathname: '/register' });
+                }}
+              >
+                Buat Akun
+              </ThemedButton>
+              <ThemedButton variant="light" size="small"
+                style={{ alignSelf: 'flex-end', backgroundColor: Colors.light.fill.tertiary }}
+                onPress={() => {
+                  router.navigate({ pathname: '/login' });
+                }}
+              >
+                Masuk
+              </ThemedButton>
+            </BlurView>
+          )}
         </View>
       </View>
       {/* End Welcome Card */}
 
       {/* History Section */}
       <View>
-        <ThemedText type="title3" style={{ marginHorizontal: 24 }}>
-          Riwayat Pengajuan
-        </ThemedText>
-        {HistoryWrapper(userSubmissions)}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 12, marginStart: 24, paddingEnd: 24 }}
+          snapToAlignment="center" snapToInterval={340 + 24} decelerationRate="fast">
+          {userSubmissions.map(element => (
+            <HistoryCard key={element.id} data={element} />
+          )).concat(userSubmissions.length === 0 ? (<EmptyHistory key="empty" />) : [])}
+        </ScrollView>
       </View>
       {/* End History Section */}
 
       {/* Guide Section */}
       <View style={{
         marginBottom: 44,
-        marginHorizontal: 24
+        marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
       }}>
         <ThemedText type="title3" style={{ marginBottom: 12 }}>
           Dukungan Penggunaan
         </ThemedText>
         <View style={styles.card}>
           <VideoView
-            style={{ width: '100%', height: responsiveScale(200) }}
+            style={{ width: '100%', height: 200 }}
             player={player}
             fullscreenOptions={{ enable: true }}
             allowsPictureInPicture
@@ -301,7 +267,7 @@ export default function HomeScreen() {
         </View>
         <ThemedView style={[styles.card, { marginTop: 20 }]}>
           <View style={{ display: 'flex', flexDirection: 'row', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 }} >
-            <IconSymbol size={responsiveScale(48)} name="document.fill" color={Colors.light.fill.vibrant.secondary} />
+            <IconSymbol size={48} name="document.fill" color={Colors.light.fill.vibrant.secondary} />
             <View style={{ flex: 1, minWidth: 0, marginStart: 12 }}>
               <ThemedText type="caption" style={{ color: Colors.light.text.tertiary, fontWeight: '600' }}>
                 DOKUMEN PEDOMAN
@@ -353,7 +319,7 @@ export default function HomeScreen() {
       {/* End Flyer Section */}
 
       {/* Support Section */}
-      <View style={{ marginBottom: 40, marginHorizontal: 24, gap: 12 }}>
+      <View style={{ marginBottom: 40, marginHorizontal: SCREEN_MARGIN_HORIZONTAL, gap: 12 }}>
         <ThemedText type="title3">
           Bantuan Layanan
         </ThemedText>
@@ -380,7 +346,7 @@ export default function HomeScreen() {
 
       {/* End Content */}
       <ImagePreviewModal visible={previewVisible} uri={previewUri} onClose={() => { setPreviewVisible(false); setPreviewUri(undefined); }} />
-    </Animated.ScrollView >
+    </ParallaxScrollView >
   );
 }
 
@@ -399,11 +365,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     position: 'absolute',
     width: '100%',
-    height: responsiveScale(250),
+    height: '100%',
   },
   logoIcon: {
-    width: responsiveScale(48 * 1.4),
-    height: responsiveScale(33 * 1.4),
+    width: 48 * 1.4,
+    height: 33 * 1.4,
     alignSelf: 'flex-end',
     margin: 20,
   },
@@ -411,7 +377,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderBottomLeftRadius: Radius.default,
     borderBottomRightRadius: Radius.default,
-    padding: 20,
+    padding: 16,
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -419,7 +385,6 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     paddingHorizontal: 20,
-    gap: 4,
     paddingBottom: 12,
   },
   badge: {
@@ -433,8 +398,8 @@ const styles = StyleSheet.create({
     gap: 3
   },
   flyerContainer: {
-    width: responsiveScale(200),
-    height: responsiveScale(300),
+    width: 200,
+    height: 300,
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
