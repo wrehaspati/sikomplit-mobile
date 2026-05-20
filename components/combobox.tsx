@@ -1,5 +1,5 @@
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Radius } from '@/constants/theme';
+import { Colors, RADIUS } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -127,7 +127,7 @@ export default function Combobox<T = string>({
 const styles = StyleSheet.create({
   trigger: {
     minHeight: 52,
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
     paddingHorizontal: 24,
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: 48,
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
     paddingHorizontal: 24,
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
   option: {
     minHeight: 48,
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     paddingHorizontal: 24,
     marginHorizontal: 8,
     justifyContent: 'center',

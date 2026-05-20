@@ -66,8 +66,8 @@ export const Colors = {
   backgroundSecondary: '#F2F2F7',
 };
 
-export const Radius = {
-  default: 20,
+export const RADIUS = {
+  DEFAULT: 20,
 }
 
 export const SCREEN_MARGIN_HORIZONTAL = 24;

@@ -36,6 +36,8 @@ const MAPPING = {
   'star': 'star-outline',
   'star.fill': 'star',
   'x.circle.fill': 'cancel',
+  'arrow.down.app.fill': 'file-download',
+  'xmark.octagon.fill': 'error',
 } as IconMapping;
 
 /**

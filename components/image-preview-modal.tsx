@@ -1,5 +1,5 @@
 import { responsiveScale } from '@/constants/scaling';
-import { Colors, Radius } from '@/constants/theme';
+import { Colors, RADIUS } from '@/constants/theme';
 import React from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import ImageViewer from 'react-native-image-zoom-viewer';
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   image: {
     width: '90%',
     height: '80%',
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     overflow: 'hidden'
   },
   closeButton: {

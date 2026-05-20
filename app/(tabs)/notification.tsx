@@ -2,7 +2,7 @@ import { activeSubmission } from "@/api/submission-api";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors, Radius } from "@/constants/theme";
+import { Colors, RADIUS } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
 import { ISubmissionData } from "@/types/submission";
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     marginTop: 54,
   },
   filterWrap: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     padding: 12,
     marginBottom: 16,
   },
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   emptyStateCard: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     padding: 20,
     alignItems: "center",
   },
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   notificationCard: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     overflow: "hidden",
     flexDirection: "row",
     alignItems: "flex-start",
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   announcementCard: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     overflow: "hidden",
     flexDirection: "row",
     alignItems: "flex-start",
@@ -764,7 +764,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   modalCard: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     padding: 14,
   },
   detailRow: {

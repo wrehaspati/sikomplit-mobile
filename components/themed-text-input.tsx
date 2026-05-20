@@ -1,4 +1,4 @@
-import { Colors, Radius } from "@/constants/theme";
+import { Colors, RADIUS } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import type { ReactNode } from 'react';
 import { useState } from "react";
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingLeft: 16,
     fontSize: 16,
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
     shadowColor: '#000',
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
   },

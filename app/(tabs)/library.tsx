@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors, Radius } from "@/constants/theme";
+import { Colors, RADIUS } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { IPublishedSubmission } from "@/types/submission";
 import { Image } from "expo-image";
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   card: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     display: 'flex',
     position: 'relative',
     overflow: 'hidden',
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   }
   ,
   suggestionPanel: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     marginTop: 4,
     marginBottom: 8,
     padding: 12,

@@ -1,60 +1,75 @@
-import { useRef } from 'react';
-import { Animated, ScrollViewProps, StyleSheet, View } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, Platform, ScrollViewProps, StyleSheet, View } from 'react-native';
 import { ThemedText } from './themed-text';
 
 type ParallaxScrollViewProps = ScrollViewProps & {
   title: string;
 };
 
+const HEADER_OFFSET = 54 + 12 + 41;
+
 export default function ParallaxScrollView({ title, children, ...Props }: ParallaxScrollViewProps) {
   const scrollY = useRef(new Animated.Value(0)).current;
+  const { refreshControl, ...scrollProps } = Props as ScrollViewProps & { refreshControl?: React.ReactElement<any> };
+  const injectedRefreshControl = refreshControl
+    ? React.cloneElement(refreshControl as React.ReactElement<any>, {
+      progressViewOffset: HEADER_OFFSET,
+    })
+    : undefined;
+  const adjustedScroll = Platform.OS === 'ios' ? Animated.add(scrollY, HEADER_OFFSET) : scrollY;
+
   return (
-    <Animated.ScrollView
-      style={{
-        flex: 1,
-      }}
-      scrollEventThrottle={16}
-      onScroll={Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-        { useNativeDriver: true }
-      )}
-      {...Props}
-    >
+    <View style={{ flex: 1 }}>
       <Animated.View
         style={{
           ...styles.header,
-          opacity: scrollY.interpolate({
+          opacity: adjustedScroll.interpolate({
             inputRange: [0, 18, 72],
             outputRange: [1, 0, 0],
             extrapolate: 'clamp',
           }),
-          transform: [{
-            translateY: scrollY.interpolate({
-              inputRange: [0, 72],
-              outputRange: [0, 72],
-              extrapolate: 'clamp',
-            }),
-          }],
         }}
       >
         <ThemedText type="title">
           {title}
         </ThemedText>
       </Animated.View>
-      <View style={styles.container}>
-        {children}
-      </View>
-    </Animated.ScrollView>
+      <Animated.ScrollView
+        style={{
+          flex: 1,
+        }}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        refreshControl={injectedRefreshControl}
+        contentInset={Platform.OS === 'ios' ? { top: HEADER_OFFSET } : undefined}
+        contentOffset={Platform.OS === 'ios' ? { x: 0, y: -HEADER_OFFSET } : undefined}
+        contentContainerStyle={{
+          paddingTop: Platform.OS === 'ios' ? 0 : null,
+        }}
+        {...scrollProps}
+        automaticallyAdjustContentInsets={false}
+      >
+        <View style={{ height: Platform.OS === 'ios' ? 0 : HEADER_OFFSET }} />
+        <View style={styles.container}>
+          {children}
+        </View>
+      </Animated.ScrollView>
+    </View >
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    zIndex: 20,
   },
   header: {
     marginHorizontal: 24,
     marginBottom: 12,
-    marginTop: 54
+    top: 54,
+    position: 'absolute',
   }
 });

@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
 import { responsiveScale } from "@/constants/scaling";
-import { Colors, Radius } from "@/constants/theme";
+import { Colors, RADIUS } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { ISubmissionPost } from '@/types/submission';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -864,13 +864,13 @@ export default function FormScreen() {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     padding: 18,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
   },
   dateField: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderWidth: 1,
@@ -908,7 +908,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   fileCard: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     padding: 14,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
