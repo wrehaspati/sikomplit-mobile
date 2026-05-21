@@ -2,7 +2,6 @@ import { resetPassword } from "@/api/auth-api";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,7 +57,7 @@ export default function ResetPasswordScreen() {
     }
   };
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 24 }}>
         <View style={{ alignItems: 'center', flex: 1, width: '100%', gap: 12 }}>
           <ThemedText type="title" style={{ textAlign: 'center' }}>Reset Kata Sandi</ThemedText>
@@ -113,6 +112,6 @@ export default function ResetPasswordScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

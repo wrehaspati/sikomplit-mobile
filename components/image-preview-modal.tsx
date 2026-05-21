@@ -1,4 +1,3 @@
-import { responsiveScale } from '@/constants/scaling';
 import { Colors, RADIUS } from '@/constants/theme';
 import React from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
@@ -41,7 +40,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: responsiveScale(80),
+    top: 80,
     right: 20,
     zIndex: 20
   },

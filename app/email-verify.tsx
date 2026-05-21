@@ -2,7 +2,6 @@ import { verifyEmail } from "@/api/auth-api";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,17 +60,17 @@ export default function VerifyEmailScreen() {
 
   if (!email) {
     return (
-      <ThemedView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <ThemedText type="title">Akses Ditolak</ThemedText>
         <ThemedText type="subheadline" style={{ textAlign: 'center' }}>
           Halaman ini hanya dapat diakses melalui proses verifikasi email setelah pendaftaran atau saat login dengan akun yang belum terverifikasi. Silakan kembali ke halaman sebelumnya dan pastikan Anda mengikuti langkah-langkah yang benar untuk memverifikasi email Anda.
         </ThemedText>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 24 }}>
         <View style={{ alignItems: 'center', flex: 1, width: '100%', gap: 12 }}>
           <ThemedText type="title" style={{ textAlign: 'center' }}>Verifikasi Email</ThemedText>
@@ -131,6 +130,6 @@ export default function VerifyEmailScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

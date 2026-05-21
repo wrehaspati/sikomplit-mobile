@@ -33,6 +33,7 @@ export default function ThemedTextInput({
 }: ThemedTextInputProps) {
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'secondary');
   const textColor = useThemeColor({}, 'text.primary');
+  const placeholderTextColor = useThemeColor({}, 'text.tertiary');
   const underlineColor = useThemeColor({}, 'fill.vibrant.secondary');
   const withIconContainerColor = useThemeColor({}, 'fill.tertiary');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -72,6 +73,7 @@ export default function ThemedTextInput({
           (errorMessage && underline) && { borderBottomColor: Colors.accentRed },
           ]}
           secureTextEntry={isSecureTextEntry && !isPasswordVisible}
+          placeholderTextColor={placeholderTextColor}
         />
         {isSecureTextEntry && (
           <View style={{ position: 'absolute', right: 16 }}>

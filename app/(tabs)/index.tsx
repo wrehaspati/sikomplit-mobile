@@ -8,21 +8,27 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { activeSubmission, publishedSubmission } from "@/api/submission-api";
 import ImagePreviewModal from "@/components/image-preview-modal";
+import BottomSheetModal from "@/components/modal";
+import NotificationModal from "@/components/notification-modal";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import ThemedSeparator from "@/components/themed-separator";
 import { useAuth } from "@/contexts/auth-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
+import { formatDate } from "@/services/format-date";
+import { shortResearchType } from "@/services/format-text";
 import { IPublishedSubmission, ISubmissionData } from "@/types/submission";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Dimensions, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
+import NotificationCard from "../../components/notification-card";
+import { getStatusMeta } from "./notification";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const FIRST_CARD_HEIGHT = SCREEN_WIDTH * 1;
-const SECTION_GAP = 40;
+const SECTION_GAP = 24;
 const CHEVRON_SIZE = Platform.OS === 'ios' ? 12 : 16;
 
 interface IGuideDocument {
@@ -48,7 +54,9 @@ export default function HomeScreen() {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
   const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
+  const [selectedSubmission, setSelectedSubmission] = useState<ISubmissionData | null>(null);
 
   // Fetch published submissions
   const fetchPublishedSubmissions = async () => {
@@ -130,34 +138,25 @@ export default function HomeScreen() {
   };
 
 
-  const HistoryCard = ({ data }: { data: ISubmissionData }) => (
-    <ThemedView style={[styles.card, { width: 340, marginHorizontal: 0, marginVertical: 12, marginEnd: 24, padding: 20 }]}>
-      <ThemedView style={styles.badge} lightColor={Colors.light.fill.vibrant.tertiary} darkColor={Colors.dark.fill.vibrant.primary}>
-        <IconSymbol size={10} name="circle.fill" color={Colors.accentBlue} />
-        <ThemedText type="footnote">
-          {data.progress_status}
-        </ThemedText>
-      </ThemedView>
-      <View style={{ marginTop: 12, gap: 4 }}>
-        <ThemedText type="headline" style={{ fontWeight: '600' }}>
-          {data.research_type.split('/')[0]}
-        </ThemedText>
-        <ThemedText type="caption" style={{ color: Colors.light.text.secondary }}>
-          Diajukan pada {new Date(data.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-        </ThemedText>
+  const HistoryCard = ({ submission }: { submission: ISubmissionData }) => {
+    const statusTone = getStatusMeta(submission.progress_status);
+    return (
+      <View style={{
+        width: SCREEN_WIDTH - 2 * SCREEN_MARGIN_HORIZONTAL,
+      }} key={submission.id}>
+        <NotificationCard
+          backgroundColor={cardBackground}
+          createdAtLabel={formatDate(submission.updated_at)}
+          statusLabel={submission.progress_status}
+          title={shortResearchType(submission.research_type)}
+          subtitle={`#${submission.request_number} - ${submission.research_upload?.title ?? submission.created_at}`}
+          footerLabel="Ketuk untuk melihat detail pengajuan"
+          statusTone={statusTone}
+          onPress={() => setSelectedSubmission(submission)}
+        />
       </View>
-      <View>
-        <View style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginTop: 12 }}>
-          <ThemedText type="caption" style={{ fontWeight: '600', color: Colors.accentBlue }}>
-            Tekan untuk melihat detail
-          </ThemedText>
-          <ThemedText type="caption" style={{ fontWeight: '800', color: Colors.light.text.tertiary }}>
-            {data.request_number}
-          </ThemedText>
-        </View>
-      </View>
-    </ThemedView >
-  );
+    )
+  };
 
   const FlyerCard = ({ data }: { data: IPublishedSubmission }) => {
     return (
@@ -241,8 +240,7 @@ export default function HomeScreen() {
               <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
                 onPress={() => {
                   router.navigate({ pathname: '/form' });
-                }}
-              >
+                }}>
                 Ajukan Rekomendasi
               </ThemedButton>
             </BlurView>
@@ -251,16 +249,14 @@ export default function HomeScreen() {
               <ThemedButton variant="primary" size="small" style={{ alignSelf: 'flex-end' }}
                 onPress={() => {
                   router.navigate({ pathname: '/register' });
-                }}
-              >
+                }}>
                 Buat Akun
               </ThemedButton>
               <ThemedButton variant="light" size="small"
                 style={{ alignSelf: 'flex-end', backgroundColor: Colors.light.fill.tertiary }}
                 onPress={() => {
                   router.navigate({ pathname: '/login' });
-                }}
-              >
+                }}>
                 Masuk
               </ThemedButton>
             </BlurView>
@@ -274,19 +270,12 @@ export default function HomeScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            marginVertical: 16,
-            marginBottom: SECTION_GAP,
-            marginStart: 24,
-            paddingEnd: 24
-          }}
+          contentContainerStyle={styles.quickAccessContainer}
           snapToAlignment="center"
-          snapToInterval={340 + 24}
-          decelerationRate="fast"
-        >
+          decelerationRate="fast">
           {auth?.state.user ? (
-            userSubmissions.map(element => (
-              <HistoryCard key={element.id} data={element} />
+            userSubmissions.slice(0, 3).map(element => (
+              <HistoryCard key={element.id} submission={element} />
             )).concat(userSubmissions.length === 0 ? (
               <ThemedView
                 key="empty-history"
@@ -296,8 +285,7 @@ export default function HomeScreen() {
                   { borderColor: backgroundColor }
                 ]}
                 lightColor={cardBackground}
-                darkColor={cardBackground}
-              >
+                darkColor={cardBackground}>
                 <ThemedText type="subheadline" style={{ fontWeight: '600' }}>
                   Belum Ada Pengajuan
                 </ThemedText>
@@ -307,8 +295,7 @@ export default function HomeScreen() {
                 <Pressable
                   onPress={() => router.push('/form')}
                   hitSlop={10}
-                  style={{ marginTop: 12 }}
-                >
+                  style={{ marginTop: 12 }}>
                   <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
                     Ajukan Sekarang
                   </ThemedText>
@@ -323,8 +310,7 @@ export default function HomeScreen() {
                 { borderColor: backgroundColor }
               ]}
               lightColor={cardBackground}
-              darkColor={cardBackground}
-            >
+              darkColor={cardBackground}>
               <ThemedText type="subheadline" style={{ fontWeight: '600' }}>
                 Akses Dibatasi
               </ThemedText>
@@ -347,77 +333,56 @@ export default function HomeScreen() {
         </ThemedText>
         <View style={[styles.card, { borderWidth: 0 }]}>
           <VideoView
-            style={{ width: '100%', height: 200 }}
+            style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: RADIUS.DEFAULT }}
             player={player}
             fullscreenOptions={{ enable: true }}
             allowsPictureInPicture
             contentFit="fill"
           />
         </View>
-        <ThemedView
+        <Pressable
           style={[
-            styles.card,
-            { marginTop: 12, borderColor: backgroundColor },
+            styles.card, {
+              marginTop: 16,
+              borderColor: backgroundColor,
+              display: 'flex',
+              flexDirection: 'row',
+              paddingHorizontal: 20,
+              paddingVertical: 20
+            },
           ]}
-          lightColor={Colors.light.fill.vibrant.tertiary}
-          darkColor={Colors.dark.fill.vibrant.tertiary}
-        >
-          <View style={{ display: 'flex', flexDirection: 'row', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 }} >
-            <IconSymbol size={48} name="document.fill" color={iconBackground} />
-            <View style={{ flex: 1, minWidth: 0, marginStart: 12 }}>
-              <ThemedText type="caption" style={{ color: Colors.light.text.secondary, fontWeight: '600' }}>
-                LAMPIRAN
-              </ThemedText>
+          onPress={() => setOpenModal(true)}>
+          <IconSymbol size={40} name="document.fill" color={iconBackground} />
+          <View style={{ flex: 1, minWidth: 0, marginStart: 12 }}>
+            <ThemedText type="caption" style={{ color: Colors.light.text.secondary, fontWeight: '600' }}>
+              LAMPIRAN
+            </ThemedText>
+            <View style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}>
               <ThemedText type="headline" style={{ fontWeight: '600', marginBottom: 4, flexShrink: 1 }}>
                 Berkas Pendukung
               </ThemedText>
-              <ThemedText type="caption" style={{ color: Colors.light.text.secondary, flexShrink: 1, textAlign: 'justify' }}>
-                Berikut dilampirkan dokumen panduan atau template formulir yang dapat dilihat/unduh.
-              </ThemedText>
+              <IconSymbol name="chevron.right" size={CHEVRON_SIZE} color={Colors.light.text.secondary} style={{ marginStart: 4 }} />
             </View>
+            <ThemedText type="caption" style={{ color: Colors.light.text.secondary, flexShrink: 1 }}>
+              Berikut dilampirkan dokumen panduan atau template formulir yang dapat diunduh.
+            </ThemedText>
           </View>
-          <View style={{ marginHorizontal: 20 }}>
-            <ThemedSeparator />
-            <View style={styles.guideDocContainer}>
-              {guideDoc.map((doc, index) => {
-                const available = isValidHttpUrl(doc.uri);
-                const progress = doc.uri ? downloadProgressMap[doc.uri] ?? null : null;
-                const isDownloading = progress !== null && progress >= 0 && progress < 1;
-
-                return (
-                  <Pressable
-                    key={index}
-                    onPress={() => openDocument(doc.uri)}
-                    hitSlop={10}
-                    style={styles.guideDocItem}
-                  >
-                    {available ? (
-                      <IconSymbol name="arrow.down.app.fill" size={20} color={Colors.accentBlue} style={{ marginEnd: 4 }} />
-                    ) : (
-                      <IconSymbol name="xmark.octagon.fill" size={20} color={Colors.accentRed} style={{ marginEnd: 4 }} />
-                    )}
-                    <ThemedText type="link" style={{ color: available ? Colors.accentBlue : Colors.light.text.secondary }}>
-                      {doc.name} {isDownloading && `(${Math.round(progress * 100)}%)`}
-                    </ThemedText>
-                  </Pressable>
-                )
-              })}
-            </View>
-          </View>
-        </ThemedView>
+        </Pressable>
       </View>
       {/* End Guide Section */}
 
       {/* Flyer Section */}
       <View style={{
         marginTop: SECTION_GAP,
-      }}
-      >
+      }}>
         <ThemedText type="title3" style={{
           marginBottom: 12,
           marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
-        }}
-        >
+        }}>
           Pustaka Digital
         </ThemedText>
         <ScrollView
@@ -444,8 +409,7 @@ export default function HomeScreen() {
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center'
-          }}
-        >
+          }}>
           <ThemedText type="default" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
             Selengkapnya
           </ThemedText>
@@ -455,12 +419,7 @@ export default function HomeScreen() {
       {/* End Flyer Section */}
 
       {/* Support Section */}
-      <View style={{
-        paddingBottom: 54,
-        paddingHorizontal: SCREEN_MARGIN_HORIZONTAL,
-        gap: 12,
-        marginTop: SECTION_GAP
-      }}>
+      <View style={styles.supportContainer}>
         <ThemedText type="title3">
           Bantuan Layanan
         </ThemedText>
@@ -484,14 +443,7 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => { }}
             hitSlop={10}
-            style={{
-              alignSelf: 'flex-start',
-              paddingTop: 12,
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center'
-            }}
-          >
+            style={styles.supportLink}>
             <ThemedText type="default" lightColor={Colors.light.text.secondary} darkColor={Colors.light.text.secondary}>
               Syarat dan Ketentuan Layanan
             </ThemedText>
@@ -501,12 +453,90 @@ export default function HomeScreen() {
       </View>
 
       {/* End Content */}
+      <BottomSheetModal visible={openModal} title={'Daftar Lampiran'} onClose={() => setOpenModal(false)} height="68%">
+        <View style={styles.modalBody}>
+          <ThemedText type="caption" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
+            Berikut adalah dokumen panduan dan template formulir yang dapat diunduh untuk membantu proses pengajuan rekomendasi penelitian.
+          </ThemedText>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.guideList}>
+            {guideDoc.map((file) => {
+              const progress = downloadProgressMap[file.uri];
+              const downloading = progress !== undefined;
+              const progressPercent = Math.round((progress ?? 0) * 100);
+              return (
+                <Pressable
+                  key={file.uri}
+                  onPress={() => openDocument(file.uri)}
+                  disabled={downloading}
+                  style={({ pressed }) => [
+                    styles.guideCard, pressed &&
+                    !downloading &&
+                    styles.guideCardPressed, downloading &&
+                    styles.guideCardDisabled
+                  ]}>
+                  <View style={styles.guideIconWrap}>
+                    <IconSymbol size={22} name="arrow.down.app.fill" color={Colors.accentBlue} />
+                  </View>
+                  <View style={styles.guideInfo}>
+                    <ThemedText type="defaultSemiBold" style={styles.guideTitle}>
+                      {file.name}
+                    </ThemedText>
+                    <ThemedText type="caption2" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
+                      {downloading ? `${progressPercent}% selesai` : 'Ketuk untuk mengunduh'}
+                    </ThemedText>
+
+                    {downloading && (
+                      <View style={styles.progressTrack}>
+                        <View style={[styles.progressFill, { width: `${Math.max(8, progressPercent)}%` }]} />
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.guideAction}>
+                    {downloading ? (
+                      <>
+                        <ActivityIndicator size="small" color={Colors.accentBlue} />
+                      </>
+                    ) : (
+                      <ThemedText type="caption2" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
+                        Buka
+                      </ThemedText>
+                    )}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </BottomSheetModal>
+      <NotificationModal
+        visible={selectedSubmission !== null}
+        submission={selectedSubmission}
+        sectionBackground={backgroundColor}
+        secondaryText={Colors.light.text.secondary}
+        tertiaryText={Colors.light.text.tertiary}
+        onClose={() => setSelectedSubmission(null)}
+        onOpenDocument={openDocument}
+        downloadProgressMap={downloadProgressMap}
+      />
       <ImagePreviewModal visible={previewVisible} uri={previewUri} onClose={() => { setPreviewVisible(false); setPreviewUri(undefined); }} />
     </ParallaxScrollView >
   );
 }
 
 const styles = StyleSheet.create({
+  supportContainer: {
+    paddingBottom: 54,
+    paddingHorizontal: SCREEN_MARGIN_HORIZONTAL,
+    gap: 12,
+    marginTop: SECTION_GAP
+  },
+  quickAccessContainer: {
+    marginVertical: 16,
+    marginBottom: SECTION_GAP,
+    marginStart: 24,
+    paddingEnd: 48,
+    gap: 12,
+  },
   card: {
     borderRadius: RADIUS.DEFAULT,
     display: 'flex',
@@ -573,15 +603,70 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.fill.tertiary,
     width: '100%',
   },
-  guideDocContainer: {
-    gap: 8,
-    paddingVertical: 12,
+  modalBody: {
+    flex: 1,
+    gap: 12,
   },
-  guideDocItem: {
-    alignSelf: 'flex-start',
-    display: 'flex',
+  guideList: {
+    gap: 10,
+    paddingBottom: 8,
+  },
+  guideCard: {
+    minHeight: 72,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.light.fill.secondary,
+    backgroundColor: Colors.light.background,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4
-  }
+    gap: 10,
+  },
+  guideCardPressed: {
+    opacity: 0.85,
+  },
+  guideCardDisabled: {
+    opacity: 0.75,
+  },
+  guideIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.backgroundSecondary,
+  },
+  guideInfo: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  guideTitle: {
+    flexShrink: 1,
+  },
+  progressTrack: {
+    height: 4,
+    marginTop: 6,
+    borderRadius: RADIUS.DEFAULT,
+    backgroundColor: Colors.light.fill.secondary,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: RADIUS.DEFAULT,
+    backgroundColor: Colors.accentBlue,
+  },
+  guideAction: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  supportLink: {
+    alignSelf: 'flex-start',
+    paddingTop: 12,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
 });

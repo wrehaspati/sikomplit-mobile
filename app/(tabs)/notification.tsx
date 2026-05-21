@@ -5,18 +5,20 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, RADIUS } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
+import { formatDate } from "@/services/format-date";
+import { shortResearchType } from "@/services/format-text";
 import { ISubmissionData } from "@/types/submission";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
-  Modal,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View
 } from "react-native";
+import NotificationCard, { type NotificationStatusTone } from "../../components/notification-card";
+import NotificationModal from "../../components/notification-modal";
 
 type SortOrder = "newest" | "oldest";
 type StatusFilter = "all" | "pending" | "approved" | "revision";
@@ -53,6 +55,43 @@ const DUMMY_ANNOUNCEMENTS: AnnouncementNotification[] = [
     created_at: "2026-05-12T04:45:00.000Z",
   },
 ];
+
+/**
+ * Determines the status metadata (badge color, text color, stripe color, and icon) based on the submission status text.
+ * @param status 
+ * @returns 
+ */
+export const getStatusMeta = (status: string) => {
+  const normalized = status.toLowerCase();
+
+  if (normalized.includes("selesai") || normalized.includes("approved") || normalized.includes("diterima")) {
+    return {
+      kind: "approved" as const,
+      badgeBackground: "#E7F8ED",
+      badgeText: Colors.accentGreen,
+      stripe: "#31B364",
+      iconName: "checkmark.shield.fill" as const,
+    };
+  }
+
+  if (normalized.includes("revisi") || normalized.includes("review") || normalized.includes("perbaikan")) {
+    return {
+      kind: "revision" as const,
+      badgeBackground: "#FFFBE6",
+      badgeText: Colors.accentYellow,
+      stripe: Colors.accentYellow,
+      iconName: "circle.fill" as const,
+    };
+  }
+
+  return {
+    kind: "pending" as const,
+    badgeBackground: "#E8F3FF",
+    badgeText: "#0F61C5",
+    stripe: Colors.accentBlue,
+    iconName: "circle.fill" as const,
+  };
+};
 
 export default function NotificationScreen() {
   const backgroundColor = useThemeColor({}, "background");
@@ -92,39 +131,6 @@ export default function NotificationScreen() {
   const sortedSubmissions = useMemo(() => {
     return [...userSubmissions];
   }, [userSubmissions]);
-
-  // Function to determine status metadata for styling
-  const getStatusMeta = (status: string) => {
-    const normalized = status.toLowerCase();
-
-    if (normalized.includes("selesai") || normalized.includes("approved") || normalized.includes("diterima")) {
-      return {
-        kind: "approved" as const,
-        badgeBackground: "#E7F8ED",
-        badgeText: Colors.accentGreen,
-        stripe: "#31B364",
-        iconName: "checkmark.shield.fill" as const,
-      };
-    }
-
-    if (normalized.includes("revisi") || normalized.includes("review") || normalized.includes("perbaikan")) {
-      return {
-        kind: "revision" as const,
-        badgeBackground: "#FFFBE6",
-        badgeText: Colors.accentYellow,
-        stripe: Colors.accentYellow,
-        iconName: "circle.fill" as const,
-      };
-    }
-
-    return {
-      kind: "pending" as const,
-      badgeBackground: "#E8F3FF",
-      badgeText: "#0F61C5",
-      stripe: Colors.accentBlue,
-      iconName: "circle.fill" as const,
-    };
-  };
 
   // Memoized filtered submissions based on status filter
   const filteredSubmissions = useMemo(() => {
@@ -206,84 +212,6 @@ export default function NotificationScreen() {
     }
   };
 
-  // Function to format date strings into a more readable format
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  // Function to format date and time into a more readable format
-  const formatDateTime = (date: string) => {
-    return new Date(date).toLocaleString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  // Function to extract a short research type from a potentially longer string
-  const shortResearchType = (value?: string) => {
-    if (!value) {
-      return "-";
-    }
-
-    const chunk = value.split("/")[0]?.trim();
-    return chunk && chunk.length > 0 ? chunk : value;
-  };
-
-  // Component to display a label and value pair in the submission details
-  const DetailRow = ({ label, value }: { label: string; value?: string | null }) => {
-    return (
-      <View style={styles.detailRow}>
-        <ThemedText type="caption" style={{ color: tertiaryText, marginBottom: 2 }}>
-          {label}
-        </ThemedText>
-        <ThemedText type="subheadline" style={{ fontWeight: "600" }}>
-          {value && value.trim().length > 0 ? value : "-"}
-        </ThemedText>
-      </View>
-    );
-  };
-
-  // Component to display a document row with a label and a link to open the document if available
-  const DocumentRow = ({ label, url }: { label: string; url?: string | null }) => {
-    const available = isValidHttpUrl(url);
-    const progress = url ? downloadProgressMap[url] ?? null : null;
-    const isDownloading = progress !== null && progress >= 0 && progress < 1;
-
-    return (
-      <Pressable
-        onPress={() => openDocument(url)}
-        disabled={!available}
-        style={[styles.documentRow, !available && styles.documentRowDisabled]}
-      >
-        <View style={styles.documentLabelBlock}>
-          <IconSymbol name="document.fill" size={16} color={available ? Colors.accentBlue : Colors.light.text.secondary} />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <ThemedText type="subheadline" style={{ fontWeight: "600" }} numberOfLines={1}>
-              {label}
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: available ? Colors.accentBlue : secondaryText }}>
-              {available ? "Buka / Unduh" : "Belum tersedia"}
-            </ThemedText>
-          </View>
-        </View>
-        {isDownloading ? (
-          <ThemedText type="caption" style={{ color: Colors.accentBlue, fontWeight: '700' }}>
-            {Math.round((progress ?? 0) * 100)}%
-          </ThemedText>
-        ) : (
-          available && <IconSymbol name="chevron.right" size={16} color={Colors.accentBlue} />
-        )}
-      </Pressable>
-    );
-  };
-
   return (
     <>
       <Animated.ScrollView
@@ -295,8 +223,7 @@ export default function NotificationScreen() {
         )}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
+        }>
         <View style={styles.screenPadding}>
           <Animated.View
             id="header"
@@ -314,8 +241,7 @@ export default function NotificationScreen() {
                   extrapolate: "clamp",
                 }),
               }],
-            }}
-          >
+            }}>
             <ThemedText type="title">Notifikasi</ThemedText>
           </Animated.View>
 
@@ -329,12 +255,10 @@ export default function NotificationScreen() {
                 style={[
                   styles.filterButton,
                   sortOrder === "newest" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}
-              >
+                ]}>
                 <ThemedText
                   type="caption"
-                  style={sortOrder === "newest" ? styles.filterTextActive : styles.filterTextInactive}
-                >
+                  style={sortOrder === "newest" ? styles.filterTextActive : styles.filterTextInactive}>
                   Terbaru
                 </ThemedText>
               </Pressable>
@@ -343,12 +267,10 @@ export default function NotificationScreen() {
                 style={[
                   styles.filterButton,
                   sortOrder === "oldest" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}
-              >
+                ]}>
                 <ThemedText
                   type="caption"
-                  style={sortOrder === "oldest" ? styles.filterTextActive : styles.filterTextInactive}
-                >
+                  style={sortOrder === "oldest" ? styles.filterTextActive : styles.filterTextInactive}>
                   Terlama
                 </ThemedText>
               </Pressable>
@@ -361,12 +283,10 @@ export default function NotificationScreen() {
                 style={[
                   styles.filterButton,
                   statusFilter === "all" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}
-              >
+                ]}>
                 <ThemedText
                   type="caption"
-                  style={statusFilter === "all" ? styles.filterTextActive : styles.filterTextInactive}
-                >
+                  style={statusFilter === "all" ? styles.filterTextActive : styles.filterTextInactive}>
                   Semua
                 </ThemedText>
               </Pressable>
@@ -376,8 +296,7 @@ export default function NotificationScreen() {
                 style={[
                   styles.filterButton,
                   statusFilter === "pending" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}
-              >
+                ]}>
                 <View style={styles.filterChipContent}>
                   <IconSymbol
                     name="circle.fill"
@@ -398,8 +317,7 @@ export default function NotificationScreen() {
                 style={[
                   styles.filterButton,
                   statusFilter === "approved" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}
-              >
+                ]}>
                 <View style={styles.filterChipContent}>
                   <IconSymbol
                     name="checkmark.shield.fill"
@@ -420,8 +338,7 @@ export default function NotificationScreen() {
                 style={[
                   styles.filterButton,
                   statusFilter === "revision" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}
-              >
+                ]}>
                 <View style={styles.filterChipContent}>
                   <IconSymbol
                     name="circle.fill"
@@ -452,36 +369,17 @@ export default function NotificationScreen() {
             feedItems.map((item) => {
               if (item.type === "announcement") {
                 return (
-                  <ThemedView key={item.announcement.id} style={[styles.announcementCard, { backgroundColor }]}>
-                    <View style={[styles.statusIconWrap, styles.announcementIconWrap]}>
-                      <IconSymbol name="bell.fill" size={18} color="#AD6500" />
-                    </View>
-
-                    <View style={styles.cardBody}>
-                      <View style={styles.cardHeaderRow}>
-                        <View style={styles.announcementBadge}>
-                          <ThemedText type="caption" style={styles.announcementBadgeText}>
-                            Pengumuman
-                          </ThemedText>
-                        </View>
-                        <ThemedText type="caption" style={{ color: tertiaryText }}>
-                          {formatDate(item.announcement.created_at)}
-                        </ThemedText>
-                      </View>
-
-                      <ThemedText type="subheadline" style={styles.notificationTitleLong} numberOfLines={2}>
-                        {item.announcement.title}
-                      </ThemedText>
-
-                      <ThemedText type="tightFootnote" style={{ color: tertiaryText }} numberOfLines={2}>
-                        {item.announcement.message}
-                      </ThemedText>
-
-                      <ThemedText type="caption" style={[styles.announcementSource, { color: secondaryText }]}>
-                        Firebase Push Notification
-                      </ThemedText>
-                    </View>
-                  </ThemedView>
+                  <NotificationCard
+                    key={item.announcement.id}
+                    backgroundColor={backgroundColor}
+                    createdAtLabel={formatDate(item.announcement.created_at)}
+                    statusLabel="Pengumuman"
+                    title={item.announcement.title}
+                    subtitle={item.announcement.message}
+                    footerLabel="Firebase Push Notification"
+                    statusTone={{ badgeBackground: '#FFEFD8', badgeText: '#AD6500', iconName: 'circle.fill' } as NotificationStatusTone}
+                    announcement
+                  />
                 );
               }
 
@@ -489,110 +387,33 @@ export default function NotificationScreen() {
               const statusTone = getStatusMeta(submission.progress_status);
 
               return (
-                <Pressable
+                <NotificationCard
                   key={submission.id}
+                  backgroundColor={backgroundColor}
+                  createdAtLabel={formatDate(submission.updated_at)}
+                  statusLabel={submission.progress_status}
+                  title={shortResearchType(submission.research_type)}
+                  subtitle={`#${submission.request_number} - ${submission.research_upload?.title ?? submission.created_at}`}
+                  footerLabel="Ketuk untuk melihat detail pengajuan"
+                  statusTone={statusTone}
                   onPress={() => setSelectedSubmission(submission)}
-                  style={[styles.notificationCard, { backgroundColor }]}
-                >
-                  <View style={[styles.statusIconWrap, { backgroundColor: statusTone.badgeBackground }]}>
-                    <IconSymbol name={statusTone.iconName} size={18} color={statusTone.badgeText} />
-                  </View>
-
-                  <View style={styles.cardBody}>
-                    <View style={styles.cardHeaderRow}>
-                      <View style={[styles.statusBadge, { backgroundColor: statusTone.badgeBackground }]}>
-                        <ThemedText type="caption" style={{ color: statusTone.badgeText, fontWeight: "700" }}>
-                          {submission.progress_status}
-                        </ThemedText>
-                      </View>
-                      <ThemedText type="caption" style={{ color: tertiaryText }}>
-                        {formatDate(submission.updated_at)}
-                      </ThemedText>
-                    </View>
-
-                    <ThemedText type="subheadline" style={styles.notificationTitleLong} numberOfLines={2}>
-                      {shortResearchType(submission.research_type)}
-                    </ThemedText>
-
-                    <ThemedText type="tightFootnote" style={{ color: tertiaryText, marginBottom: 6 }} numberOfLines={2}>
-                      #{submission.request_number} - {submission.research_upload?.title ?? submission.created_at}
-                    </ThemedText>
-
-                    <View style={styles.cardFooterRow}>
-                      <ThemedText type="caption" style={{ color: secondaryText, flex: 1 }} numberOfLines={1}>
-                        Ketuk untuk melihat detail pengajuan
-                      </ThemedText>
-                      <IconSymbol name="chevron.right" size={16} color={Colors.accentBlue} />
-                    </View>
-                  </View>
-                </Pressable>
+                />
               );
             })
           )}
         </View>
       </Animated.ScrollView>
 
-      <Modal
+      <NotificationModal
         visible={selectedSubmission !== null}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setSelectedSubmission(null)}
-      >
-        <ThemedView style={styles.modalContainer}>
-          <View style={styles.modalTopBar}>
-            <ThemedText type="title4">Detail Pengajuan</ThemedText>
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => setSelectedSubmission(null)}
-            >
-              <ThemedText type="subheadline" style={{ color: Colors.accentBlue, fontWeight: "700" }}>
-                Tutup
-              </ThemedText>
-            </Pressable>
-          </View>
-
-          {selectedSubmission && (
-            <ScrollView contentContainerStyle={styles.modalContent}>
-              <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
-                <ThemedText type="headline" style={{ marginBottom: 12 }}>
-                  Ringkasan
-                </ThemedText>
-                <DetailRow label="Nomor Permintaan" value={selectedSubmission.request_number} />
-                <DetailRow label="Status" value={selectedSubmission.progress_status} />
-                <DetailRow label="Jenis Penelitian" value={shortResearchType(selectedSubmission.research_type)} />
-                <DetailRow label="Judul Penelitian" value={selectedSubmission.research_upload?.title} />
-                <DetailRow label="Dibuat" value={formatDateTime(selectedSubmission.created_at)} />
-                <DetailRow label="Terakhir Diperbarui" value={formatDateTime(selectedSubmission.updated_at)} />
-              </ThemedView>
-
-              <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
-                <ThemedText type="headline" style={{ marginBottom: 12 }}>
-                  Informasi Pemohon
-                </ThemedText>
-                <DetailRow label="Nama" value={selectedSubmission.name} />
-                <DetailRow label="Email" value={selectedSubmission.email} />
-                <DetailRow label="No. Telepon" value={selectedSubmission.phone} />
-                <DetailRow label="NIK" value={selectedSubmission.national_identity_number} />
-                <DetailRow label="Tanggal Lahir" value={selectedSubmission.date_of_birth} />
-                <DetailRow label="Gender" value={selectedSubmission.gender} />
-                <DetailRow label="Pendidikan Terakhir" value={selectedSubmission.last_education} />
-                <DetailRow label="Pekerjaan" value={selectedSubmission.occupation} />
-              </ThemedView>
-
-              <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
-                <ThemedText type="headline" style={{ marginBottom: 12 }}>
-                  Dokumen
-                </ThemedText>
-                <DocumentRow label="Surat Permohonan" url={selectedSubmission.application_letter} />
-                <DocumentRow label="Proposal Penelitian" url={selectedSubmission.research_proposal} />
-                <DocumentRow label="Ethics Clearance" url={selectedSubmission.ethics_clearance_letter} />
-                <DocumentRow label="Surat Pernyataan Laporan Akhir" url={selectedSubmission.final_report_statement_letter} />
-                <DocumentRow label="Surat Rekomendasi" url={selectedSubmission.recommendation_letter} />
-              </ThemedView>
-            </ScrollView>
-          )}
-        </ThemedView>
-      </Modal>
+        submission={selectedSubmission}
+        sectionBackground={sectionBackground}
+        secondaryText={secondaryText}
+        tertiaryText={tertiaryText}
+        onClose={() => setSelectedSubmission(null)}
+        onOpenDocument={openDocument}
+        downloadProgressMap={downloadProgressMap}
+      />
     </>
   );
 }
@@ -660,136 +481,5 @@ const styles = StyleSheet.create({
   },
   notificationCard: {
     borderRadius: RADIUS.DEFAULT,
-    overflow: "hidden",
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 1,
-  },
-  announcementCard: {
-    borderRadius: RADIUS.DEFAULT,
-    overflow: "hidden",
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 1,
-    borderWidth: 1,
-    borderColor: "#F6E2C5",
-  },
-  statusIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    marginLeft: 10,
-    marginTop: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  announcementIconWrap: {
-    backgroundColor: "#FFEFD8",
-  },
-  cardBody: {
-    flex: 1,
-    minWidth: 0,
-    paddingVertical: 9,
-    paddingHorizontal: 10,
-  },
-  cardHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-    gap: 8,
-  },
-  statusBadge: {
-    borderRadius: 999,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-  },
-  notificationTitleLong: {
-    fontWeight: "700",
-    marginBottom: 5,
-    fontSize: 14,
-    lineHeight: 18,
-    flexShrink: 1,
-  },
-  cardFooterRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  announcementBadge: {
-    borderRadius: 999,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    backgroundColor: "#FFEFD8",
-  },
-  announcementBadgeText: {
-    color: "#AD6500",
-    fontWeight: "700",
-  },
-  announcementSource: {
-    marginTop: 8,
-  },
-  modalContainer: {
-    flex: 1,
-    paddingTop: 56,
-  },
-  modalTopBar: {
-    paddingHorizontal: 24,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.fill.secondary,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  closeButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  modalContent: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 32,
-    gap: 12,
-  },
-  modalCard: {
-    borderRadius: RADIUS.DEFAULT,
-    padding: 14,
-  },
-  detailRow: {
-    marginBottom: 10,
-  },
-  documentRow: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    marginBottom: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  documentRowDisabled: {
-    opacity: 0.6,
-  },
-  documentLabelBlock: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flex: 1,
-    minWidth: 0,
   },
 });

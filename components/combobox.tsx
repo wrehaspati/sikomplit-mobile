@@ -2,7 +2,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors, RADIUS } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import React, { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import BottomSheetModal from './modal';
 
 type Option<T = string> = {
   label: string;
@@ -48,8 +49,7 @@ export default function Combobox<T = string>({
     <>
       <Pressable
         onPress={() => setOpen(true)}
-        style={({ pressed }) => [styles.trigger, { backgroundColor }, errorMessage && { borderColor: Colors.accentRed }, pressed && styles.pressed]}
-      >
+        style={({ pressed }) => [styles.trigger, { backgroundColor }, errorMessage && { borderColor: Colors.accentRed }, pressed && styles.pressed]}>
         <ThemedText type={'default'} lightColor={selectedLabel ? undefined : Colors.light.text.secondary} darkColor={selectedLabel ? undefined : Colors.dark.text.secondary}>
           {selectedLabel ?? placeholder}
         </ThemedText>
@@ -63,63 +63,43 @@ export default function Combobox<T = string>({
         </Text>
       )}
 
-      <Modal animationType="fade" transparent visible={open} onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={[styles.sheet, { backgroundColor }]} onPress={() => undefined}>
-
-            <View style={styles.sheetHeader}>
-              <Pressable onPress={() => setOpen(false)} hitSlop={10}>
-                <ThemedText type="defaultSemiBold" lightColor={Colors.light.text.secondary} darkColor={Colors.dark.text.secondary}>
-                  Batal
+      <BottomSheetModal visible={open} title={titlePlaceholder ?? 'Pilih data'} onClose={() => setOpen(false)}>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder={searchPlaceholder}
+          placeholderTextColor={Colors.light.text.tertiary}
+          style={[styles.input, { backgroundColor }]}
+        />
+        <FlatList
+          data={filteredOptions}
+          keyExtractor={(item) => String(item.value)}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }) => {
+            const selected = String(item.value) === String(selectedValue);
+            return (
+              <Pressable
+                onPress={() => {
+                  onValueChange(item.value);
+                  setOpen(false);
+                  setQuery('');
+                }}
+                style={({ pressed }) => [styles.option, selected && styles.optionSelected, pressed && styles.pressed]}>
+                <ThemedText type={selected ? 'defaultSemiBold' : 'default'} style={selected ? styles.optionSelectedText : undefined}>
+                  {item.label}
                 </ThemedText>
               </Pressable>
-              <ThemedText type="defaultSemiBold">
-                {titlePlaceholder ?? 'Pilih data'}
+            );
+          }}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <ThemedText type="caption" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
+                Tidak ada hasil.
               </ThemedText>
-              <Text>{"             "}</Text>
             </View>
-
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder={searchPlaceholder}
-              placeholderTextColor={Colors.light.text.tertiary}
-              style={[styles.input, { backgroundColor }]}
-            />
-
-            <FlatList
-              data={filteredOptions}
-              keyExtractor={(item) => String(item.value)}
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => {
-                const selected = String(item.value) === String(selectedValue);
-
-                return (
-                  <Pressable
-                    onPress={() => {
-                      onValueChange(item.value);
-                      setOpen(false);
-                      setQuery('');
-                    }}
-                    style={({ pressed }) => [styles.option, selected && styles.optionSelected, pressed && styles.pressed]}
-                  >
-                    <ThemedText type={selected ? 'defaultSemiBold' : 'default'} style={selected ? styles.optionSelectedText : undefined}>
-                      {item.label}
-                    </ThemedText>
-                  </Pressable>
-                );
-              }}
-              ListEmptyComponent={
-                <View style={styles.emptyState}>
-                  <ThemedText type="caption" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-                    Tidak ada hasil.
-                  </ThemedText>
-                </View>
-              }
-            />
-          </Pressable>
-        </Pressable>
-      </Modal>
+          }
+        />
+      </BottomSheetModal>
     </>
   );
 }
@@ -139,26 +119,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.85,
-  },
-  backdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-  },
-  sheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 20,
-    height: '70%',
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
   },
   input: {
     minHeight: 48,

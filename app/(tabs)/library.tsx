@@ -183,8 +183,7 @@ export default function LibraryScreen() {
                 extrapolate: 'clamp',
               }),
             }],
-          }}
-        >
+          }}>
           <ThemedText type="title">
             Pustaka Digital
           </ThemedText>
@@ -196,8 +195,7 @@ export default function LibraryScreen() {
             {
               transform: [{ translateY: searchFocusAnim }],
             },
-          ]}
-        >
+          ]}>
           <ThemedTextInput
             value={query}
             onChangeText={setQuery}
@@ -223,8 +221,7 @@ export default function LibraryScreen() {
                 <Pressable
                   key={item.id}
                   style={styles.suggestionItem}
-                  onPress={() => setQuery(item.title)}
-                >
+                  onPress={() => setQuery(item.title)}>
                   <View style={styles.suggestionTextBlock}>
                     <ThemedText type="subheadline" style={styles.suggestionTitle}>
                       {item.title}
@@ -257,7 +254,7 @@ export default function LibraryScreen() {
           </View>
         )}
       </View>
-    </Animated.ScrollView>
+    </Animated.ScrollView >
   );
 }
 

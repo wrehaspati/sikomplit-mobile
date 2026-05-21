@@ -28,8 +28,7 @@ export default function ParallaxScrollView({ title, children, ...Props }: Parall
             outputRange: [1, 0, 0],
             extrapolate: 'clamp',
           }),
-        }}
-      >
+        }}>
         <ThemedText type="title">
           {title}
         </ThemedText>
@@ -50,8 +49,7 @@ export default function ParallaxScrollView({ title, children, ...Props }: Parall
           paddingTop: Platform.OS === 'ios' ? 0 : null,
         }}
         {...scrollProps}
-        automaticallyAdjustContentInsets={false}
-      >
+        automaticallyAdjustContentInsets={false}>
         <View style={{ height: Platform.OS === 'ios' ? 0 : HEADER_OFFSET }} />
         <View style={styles.container}>
           {children}
@@ -69,7 +67,7 @@ const styles = StyleSheet.create({
   header: {
     marginHorizontal: 24,
     marginBottom: 12,
-    top: 54,
+    top: Platform.OS === 'ios' ? 0 : 54,
     position: 'absolute',
   }
 });
