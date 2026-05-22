@@ -6,7 +6,7 @@ import { ThemedText } from "./themed-text";
 export type ThemedButtonProps = TouchableOpacityProps & {
   lightColor?: string;
   darkColor?: string;
-  variant?: 'themed' | 'primary' | 'secondary' | 'outline' | 'light' | 'dark' | 'link';
+  variant?: 'themed' | 'primary' | 'secondary' | 'outline' | 'light' | 'dark' | 'link' | 'outlineSecondary';
   size?: 'default' | 'small';
   icon?: React.ReactNode;
 };
@@ -36,6 +36,7 @@ export default function ThemedButton({
       variant === 'light' ? styles.light : undefined,
       variant === 'dark' ? styles.dark : undefined,
       variant === 'link' ? styles.link : undefined,
+      variant === 'outlineSecondary' ? styles.outlineSecondary : undefined,
     ]} {...rest}>
       {icon && <View style={{ paddingRight: 4 }}>{icon}</View>}
       <ThemedText type="defaultSemiBold" style={[
@@ -96,6 +97,12 @@ const styles = {
   link: {
     backgroundColor: 'transparent',
     paddingHorizontal: 0,
+    shadowColor: 'transparent',
+  },
+  outlineSecondary: {
+    borderWidth: 2,
+    backgroundColor: 'transparent',
+    borderColor: Colors.light.fill.vibrant.secondary,
     shadowColor: 'transparent',
   }
 } as const;

@@ -57,7 +57,8 @@ export default function ThemedTextInput({
         </View>
       )}
       <ThemedView style={[
-        hasContainerIcon ? [styles.withIconContainer, { backgroundColor: withIconContainerColor }] : null,
+        hasContainerIcon ? [styles.withIconContainer,
+        { backgroundColor: withIconContainerColor }] : null,
         variant === 'transparent' ? styles.transparentContainer : null,
         inputStyle,
         (errorMessage && variant !== 'transparent') && { borderColor: Colors.accentRed, borderWidth: 1 },
@@ -86,12 +87,12 @@ export default function ThemedTextInput({
             </TouchableOpacity>
           </View>
         )}
-        {errorMessage && (
-          <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
-            {errorMessage}
-          </Text>
-        )}
       </ThemedView>
+      {errorMessage && (
+        <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
+          {errorMessage}
+        </Text>
+      )}
     </View >
   );
 }

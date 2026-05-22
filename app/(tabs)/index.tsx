@@ -313,7 +313,7 @@ export default function HomeScreen() {
               lightColor={cardBackground}
               darkColor={cardBackground}>
               <ThemedText type="subheadline" style={{ fontWeight: '600' }}>
-                Akses Dibatasi
+                Akses Terbatas
               </ThemedText>
               <ThemedText type="footnote" style={{ textAlign: 'center' }} darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
                 Silahkan masuk atau registrasi sebelum menggunakan layanan pengajuan.
@@ -348,7 +348,8 @@ export default function HomeScreen() {
               display: 'flex',
               flexDirection: 'row',
               paddingHorizontal: 20,
-              paddingVertical: 20
+              paddingVertical: 20,
+              backgroundColor: cardBackground,
             },
           ]}
           onPress={() => setOpenModal(true)}

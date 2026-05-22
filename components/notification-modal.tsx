@@ -60,7 +60,7 @@ export default function NotificationModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <ThemedView style={styles.modalContainer} variant="card">
+      <ThemedView style={styles.modalContainer}>
         <View style={styles.modalTopBar}>
           <ThemedText type="title4">Detail Pengajuan</ThemedText>
           <Pressable style={styles.closeButton} onPress={onClose}>
