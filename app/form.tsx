@@ -488,8 +488,7 @@ export default function FormScreen() {
                         fieldState.error ? { borderColor: Colors.accentRed, borderWidth: 1 } : null,
                         { backgroundColor },
                         pressed && styles.dateFieldPressed,
-                      ]}
-                    >
+                      ]}>
                       <View style={styles.dateFieldContent}>
                         <ThemedText
                           type={'default'}

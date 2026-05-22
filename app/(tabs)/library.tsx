@@ -1,4 +1,6 @@
 import { publishedSubmission } from "@/api/submission-api";
+import ImagePreviewModal from "@/components/image-preview-modal";
+import BottomSheetModal from "@/components/modal";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import ThemedButton from "@/components/themed-button";
 import ThemedSeparator from "@/components/themed-separator";
@@ -7,27 +9,29 @@ import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
+import { useBookmarks } from "@/contexts/bookmark-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { downloadAndOpenDocument } from "@/services/document";
 import { IPublishedSubmission } from "@/types/submission";
 import { Image } from "expo-image";
-import * as SecureStore from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, RefreshControl, StyleSheet, View } from "react-native";
-
-const BOOKMARK_STORAGE_KEY = 'library-bookmarks';
+import { Animated, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 
 export default function LibraryScreen() {
-  const backgroundColor = useThemeColor({}, 'background');
   const cardBackgound = useThemeColor({}, 'fill.vibrant.tertiary');
   const iconColor = useThemeColor({}, 'text.secondary');
+  const bookmarks = useBookmarks();
   const scrollY = useRef(new Animated.Value(0)).current;
   const searchFocusAnim = useRef(new Animated.Value(0)).current;
+  const filterButtonScale = useRef(new Animated.Value(1)).current;
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [published, setPublished] = useState<IPublishedSubmission[]>();
-  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
-  const [bookmarksLoaded, setBookmarksLoaded] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [selectedPublication, setSelectedPublication] = useState<IPublishedSubmission | null>(null);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
+  const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
 
   // Fetch published submissions
   const fetchPublishedSubmissions = async () => {
@@ -41,44 +45,16 @@ export default function LibraryScreen() {
 
   // Handler for bookmark toggle
   const handleBookmark = (id: string) => {
-    setBookmarkedIds((prev) => prev.includes(id) ? prev.filter((bid) => bid !== id) : [...prev, id]);
+    bookmarks?.toggleBookmark(id);
   };
 
-  // Load bookmarks from secure storage on mount
+  // Ensure bookmarks are valid when published submissions are loaded or updated
   useEffect(() => {
-    const loadBookmarks = async () => {
-      try {
-        const storedBookmarks = await SecureStore.getItemAsync(BOOKMARK_STORAGE_KEY);
-        if (storedBookmarks) {
-          const parsedBookmarks = JSON.parse(storedBookmarks);
-          if (Array.isArray(parsedBookmarks)) {
-            setBookmarkedIds(parsedBookmarks.filter((bookmarkId): bookmarkId is string => typeof bookmarkId === 'string'));
-          }
-        }
-      } catch {
-        setBookmarkedIds([]);
-      } finally {
-        setBookmarksLoaded(true);
-      }
-    };
-
-    loadBookmarks();
-  }, []);
-
-  // Save bookmarks to secure storage whenever they change
-  useEffect(() => {
-    if (!bookmarksLoaded) {
+    if (!published || !bookmarks?.bookmarksLoaded) {
       return;
     }
-
-    const saveBookmarks = async () => {
-      try {
-        await SecureStore.setItemAsync(BOOKMARK_STORAGE_KEY, JSON.stringify(bookmarkedIds));
-      } catch { }
-    };
-
-    saveBookmarks();
-  }, [bookmarkedIds, bookmarksLoaded]);
+    bookmarks.setValidBookmarks(published.map((item) => item.id));
+  }, [published, bookmarks]);
 
   // Handlers for search input focus and blur animations
   const handleSearchFocus = () => {
@@ -100,6 +76,30 @@ export default function LibraryScreen() {
     }).start(() => setIsSearchFocused(false));
     scrollY.setValue(0);
   };
+
+  // Handler to clear search input and dismiss keyboard
+  const handleSearchClear = () => {
+    setQuery('');
+    setIsSearchFocused(false);
+    Keyboard.dismiss();
+  };
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.spring(filterButtonScale, {
+        toValue: 0.97,
+        useNativeDriver: true,
+        speed: 25,
+        bounciness: 4,
+      }),
+      Animated.spring(filterButtonScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 25,
+        bounciness: 4,
+      }),
+    ]).start();
+  }, [showBookmarksOnly, filterButtonScale]);
 
   // Handler for pull-to-refresh action
   const handleRefresh = async () => {
@@ -141,7 +141,7 @@ export default function LibraryScreen() {
                   Terbit pada {new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </ThemedText>
                 <Pressable style={{ padding: 4, borderRadius: 4 }} onPress={() => handleBookmark(item.id)} hitSlop={20}>
-                  {bookmarkedIds.includes(item.id) ? (
+                  {bookmarks?.bookmarkedIds.includes(item.id) ? (
                     <IconSymbol name="star.fill" color={Colors.accentYellow} size={20} style={{ shadowColor: Colors.accentYellow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 }} />
                   ) : (
                     <IconSymbol name="star" color={Colors.light.icon} size={20} />
@@ -154,7 +154,7 @@ export default function LibraryScreen() {
             </View>
             <View>
               <ThemedSeparator style={{ marginVertical: 8 }} />
-              <ThemedButton variant="secondary" size="small" onPress={() => { }} style={styles.detailButton}>
+              <ThemedButton variant="secondary" size="small" onPress={() => setSelectedPublication(item)} style={styles.detailButton}>
                 Lihat Detail
               </ThemedButton>
             </View>
@@ -171,23 +171,60 @@ export default function LibraryScreen() {
       contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN_HORIZONTAL }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }>
+      }
+    >
       {/* Content */}
 
       {/* Search Input */}
       <Animated.View
         style={[{ transform: [{ translateY: searchFocusAnim }] }]}>
-        <ThemedTextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder={"Cari Judul Penelitian..."}
-          placeholderTextColor={Colors.light.text.secondary}
-          onFocus={handleSearchFocus}
-          onBlur={handleSearchBlur}
-          inputStyle={[styles.input, { backgroundColor: cardBackgound }]}
-          style={{ paddingVertical: 12 }}
-          icon={<IconSymbol name="magnifyingglass" style={{ width: 20 }} color={iconColor} />}
-        />
+        <View style={styles.searchInputContainer}>
+          <ThemedTextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder={"Cari Judul Penelitian..."}
+            placeholderTextColor={Colors.light.text.secondary}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
+            inputStyle={[styles.input, { backgroundColor: cardBackgound }]}
+            style={{ paddingVertical: 12, paddingRight: 40 }}
+            icon={<IconSymbol name="magnifyingglass" style={{ width: 20 }} color={iconColor} />}
+          />
+          {query.length > 0 && (
+            <Pressable
+              onPress={handleSearchClear}
+              style={styles.searchClearButton}
+              hitSlop={10}>
+              <IconSymbol name="xmark.circle.fill" size={18} color={Colors.light.text.secondary} />
+            </Pressable>
+          )}
+        </View>
+      </Animated.View>
+
+      {/* Compact bookmark filter button */}
+      <Animated.View style={[{
+        marginBottom: 16,
+        transform: [{ translateY: searchFocusAnim }]
+      }]}
+      >
+        <Animated.View style={{ transform: [{ scale: filterButtonScale }] }}>
+          <Pressable
+            onPress={() => setShowBookmarksOnly((s) => !s)}
+            style={[
+              styles.bookmarkFilterButton,
+              showBookmarksOnly ? styles.bookmarkFilterButtonActive : null,
+              {
+                backgroundColor: cardBackgound,
+              }
+            ]}
+            hitSlop={8}
+          >
+            <IconSymbol name={showBookmarksOnly ? 'star.fill' : 'star'} size={14} color={showBookmarksOnly ? Colors.accentYellow : Colors.light.icon} />
+            <ThemedText type="caption" style={{ marginLeft: 8 }}>
+              {showBookmarksOnly ? 'Tampilkan semua' : `Tersimpan (${bookmarks?.bookmarkedIds.length ?? 0})`}
+            </ThemedText>
+          </Pressable>
+        </Animated.View>
       </Animated.View>
 
       {/* Search Suggestions / Results */}
@@ -214,11 +251,19 @@ export default function LibraryScreen() {
                     Terbit pada {new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </ThemedText>
                 </View>
-                <IconSymbol
-                  name={bookmarkedIds.includes(item.id) ? 'star.fill' : 'star'}
-                  color={bookmarkedIds.includes(item.id) ? Colors.accentYellow : Colors.light.icon}
-                  size={18}
-                />
+                <Pressable
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    handleBookmark(item.id);
+                  }}
+                  hitSlop={10}
+                  style={{ padding: 4 }}>
+                  <IconSymbol
+                    name={bookmarks?.bookmarkedIds.includes(item.id) ? 'star.fill' : 'star'}
+                    color={bookmarks?.bookmarkedIds.includes(item.id) ? Colors.accentYellow : Colors.light.icon}
+                    size={18}
+                  />
+                </Pressable>
               </Pressable>
             ))
           ) : (
@@ -233,10 +278,80 @@ export default function LibraryScreen() {
             <ThemedText type="default" style={{ textAlign: 'center' }}>
               Belum ada penelitian yang dipublikasikan.
             </ThemedText>
-          ) : published?.filter((item) => item.title.toLowerCase().includes(query.toLowerCase())).map(renderCard)}
+          ) : (
+            // apply bookmarks-only filter when toggled
+            (published ?? [])
+              .filter((item) => item.title.toLowerCase().includes(query.toLowerCase()))
+              .filter((item) => (showBookmarksOnly ? (bookmarks?.bookmarkedIds ?? []).includes(item.id) : true))
+              .map(renderCard)
+          )}
         </View>
       )}
-    </ParallaxScrollView >
+
+      {/* Bottom Sheet Modal for Publication Details */}
+      <BottomSheetModal
+        visible={Boolean(selectedPublication)}
+        title="Detail Pustaka"
+        onClose={() => setSelectedPublication(null)}
+        height="72%"
+      >
+        {selectedPublication && (
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            {/* Sheet Body */}
+            <View style={styles.modalTitleRow}>
+              <ThemedText type="headline" style={{ flex: 1 }}>
+                {selectedPublication.title}
+              </ThemedText>
+              <Pressable style={{ padding: 4 }} onPress={() => handleBookmark(selectedPublication.id)}>
+                <IconSymbol
+                  name={bookmarks?.bookmarkedIds.includes(selectedPublication.id) ? 'star.fill' : 'star'}
+                  color={bookmarks?.bookmarkedIds.includes(selectedPublication.id) ? Colors.accentYellow : Colors.light.icon}
+                  size={20}
+                />
+              </Pressable>
+            </View>
+
+            <ThemedText type="caption" style={{ color: Colors.light.text.secondary }}>
+              Terbit pada {new Date(selectedPublication.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </ThemedText>
+
+            <ThemedSeparator style={{ marginVertical: 12 }} />
+
+            <ThemedText type={selectedPublication.abstract ? "subheadline" : "footnote"} style={{ lineHeight: 20 }}>
+              {selectedPublication.abstract || 'Abstract tidak tersedia'}
+            </ThemedText>
+            <Pressable
+              onPress={() => selectedPublication.research_summary && downloadAndOpenDocument(selectedPublication.research_summary)}
+              hitSlop={10}
+              style={styles.downloadSummaryButton}
+            >
+              {selectedPublication.research_summary ? (
+                <IconSymbol name="arrow.down.app.fill" size={20} color={Colors.accentBlue} style={{ marginEnd: 4 }} />
+              ) : (
+                <IconSymbol name="xmark.octagon.fill" size={20} color={Colors.accentRed} style={{ marginEnd: 4 }} />
+              )}
+              <ThemedText type="link" style={{ color: selectedPublication.research_summary ? Colors.accentBlue : Colors.light.text.secondary }}>
+                {selectedPublication.research_summary ? 'Unduh Ringkasan Penelitian' : 'Ringkasan Penelitian tidak tersedia'}
+              </ThemedText>
+            </Pressable>
+
+            <ThemedSeparator style={{ marginVertical: 12 }} />
+
+            <Pressable onPress={() => { setPreviewUri(selectedPublication.flyer); setPreviewVisible(true); }}>
+              <View style={styles.flyerContainer}>
+                <Image
+                  style={styles.flyerImage}
+                  source={selectedPublication.flyer}
+                  contentFit="cover"
+                  transition={1000}
+                />
+              </View>
+            </Pressable>
+          </ScrollView>
+        )}
+      </BottomSheetModal>
+      <ImagePreviewModal visible={previewVisible} uri={previewUri} onClose={() => { setPreviewVisible(false); setPreviewUri(undefined); }} />
+    </ParallaxScrollView>
   );
 }
 
@@ -248,6 +363,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     marginBottom: 16,
     boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.2)'
+  },
+  searchInputContainer: {
+    position: 'relative',
+  },
+  searchClearButton: {
+    position: 'absolute',
+    right: 14,
+    top: 16,
+  },
+  bookmarkFilterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.2)'
+  },
+  bookmarkFilterButtonActive: {
+    backgroundColor: Colors.light.fill.secondary,
   },
   card: {
     borderRadius: RADIUS.DEFAULT,
@@ -302,5 +437,36 @@ const styles = StyleSheet.create({
   },
   noSuggestionText: {
     paddingVertical: 12,
-  }
+  },
+  modalContent: {
+    paddingBottom: 24,
+  },
+  modalImage: {
+    width: '100%',
+    aspectRatio: 2 / 3,
+    borderRadius: 12,
+    backgroundColor: Colors.light.fill.secondary,
+    marginBottom: 12,
+  },
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  flyerContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Colors.light.fill.secondary,
+  },
+  flyerImage: {
+    width: '100%',
+    aspectRatio: 2 / 3,
+  },
+  downloadSummaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginTop: 8,
+  },
 });

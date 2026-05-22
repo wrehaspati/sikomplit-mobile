@@ -272,7 +272,8 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.quickAccessContainer}
           snapToAlignment="center"
-          decelerationRate="fast">
+          decelerationRate="fast"
+        >
           {auth?.state.user ? (
             userSubmissions.slice(0, 3).map(element => (
               <HistoryCard key={element.id} submission={element} />
@@ -319,7 +320,6 @@ export default function HomeScreen() {
               </ThemedText>
             </ThemedView>
           )}
-
         </ScrollView>
       </View>
       {/* End Quick Access Section */}
@@ -351,7 +351,8 @@ export default function HomeScreen() {
               paddingVertical: 20
             },
           ]}
-          onPress={() => setOpenModal(true)}>
+          onPress={() => setOpenModal(true)}
+        >
           <IconSymbol size={40} name="document.fill" color={iconBackground} />
           <View style={{ flex: 1, minWidth: 0, marginStart: 12 }}>
             <ThemedText type="caption" style={{ color: Colors.light.text.secondary, fontWeight: '600' }}>
@@ -379,10 +380,12 @@ export default function HomeScreen() {
       <View style={{
         marginTop: SECTION_GAP,
       }}>
-        <ThemedText type="title3" style={{
-          marginBottom: 12,
-          marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
-        }}>
+        <ThemedText
+          type="title3"
+          style={{
+            marginBottom: 12,
+            marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+          }}>
           Pustaka Digital
         </ThemedText>
         <ScrollView
@@ -409,7 +412,8 @@ export default function HomeScreen() {
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center'
-          }}>
+          }}
+        >
           <ThemedText type="default" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
             Selengkapnya
           </ThemedText>
@@ -469,7 +473,8 @@ export default function HomeScreen() {
                     !downloading &&
                     styles.guideCardPressed, downloading &&
                     styles.guideCardDisabled
-                  ]}>
+                  ]}
+                >
                   <View style={styles.guideIconWrap}>
                     <IconSymbol size={22} name="arrow.down.app.fill" color={Colors.accentBlue} />
                   </View>
@@ -515,7 +520,7 @@ export default function HomeScreen() {
         downloadProgressMap={downloadProgressMap}
       />
       <ImagePreviewModal visible={previewVisible} uri={previewUri} onClose={() => { setPreviewVisible(false); setPreviewUri(undefined); }} />
-    </ParallaxScrollView >
+    </ParallaxScrollView>
   );
 }
 
@@ -598,6 +603,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.fill.tertiary,
     width: '100%',
+    aspectRatio: 2 / 3,
   },
   modalBody: {
     flex: 1,

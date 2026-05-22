@@ -38,6 +38,7 @@ const MAPPING = {
   'x.circle.fill': 'cancel',
   'arrow.down.app.fill': 'file-download',
   'xmark.octagon.fill': 'error',
+  'xmark.circle.fill': 'cancel',
 } as IconMapping;
 
 /**
