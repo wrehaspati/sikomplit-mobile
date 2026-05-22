@@ -15,7 +15,7 @@ import { downloadAndOpenDocument } from "@/services/document";
 import { IPublishedSubmission } from "@/types/submission";
 import { Image } from "expo-image";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Animated, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 
 export default function LibraryScreen() {
   const cardBackgound = useThemeColor({}, 'fill.vibrant.tertiary');
@@ -32,6 +32,7 @@ export default function LibraryScreen() {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
+  const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
 
   // Fetch published submissions
   const fetchPublishedSubmissions = async () => {
@@ -65,6 +66,41 @@ export default function LibraryScreen() {
       useNativeDriver: true,
     }).start();
     scrollY.setValue(20);
+  };
+
+  // Function to validate if a string is a valid HTTP URL
+  const isValidHttpUrl = (value?: string | null) => {
+    if (!value) return false
+    return /^https?:\/\//i.test(value);
+  };
+
+  // Function to open a document URL using authenticated download + open
+  const openDocument = async (url?: string | null) => {
+    if (!isValidHttpUrl(url)) {
+      Alert.alert("Dokumen tidak tersedia", "Tautan dokumen tidak valid atau belum tersedia.");
+      return;
+    }
+
+    const safeUrl = url as string;
+
+    try {
+      setDownloadProgressMap((s) => ({ ...s, [safeUrl]: 0 }));
+      await downloadAndOpenDocument(safeUrl, (p) => {
+        setDownloadProgressMap((s) => ({ ...s, [safeUrl]: p }));
+      });
+      setDownloadProgressMap((s) => {
+        const copy = { ...s };
+        delete copy[safeUrl];
+        return copy;
+      });
+    } catch {
+      setDownloadProgressMap((s) => {
+        const copy = { ...s };
+        if (safeUrl in copy) delete copy[safeUrl];
+        return copy;
+      });
+      Alert.alert("Gagal membuka dokumen", "Silakan coba lagi beberapa saat.");
+    }
   };
 
   // Handlers for search input focus and blur animations
@@ -321,7 +357,7 @@ export default function LibraryScreen() {
               {selectedPublication.abstract || 'Abstract tidak tersedia'}
             </ThemedText>
             <Pressable
-              onPress={() => selectedPublication.research_summary && downloadAndOpenDocument(selectedPublication.research_summary)}
+              onPress={() => openDocument(selectedPublication.research_summary)}
               hitSlop={10}
               style={styles.downloadSummaryButton}
             >
@@ -332,6 +368,11 @@ export default function LibraryScreen() {
               )}
               <ThemedText type="link" style={{ color: selectedPublication.research_summary ? Colors.accentBlue : Colors.light.text.secondary }}>
                 {selectedPublication.research_summary ? 'Unduh Ringkasan Penelitian' : 'Ringkasan Penelitian tidak tersedia'}
+                {downloadProgressMap[selectedPublication.research_summary ?? ''] !== undefined && (
+                  <ThemedText type="link" style={{ color: Colors.accentBlue }}>
+                    {` (${Math.round((downloadProgressMap[selectedPublication.research_summary ?? ''] ?? 0) * 100)}%)`}
+                  </ThemedText>
+                )}
               </ThemedText>
             </Pressable>
 

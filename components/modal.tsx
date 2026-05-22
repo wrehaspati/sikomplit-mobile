@@ -1,5 +1,5 @@
 import React, { type ReactNode } from 'react';
-import { Pressable, Modal as RNModal, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Modal, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
@@ -29,8 +29,16 @@ export default function BottomSheetModal({
   const backgroundColor = useThemeColor({}, 'background');
 
   return (
-    <RNModal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal
+      animationType="fade"
+      transparent
+      visible={visible}
+      presentationStyle="overFullScreen"
+      onRequestClose={onClose}
+      onDismiss={onClose}
+    >
+      <View style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <Pressable style={[styles.sheet, { backgroundColor, height }, sheetStyle]} onPress={() => undefined}>
           <View style={styles.header}>
             <Pressable onPress={onClose} hitSlop={10}>
@@ -45,8 +53,8 @@ export default function BottomSheetModal({
           </View>
           <View style={[styles.content, contentStyle]}>{children}</View>
         </Pressable>
-      </Pressable>
-    </RNModal>
+      </View>
+    </Modal>
   );
 }
 
