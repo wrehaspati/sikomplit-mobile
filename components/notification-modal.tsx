@@ -60,7 +60,7 @@ export default function NotificationModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <ThemedView style={styles.modalContainer}>
+      <ThemedView style={styles.modalContainer} variant="card">
         <View style={styles.modalTopBar}>
           <ThemedText type="title4">Detail Pengajuan</ThemedText>
           <Pressable style={styles.closeButton} onPress={onClose}>
@@ -131,7 +131,7 @@ function DetailRow({ label, value, tertiaryText }: { label: string; value?: stri
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    paddingTop: 56,
+    paddingTop: 24,
   },
   modalTopBar: {
     paddingHorizontal: 24,
@@ -144,7 +144,6 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     paddingVertical: 4,
-    paddingHorizontal: 8,
   },
   modalContent: {
     paddingHorizontal: 24,
@@ -154,7 +153,8 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     borderRadius: RADIUS.DEFAULT,
-    padding: 14,
+    padding: 16,
+    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.2)'
   },
   detailRow: {
     marginBottom: 10,

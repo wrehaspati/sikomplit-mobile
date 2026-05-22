@@ -41,7 +41,14 @@ export default function NotificationCard({
   return (
     <Container
       {...(onPress ? { onPress } : {})}
-      style={[styles.card, { backgroundColor }, announcement && styles.announcementCard, onPress && styles.pressableCard]}>
+      style={[
+        styles.card,
+        { backgroundColor },
+        announcement && styles.announcementCard,
+        onPress && styles.pressableCard,
+        //!announcement && { borderColor: statusTone.badgeBackground, borderWidth: 1 }
+      ]}
+    >
       <View style={[styles.statusIconWrap, announcement ? { backgroundColor: announcementBadge.background } : { backgroundColor: statusTone.badgeBackground }]}>
         <IconSymbol name={announcement ? 'bell.fill' : statusTone.iconName} size={18} color={announcement ? announcementBadge.icon : statusTone.badgeText} />
       </View>
@@ -87,8 +94,8 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   announcementCard: {
-    borderWidth: 1,
-    borderColor: Colors.notificationBadge.announcement.border,
+    // borderWidth: 1,
+    // borderColor: Colors.notificationBadge.announcement.border,
   },
   statusIconWrap: {
     width: 38,

@@ -1,17 +1,17 @@
 import { activeSubmission } from "@/api/submission-api";
+import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors, RADIUS } from "@/constants/theme";
+import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
 import { formatDate } from "@/services/format-date";
 import { shortResearchType } from "@/services/format-text";
 import { ISubmissionData } from "@/types/submission";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
-  Animated,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -94,11 +94,10 @@ export const getStatusMeta = (status: string) => {
 };
 
 export default function NotificationScreen() {
-  const backgroundColor = useThemeColor({}, "background");
-  const sectionBackground = useThemeColor({}, "fill.vibrant.secondary");
-  const tertiaryText = useThemeColor({}, "text.tertiary");
+  const backgroundColor = useThemeColor({}, "fill.vibrant.tertiary");
+  const sectionBackground = useThemeColor({}, "fill.vibrant.tertiary");
+  const tertiaryText = useThemeColor({}, "text.secondary");
   const secondaryText = useThemeColor({}, "text.secondary");
-  const scrollY = useRef(new Animated.Value(0)).current;
   const [userSubmissions, setUserSubmissions] = useState<ISubmissionData[] | []>([]);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -214,199 +213,178 @@ export default function NotificationScreen() {
 
   return (
     <>
-      <Animated.ScrollView
-        style={{ flex: 1 }}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
+      <ParallaxScrollView
+        title="Notifikasi"
+        contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN_HORIZONTAL, paddingBottom: 40 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }>
-        <View style={styles.screenPadding}>
-          <Animated.View
-            id="header"
-            style={{
-              marginBottom: 16,
-              opacity: scrollY.interpolate({
-                inputRange: [0, 18, 72],
-                outputRange: [1, 0, 0],
-                extrapolate: "clamp",
-              }),
-              transform: [{
-                translateY: scrollY.interpolate({
-                  inputRange: [0, 72],
-                  outputRange: [0, 72],
-                  extrapolate: "clamp",
-                }),
-              }],
-            }}>
-            <ThemedText type="title">Notifikasi</ThemedText>
-          </Animated.View>
+        {/* Content */}
 
-          <ThemedView style={[styles.filterWrap, { backgroundColor: sectionBackground }]}>
-            <ThemedText type="caption" style={styles.filterLabel}>
-              Urutkan tanggal dibuat
+        {/* Filter */}
+        <ThemedView style={[styles.filterWrap, { backgroundColor: sectionBackground }]}>
+          {/* Sort Order Filter */}
+          <ThemedText type="caption" style={styles.filterLabel}>
+            Urutkan tanggal dibuat
+          </ThemedText>
+          <View style={styles.filterButtonsRow}>
+            <Pressable
+              onPress={() => setSortOrder("newest")}
+              style={[
+                styles.filterButton,
+                sortOrder === "newest" ? styles.filterButtonActive : styles.filterButtonInactive,
+              ]}>
+              <ThemedText
+                type="caption"
+                style={sortOrder === "newest" ? styles.filterTextActive : styles.filterTextInactive}>
+                Terbaru
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => setSortOrder("oldest")}
+              style={[
+                styles.filterButton,
+                sortOrder === "oldest" ? styles.filterButtonActive : styles.filterButtonInactive,
+              ]}>
+              <ThemedText
+                type="caption"
+                style={sortOrder === "oldest" ? styles.filterTextActive : styles.filterTextInactive}>
+                Terlama
+              </ThemedText>
+            </Pressable>
+          </View>
+          {/* Status Filter */}
+          <ThemedText type="caption" style={[styles.filterLabel, { marginTop: 10 }]}>
+            Status
+          </ThemedText>
+          <View style={styles.filterButtonsRowWrap}>
+            <Pressable
+              onPress={() => setStatusFilter("all")}
+              style={[
+                styles.filterButton,
+                statusFilter === "all" ? styles.filterButtonActive : styles.filterButtonInactive,
+              ]}>
+              <ThemedText
+                type="caption"
+                style={statusFilter === "all" ? styles.filterTextActive : styles.filterTextInactive}>
+                Semua
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => setStatusFilter("pending")}
+              style={[
+                styles.filterButton,
+                statusFilter === "pending" ? styles.filterButtonActive : styles.filterButtonInactive,
+              ]}>
+              <View style={styles.filterChipContent}>
+                <IconSymbol
+                  name="circle.fill"
+                  size={10}
+                  color={statusFilter === "pending" ? "#fff" : Colors.accentBlue}
+                />
+                <ThemedText
+                  type="caption"
+                  style={statusFilter === "pending" ? styles.filterTextActive : styles.filterTextInactive}
+                >
+                  Pending
+                </ThemedText>
+              </View>
+            </Pressable>
+            <Pressable
+              onPress={() => setStatusFilter("approved")}
+              style={[
+                styles.filterButton,
+                statusFilter === "approved" ? styles.filterButtonActive : styles.filterButtonInactive,
+              ]}>
+              <View style={styles.filterChipContent}>
+                <IconSymbol
+                  name="checkmark.shield.fill"
+                  size={12}
+                  color={statusFilter === "approved" ? "#fff" : Colors.accentGreen}
+                />
+                <ThemedText
+                  type="caption"
+                  style={statusFilter === "approved" ? styles.filterTextActive : styles.filterTextInactive}
+                >
+                  Disetujui
+                </ThemedText>
+              </View>
+            </Pressable>
+            <Pressable
+              onPress={() => setStatusFilter("revision")}
+              style={[
+                styles.filterButton,
+                statusFilter === "revision" ? styles.filterButtonActive : styles.filterButtonInactive,
+              ]}>
+              <View style={styles.filterChipContent}>
+                <IconSymbol
+                  name="circle.fill"
+                  size={12}
+                  color={statusFilter === "revision" ? "#fff" : Colors.accentYellow}
+                />
+                <ThemedText
+                  type="caption"
+                  style={statusFilter === "revision" ? styles.filterTextActive : styles.filterTextInactive}
+                >
+                  Perlu Revisi
+                </ThemedText>
+              </View>
+            </Pressable>
+          </View>
+        </ThemedView>
+        {/* End Filter */}
+
+        {/* Notification Items */}
+        {feedItems.length === 0 ? (
+          <ThemedView style={[styles.emptyStateCard, { backgroundColor: sectionBackground }]}>
+            <ThemedText type="headline" style={styles.emptyStateTitle}>
+              Belum Ada Notifikasi
             </ThemedText>
-            <View style={styles.filterButtonsRow}>
-              <Pressable
-                onPress={() => setSortOrder("newest")}
-                style={[
-                  styles.filterButton,
-                  sortOrder === "newest" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}>
-                <ThemedText
-                  type="caption"
-                  style={sortOrder === "newest" ? styles.filterTextActive : styles.filterTextInactive}>
-                  Terbaru
-                </ThemedText>
-              </Pressable>
-              <Pressable
-                onPress={() => setSortOrder("oldest")}
-                style={[
-                  styles.filterButton,
-                  sortOrder === "oldest" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}>
-                <ThemedText
-                  type="caption"
-                  style={sortOrder === "oldest" ? styles.filterTextActive : styles.filterTextInactive}>
-                  Terlama
-                </ThemedText>
-              </Pressable>
-            </View>
-
-            <ThemedText type="caption" style={[styles.filterLabel, { marginTop: 10 }]}>Status</ThemedText>
-            <View style={styles.filterButtonsRowWrap}>
-              <Pressable
-                onPress={() => setStatusFilter("all")}
-                style={[
-                  styles.filterButton,
-                  statusFilter === "all" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}>
-                <ThemedText
-                  type="caption"
-                  style={statusFilter === "all" ? styles.filterTextActive : styles.filterTextInactive}>
-                  Semua
-                </ThemedText>
-              </Pressable>
-
-              <Pressable
-                onPress={() => setStatusFilter("pending")}
-                style={[
-                  styles.filterButton,
-                  statusFilter === "pending" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}>
-                <View style={styles.filterChipContent}>
-                  <IconSymbol
-                    name="circle.fill"
-                    size={10}
-                    color={statusFilter === "pending" ? "#fff" : Colors.accentBlue}
-                  />
-                  <ThemedText
-                    type="caption"
-                    style={statusFilter === "pending" ? styles.filterTextActive : styles.filterTextInactive}
-                  >
-                    Pending
-                  </ThemedText>
-                </View>
-              </Pressable>
-
-              <Pressable
-                onPress={() => setStatusFilter("approved")}
-                style={[
-                  styles.filterButton,
-                  statusFilter === "approved" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}>
-                <View style={styles.filterChipContent}>
-                  <IconSymbol
-                    name="checkmark.shield.fill"
-                    size={12}
-                    color={statusFilter === "approved" ? "#fff" : Colors.accentGreen}
-                  />
-                  <ThemedText
-                    type="caption"
-                    style={statusFilter === "approved" ? styles.filterTextActive : styles.filterTextInactive}
-                  >
-                    Disetujui
-                  </ThemedText>
-                </View>
-              </Pressable>
-
-              <Pressable
-                onPress={() => setStatusFilter("revision")}
-                style={[
-                  styles.filterButton,
-                  statusFilter === "revision" ? styles.filterButtonActive : styles.filterButtonInactive,
-                ]}>
-                <View style={styles.filterChipContent}>
-                  <IconSymbol
-                    name="circle.fill"
-                    size={12}
-                    color={statusFilter === "revision" ? "#fff" : Colors.accentYellow}
-                  />
-                  <ThemedText
-                    type="caption"
-                    style={statusFilter === "revision" ? styles.filterTextActive : styles.filterTextInactive}
-                  >
-                    Perlu Revisi
-                  </ThemedText>
-                </View>
-              </Pressable>
-            </View>
+            <ThemedText type="subheadline" style={{ color: tertiaryText, textAlign: "center" }}>
+              Notifikasi pengajuan akan muncul di sini setelah Anda mengirim formulir.
+            </ThemedText>
           </ThemedView>
-
-          {feedItems.length === 0 ? (
-            <ThemedView style={[styles.emptyStateCard, { backgroundColor: sectionBackground }]}>
-              <ThemedText type="headline" style={styles.emptyStateTitle}>
-                Belum Ada Notifikasi
-              </ThemedText>
-              <ThemedText type="subheadline" style={{ color: tertiaryText, textAlign: "center" }}>
-                Notifikasi pengajuan akan muncul di sini setelah Anda mengirim formulir.
-              </ThemedText>
-            </ThemedView>
-          ) : (
-            feedItems.map((item) => {
-              if (item.type === "announcement") {
-                return (
-                  <NotificationCard
-                    key={item.announcement.id}
-                    backgroundColor={backgroundColor}
-                    createdAtLabel={formatDate(item.announcement.created_at)}
-                    statusLabel="Pengumuman"
-                    title={item.announcement.title}
-                    subtitle={item.announcement.message}
-                    footerLabel="Firebase Push Notification"
-                    statusTone={{
-                      badgeBackground: Colors.notificationBadge.announcement.background,
-                      badgeText: Colors.notificationBadge.announcement.text,
-                      iconName: 'circle.fill',
-                    } as NotificationStatusTone}
-                    announcement
-                  />
-                );
-              }
-
-              const submission = item.submission;
-              const statusTone = getStatusMeta(submission.progress_status);
-
+        ) : (
+          feedItems.map((item) => {
+            if (item.type === "announcement") {
               return (
                 <NotificationCard
-                  key={submission.id}
+                  key={item.announcement.id}
                   backgroundColor={backgroundColor}
-                  createdAtLabel={formatDate(submission.updated_at)}
-                  statusLabel={submission.progress_status}
-                  title={shortResearchType(submission.research_type)}
-                  subtitle={`#${submission.request_number} - ${submission.research_upload?.title ?? submission.created_at}`}
-                  footerLabel="Ketuk untuk melihat detail pengajuan"
-                  statusTone={statusTone}
-                  onPress={() => setSelectedSubmission(submission)}
+                  createdAtLabel={formatDate(item.announcement.created_at)}
+                  statusLabel="Pengumuman"
+                  title={item.announcement.title}
+                  subtitle={item.announcement.message}
+                  footerLabel="Firebase Push Notification"
+                  statusTone={{
+                    badgeBackground: Colors.notificationBadge.announcement.background,
+                    badgeText: Colors.notificationBadge.announcement.text,
+                    iconName: 'circle.fill',
+                  } as NotificationStatusTone}
+                  announcement
                 />
               );
-            })
-          )}
-        </View>
-      </Animated.ScrollView>
+            }
+
+            const submission = item.submission;
+            const statusTone = getStatusMeta(submission.progress_status);
+
+            return (
+              <NotificationCard
+                key={submission.id}
+                backgroundColor={backgroundColor}
+                createdAtLabel={formatDate(submission.updated_at)}
+                statusLabel={submission.progress_status}
+                title={shortResearchType(submission.research_type)}
+                subtitle={`#${submission.request_number} - ${submission.research_upload?.title ?? submission.created_at}`}
+                footerLabel="Ketuk untuk melihat detail pengajuan"
+                statusTone={statusTone}
+                onPress={() => setSelectedSubmission(submission)}
+              />
+            );
+          })
+        )}
+      </ParallaxScrollView >
 
       <NotificationModal
         visible={selectedSubmission !== null}
@@ -423,18 +401,14 @@ export default function NotificationScreen() {
 }
 
 const styles = StyleSheet.create({
-  screenPadding: {
-    marginHorizontal: 24,
-    marginBottom: 28,
-    marginTop: 54,
-  },
   filterWrap: {
     borderRadius: RADIUS.DEFAULT,
-    padding: 12,
+    padding: 16,
     marginBottom: 16,
   },
   filterLabel: {
     marginBottom: 8,
+    fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.6,
   },
