@@ -36,18 +36,19 @@ export default function NotificationCard({
   onPress,
 }: Props) {
   const Container = onPress ? Pressable : View;
+  const announcementBadge = Colors.notificationBadge.announcement;
 
   return (
     <Container
       {...(onPress ? { onPress } : {})}
       style={[styles.card, { backgroundColor }, announcement && styles.announcementCard, onPress && styles.pressableCard]}>
-      <View style={[styles.statusIconWrap, announcement ? styles.announcementIconWrap : { backgroundColor: statusTone.badgeBackground }]}>
-        <IconSymbol name={announcement ? 'bell.fill' : statusTone.iconName} size={18} color={announcement ? '#AD6500' : statusTone.badgeText} />
+      <View style={[styles.statusIconWrap, announcement ? { backgroundColor: announcementBadge.background } : { backgroundColor: statusTone.badgeBackground }]}>
+        <IconSymbol name={announcement ? 'bell.fill' : statusTone.iconName} size={18} color={announcement ? announcementBadge.icon : statusTone.badgeText} />
       </View>
       <View style={styles.cardBody}>
         <View style={styles.cardHeaderRow}>
-          <View style={[styles.statusBadge, announcement && styles.announcementBadge, { backgroundColor: announcement ? '#FFEFD8' : statusTone.badgeBackground }]}>
-            <ThemedText type="caption" style={[styles.statusBadgeText, announcement && styles.announcementBadgeText, { color: announcement ? '#AD6500' : statusTone.badgeText }]}>
+          <View style={[styles.statusBadge, announcement && styles.announcementBadge, { backgroundColor: announcement ? announcementBadge.background : statusTone.badgeBackground }]}>
+            <ThemedText type="caption" style={[styles.statusBadgeText, announcement && styles.announcementBadgeText, { color: announcement ? announcementBadge.text : statusTone.badgeText }]}>
               {announcement ? announcementLabel : statusLabel}
             </ThemedText>
           </View>
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
   },
   announcementCard: {
     borderWidth: 1,
-    borderColor: '#F6E2C5',
+    borderColor: Colors.notificationBadge.announcement.border,
   },
   statusIconWrap: {
     width: 38,
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   announcementIconWrap: {
-    backgroundColor: '#FFEFD8',
+    backgroundColor: Colors.notificationBadge.announcement.background,
   },
   cardBody: {
     flex: 1,

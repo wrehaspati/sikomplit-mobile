@@ -64,6 +64,32 @@ export const Colors = {
   accentYellow: '#FFCC00',
   accentGreen: '#34C759',
   backgroundSecondary: '#F2F2F7',
+  notificationBadge: {
+    announcement: {
+      background: '#FFF4E1',
+      text: '#9A5A00',
+      border: '#F1D7B0',
+      icon: '#9A5A00',
+    },
+    approved: {
+      background: '#EAF8EF',
+      text: '#1F8A4C',
+      stripe: '#2FB36A',
+      icon: '#1F8A4C',
+    },
+    revision: {
+      background: '#FFF7D6',
+      text: '#B48A00',
+      stripe: '#D9A400',
+      icon: '#B48A00',
+    },
+    pending: {
+      background: '#E0F2FF',
+      text: '#0B63C7',
+      stripe: '#0088FF',
+      icon: '#0B63C7',
+    },
+  },
 };
 
 export const RADIUS = {

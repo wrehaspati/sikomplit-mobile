@@ -67,9 +67,9 @@ export const getStatusMeta = (status: string) => {
   if (normalized.includes("selesai") || normalized.includes("approved") || normalized.includes("diterima")) {
     return {
       kind: "approved" as const,
-      badgeBackground: "#E7F8ED",
-      badgeText: Colors.accentGreen,
-      stripe: "#31B364",
+      badgeBackground: Colors.notificationBadge.approved.background,
+      badgeText: Colors.notificationBadge.approved.text,
+      stripe: Colors.notificationBadge.approved.stripe,
       iconName: "checkmark.shield.fill" as const,
     };
   }
@@ -77,18 +77,18 @@ export const getStatusMeta = (status: string) => {
   if (normalized.includes("revisi") || normalized.includes("review") || normalized.includes("perbaikan")) {
     return {
       kind: "revision" as const,
-      badgeBackground: "#FFFBE6",
-      badgeText: Colors.accentYellow,
-      stripe: Colors.accentYellow,
+      badgeBackground: Colors.notificationBadge.revision.background,
+      badgeText: Colors.notificationBadge.revision.text,
+      stripe: Colors.notificationBadge.revision.stripe,
       iconName: "circle.fill" as const,
     };
   }
 
   return {
     kind: "pending" as const,
-    badgeBackground: "#E8F3FF",
-    badgeText: "#0F61C5",
-    stripe: Colors.accentBlue,
+    badgeBackground: Colors.notificationBadge.pending.background,
+    badgeText: Colors.notificationBadge.pending.text,
+    stripe: Colors.notificationBadge.pending.stripe,
     iconName: "circle.fill" as const,
   };
 };
@@ -377,7 +377,11 @@ export default function NotificationScreen() {
                     title={item.announcement.title}
                     subtitle={item.announcement.message}
                     footerLabel="Firebase Push Notification"
-                    statusTone={{ badgeBackground: '#FFEFD8', badgeText: '#AD6500', iconName: 'circle.fill' } as NotificationStatusTone}
+                    statusTone={{
+                      badgeBackground: Colors.notificationBadge.announcement.background,
+                      badgeText: Colors.notificationBadge.announcement.text,
+                      iconName: 'circle.fill',
+                    } as NotificationStatusTone}
                     announcement
                   />
                 );
