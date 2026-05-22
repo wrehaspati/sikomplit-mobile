@@ -4,12 +4,19 @@ import { ThemedText } from './themed-text';
 
 type ParallaxScrollViewProps = ScrollViewProps & {
   title: string;
+  scrollYValue?: Animated.Value;
 };
 
 const HEADER_OFFSET = 54 + 12 + 41;
 
-export default function ParallaxScrollView({ title, children, ...Props }: ParallaxScrollViewProps) {
-  const scrollY = useRef(new Animated.Value(0)).current;
+export default function ParallaxScrollView({
+  title,
+  children,
+  scrollYValue,
+  ...Props
+}: ParallaxScrollViewProps) {
+  const fallbackScrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = scrollYValue ?? fallbackScrollY;
   const { refreshControl, ...scrollProps } = Props as ScrollViewProps & { refreshControl?: React.ReactElement<any> };
   const injectedRefreshControl = refreshControl
     ? React.cloneElement(refreshControl as React.ReactElement<any>, {

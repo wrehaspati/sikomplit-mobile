@@ -435,19 +435,15 @@ export default function HomeScreen() {
           </ThemedButton>
         </View>
         <View>
-          <ThemedSeparator
-            lightColor={Colors.dark.fill.vibrant.primary}
-            style={{
-              marginTop: SECTION_GAP
-            }} />
+          <ThemedSeparator style={{ marginTop: SECTION_GAP }} />
           <Pressable
             onPress={() => { }}
             hitSlop={10}
             style={styles.supportLink}>
-            <ThemedText type="default" lightColor={Colors.light.text.secondary} darkColor={Colors.light.text.secondary}>
+            <ThemedText type="footnote" lightColor={Colors.light.text.secondary} darkColor={Colors.light.text.secondary}>
               Syarat dan Ketentuan Layanan
             </ThemedText>
-            <IconSymbol name="chevron.right" size={CHEVRON_SIZE} color={Colors.light.text.secondary} style={{ marginStart: 4, marginTop: 4 }} />
+            <IconSymbol name="chevron.right" size={CHEVRON_SIZE} color={Colors.light.text.secondary} style={{ marginStart: 4 }} />
           </Pressable>
         </View>
       </View>
