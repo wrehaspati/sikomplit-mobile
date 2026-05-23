@@ -26,8 +26,8 @@ export default function ResetPasswordScreen() {
     resolver: zodResolver(FormSchema),
     mode: "onTouched",
     defaultValues: {
-      email: "userx1@example.com",
-    },
+      email: "",
+    }
   });
 
   const onSubmit = async (values: z.infer<typeof FormSchema>) => {
@@ -75,8 +75,6 @@ export default function ResetPasswordScreen() {
                   title="Email"
                   placeholder="Masukkan email Anda"
                   autoComplete="email"
-                  aria-disabled={true}
-                  editable={false}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   icon={<IconSymbol name="envelope.fill" color={Colors.light.text.secondary} />}

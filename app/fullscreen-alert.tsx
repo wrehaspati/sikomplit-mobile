@@ -17,6 +17,7 @@ export default function FullscreenAlertScreen() {
 
   if (!title || !type) {
     router.dismiss();
+    return null;
   }
 
   return (

@@ -31,8 +31,8 @@ export default function LoginScreen() {
     mode: "onTouched",
     defaultValues: {
       email: email ?? "",
-      password: "password",
-    },
+      password: "",
+    }
   });
 
   const onSubmit = async (values: z.infer<typeof FormSchema>) => {
