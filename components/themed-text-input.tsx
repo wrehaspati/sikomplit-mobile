@@ -1,4 +1,4 @@
-import { Colors, Radius } from "@/constants/theme";
+import { Colors, RADIUS } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import type { ReactNode } from 'react';
 import { useState } from "react";
@@ -33,6 +33,7 @@ export default function ThemedTextInput({
 }: ThemedTextInputProps) {
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'secondary');
   const textColor = useThemeColor({}, 'text.primary');
+  const placeholderTextColor = useThemeColor({}, 'text.tertiary');
   const underlineColor = useThemeColor({}, 'fill.vibrant.secondary');
   const withIconContainerColor = useThemeColor({}, 'fill.tertiary');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -72,6 +73,7 @@ export default function ThemedTextInput({
           (errorMessage && underline) && { borderBottomColor: Colors.accentRed },
           ]}
           secureTextEntry={isSecureTextEntry && !isPasswordVisible}
+          placeholderTextColor={placeholderTextColor}
         />
         {isSecureTextEntry && (
           <View style={{ position: 'absolute', right: 16 }}>
@@ -110,7 +112,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingLeft: 16,
     fontSize: 16,
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
     shadowColor: '#000',
@@ -128,7 +130,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
   },

@@ -1,7 +1,6 @@
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -32,8 +31,8 @@ export default function LoginScreen() {
     mode: "onTouched",
     defaultValues: {
       email: email ?? "",
-      password: "password",
-    },
+      password: "",
+    }
   });
 
   const onSubmit = async (values: z.infer<typeof FormSchema>) => {
@@ -42,7 +41,7 @@ export default function LoginScreen() {
     try {
       if (!auth) return;
       await auth.signIn(values);
-      router.dismissAll();
+      router.dismissTo('/');
     } catch (error: any) {
       if (error.response?.status === 401) {
         Alert.alert("Gagal Masuk", "Email atau password anda salah");
@@ -58,7 +57,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 24 }}>
         <View style={{ alignItems: 'center', flex: 1, width: '100%', gap: 12 }}>
           {/* <Image source={require('@/assets/images/app-icon-wide.webp')} style={{ width: '100%', height: responsiveScale(120), marginBottom: 20 }} contentFit="contain" contentPosition={'center'} /> */}
@@ -124,7 +123,7 @@ export default function LoginScreen() {
             </Pressable>
           </View>
         </View>
-        <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
+        <View style={{ width: '100%', marginVertical: 24, gap: 20 }}>
           <ThemedButton variant="outline" size="default" style={{ justifyContent: 'center' }} onPress={() => {
             router.navigate("/register");
           }}>
@@ -132,6 +131,6 @@ export default function LoginScreen() {
           </ThemedButton>
         </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

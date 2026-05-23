@@ -1,5 +1,5 @@
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Radius } from '@/constants/theme';
+import { Colors, RADIUS } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     flexGrow: 1,
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderWidth: 1,

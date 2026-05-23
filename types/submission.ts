@@ -51,7 +51,7 @@ export interface ISubmissionUploadFile {
 }
 
 export interface IPublishedSubmission {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   research_summary: string;

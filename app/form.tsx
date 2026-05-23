@@ -6,8 +6,7 @@ import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
-import { responsiveScale } from "@/constants/scaling";
-import { Colors, Radius } from "@/constants/theme";
+import { Colors, RADIUS } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { ISubmissionPost } from '@/types/submission';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -280,8 +279,7 @@ export default function FormScreen() {
         type="caption"
         darkColor={Colors.dark.text.secondary}
         lightColor={Colors.light.text.secondary}
-        style={{ marginTop: 4 }}
-      >
+        style={{ marginTop: 4 }}>
         {selectedFile
           ? `${selectedFile.mimeType ?? 'Jenis file tidak terdeteksi'}${selectedFile.size ? ` · ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB` : ''}`
           : 'File akan tampil di sini setelah dipilih.'}
@@ -357,7 +355,7 @@ export default function FormScreen() {
 
   return (
     <ScrollView style={{ paddingVertical: 20 }} contentInsetAdjustmentBehavior="automatic">
-      <View style={{ gap: 8, paddingHorizontal: 24, paddingBottom: responsiveScale(100) }}>
+      <View style={{ gap: 8, paddingHorizontal: 24, paddingBottom: 100 }}>
 
         {/* Header */}
         <ThemedView style={[styles.card, { gap: 8, marginBottom: 8 }]}>
@@ -375,8 +373,7 @@ export default function FormScreen() {
             icon={(<Image source={require('@/assets/images/whatsapp.png')} style={{ width: 20, height: 20, marginEnd: 4, marginStart: -2 }} />)}
             size="small"
             style={{ alignSelf: 'flex-start' }}
-            onPress={() => { }}
-          >
+            onPress={() => { }}>
             Whatsapp
           </ThemedButton>
           <ThemedText type="caption" darkColor={Colors.accentRed} lightColor={Colors.accentRed}>
@@ -491,8 +488,7 @@ export default function FormScreen() {
                         fieldState.error ? { borderColor: Colors.accentRed, borderWidth: 1 } : null,
                         { backgroundColor },
                         pressed && styles.dateFieldPressed,
-                      ]}
-                    >
+                      ]}>
                       <View style={styles.dateFieldContent}>
                         <ThemedText
                           type={'default'}
@@ -631,8 +627,7 @@ export default function FormScreen() {
               animationType="fade"
               transparent
               visible={showDatePicker}
-              onRequestClose={() => setShowDatePicker(false)}
-            >
+              onRequestClose={() => setShowDatePicker(false)}>
               <Pressable style={styles.modalBackdrop} onPress={() => setShowDatePicker(false)}>
                 <Pressable style={[styles.modalSheet, { backgroundColor }]} onPress={() => undefined}>
                   <SafeAreaView>
@@ -839,8 +834,7 @@ export default function FormScreen() {
               disabled={isLoading}
               onPress={() => {
                 form.handleSubmit(onSubmit)();
-              }}
-            >
+              }}>
               {isLoading ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <ThemedText type="defaultSemiBold">
@@ -864,13 +858,13 @@ export default function FormScreen() {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     padding: 18,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
   },
   dateField: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderWidth: 1,
@@ -908,7 +902,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   fileCard: {
-    borderRadius: Radius.default,
+    borderRadius: RADIUS.DEFAULT,
     padding: 14,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,

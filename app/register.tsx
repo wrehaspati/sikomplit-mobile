@@ -1,7 +1,6 @@
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -32,12 +31,12 @@ export default function RegisterScreen() {
     resolver: zodResolver(RegisterSchema),
     mode: "onTouched",
     defaultValues: {
-      name: "Userx1",
-      phone: "081234567890",
-      email: "userx1@example.com",
-      password: "password",
-      confirmPassword: "password",
-    },
+      name: "",
+      phone: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    }
   });
 
   const handleNextStep = async () => {
@@ -70,7 +69,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 24 }}>
         <View style={{ alignItems: 'center', flex: 1, width: '100%', gap: 12 }}>
           <ThemedText type="title" style={{ textAlign: 'center' }}>Daftar Akun</ThemedText>
@@ -195,7 +194,7 @@ export default function RegisterScreen() {
             </View>
           )}
         </View>
-        <View style={{ width: '100%', marginTop: 12, gap: 20 }}>
+        <View style={{ width: '100%', marginVertical: 12, gap: 20 }}>
           <Pressable onPress={() => { }} hitSlop={10} style={{ alignSelf: 'center' }}>
             <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
               Syarat dan Ketentuan
@@ -203,6 +202,6 @@ export default function RegisterScreen() {
           </Pressable>
         </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

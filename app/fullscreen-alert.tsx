@@ -1,8 +1,6 @@
 import successAnimation from "@/assets/images/success.json";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { responsiveScale } from "@/constants/scaling";
 import { RelativePathString, router, useLocalSearchParams } from "expo-router";
 import LottieView from 'lottie-react-native';
 import { useEffect, useRef } from "react";
@@ -19,10 +17,11 @@ export default function FullscreenAlertScreen() {
 
   if (!title || !type) {
     router.dismiss();
+    return null;
   }
 
   return (
-    <ThemedView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <View style={{ width: '100%', alignItems: 'center', paddingHorizontal: 24 }} >
         <LottieView
           ref={lottieRef}
@@ -34,8 +33,8 @@ export default function FullscreenAlertScreen() {
             setTimeout(() => lottieRef.current?.play(), 2000);
           }}
           style={{
-            width: responsiveScale(250),
-            height: responsiveScale(250),
+            width: 250,
+            height: 250,
             marginBottom: 8,
           }}
         />
@@ -56,11 +55,10 @@ export default function FullscreenAlertScreen() {
           size="default"
           style={{ marginVertical: 40, justifyContent: 'center', width: '70%' }}
           onPress={() => { router.dismissTo(buttonHref as RelativePathString) }}
-          hitSlop={10}
-        >
+          hitSlop={10}>
           {buttonText}
         </ThemedButton>
       </View>
-    </ThemedView>
+    </View >
   );
 }
