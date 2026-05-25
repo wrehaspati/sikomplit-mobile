@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { create } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
@@ -15,7 +15,7 @@ const getBaseUrl = () => {
   return 'http://localhost:8000/api/v1';
 };
 
-export const api = axios.create({
+export const api = create({
   baseURL: getBaseUrl(),
 });
 
@@ -40,7 +40,6 @@ api.interceptors.response.use(
       await SecureStore.setItemAsync('access_token', data.accessToken);
       original.headers.Authorization = `Bearer ${data.accessToken}`;
       return api(original);
-    }
     }
     return Promise.reject(error);
   }

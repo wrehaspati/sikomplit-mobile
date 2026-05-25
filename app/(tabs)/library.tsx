@@ -120,7 +120,7 @@ export default function LibraryScreen() {
 
   const renderCard = (item: IPublishedSubmission) => {
     return (
-      <ThemedView key={item.id} variant="card">
+      <ThemedView key={item.id} variant="card" style={{ marginBottom: 16 }}>
         <View style={styles.container}>
           <View style={styles.cardImage}>
             <Image
