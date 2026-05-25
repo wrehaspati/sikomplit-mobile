@@ -37,7 +37,7 @@ export default function LoginScreen() {
 
   const onSubmit = async (values: z.infer<typeof FormSchema>) => {
     if (isLoading) return;
-    setIsLoading(isLoading => !isLoading);
+    setIsLoading(true);
     try {
       if (!auth) return;
       await auth.signIn(values);
