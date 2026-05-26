@@ -121,6 +121,7 @@ export default function NotificationScreen() {
     await fetchUserSubmission();
     setRefreshing(false);
   };
+
   // Fetch data on component mount
   useEffect(() => {
     fetchUserSubmission();
@@ -223,7 +224,6 @@ export default function NotificationScreen() {
 
         {/* Filter */}
         <ThemedView style={[styles.filterWrap, { backgroundColor: sectionBackground }]}>
-          {/* Sort Order Filter */}
           <ThemedText type="caption" style={styles.filterLabel}>
             Urutkan tanggal dibuat
           </ThemedText>
@@ -384,6 +384,9 @@ export default function NotificationScreen() {
             );
           })
         )}
+        {/* End Notification Items */}
+
+        {/* End Content */}
       </ParallaxScrollView >
 
       <NotificationModal

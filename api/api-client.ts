@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { create } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
@@ -6,8 +6,6 @@ import { Platform } from 'react-native';
 const getBaseUrl = () => {
   if (Platform.OS === 'android') {
     return 'http://192.168.1.50:8000/api/v1';
-
-    // return 'http://10.0.2.2:8000/api/v1';
   }
   if (Platform.OS === 'ios') {
     return 'http://192.168.1.50:8000/api/v1';
@@ -15,11 +13,12 @@ const getBaseUrl = () => {
   return 'http://localhost:8000/api/v1';
 };
 
-export const api = axios.create({
+// Create an Axios instance with the base URL
+export const api = create({
   baseURL: getBaseUrl(),
 });
 
-// Attach token to every request
+// Attach the token to every request
 api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync('access_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -40,7 +39,6 @@ api.interceptors.response.use(
       await SecureStore.setItemAsync('access_token', data.accessToken);
       original.headers.Authorization = `Bearer ${data.accessToken}`;
       return api(original);
-    }
     }
     return Promise.reject(error);
   }

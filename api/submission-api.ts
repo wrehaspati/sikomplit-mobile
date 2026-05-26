@@ -5,7 +5,7 @@ import { api } from "./api-client";
 
 /**
  * Fetches the active user submissions.
- * @returns User in progress submission data
+ * @returns Active submission data.
  */
 export const activeSubmission = async (): Promise<ISubmissionData[]> => {
   const { data } = await api.get<ApiResponse<ISubmissionData[]>>(`/user/recommendations`);
@@ -15,7 +15,7 @@ export const activeSubmission = async (): Promise<ISubmissionData[]> => {
 
 /**
  * Fetches the published submissions.
- * @returns Published submission data
+ * @returns Published submission data.
  */
 export const publishedSubmission = async (): Promise<IPublishedSubmission[]> => {
   const { data } = await api.get<ApiResponse<IPublishedSubmission[]>>('/researches');
@@ -25,8 +25,8 @@ export const publishedSubmission = async (): Promise<IPublishedSubmission[]> => 
 
 /**
  * Submits a new research recommendation application.
- * @param data - The submission data.
- * @returns The response from the server containing the submitted data.
+ * @param data
+ * @returns Request response.
  */
 export const applySubmission = async (data: ISubmissionPost): Promise<ApiResponse<ISubmissionData>> => {
   type SubmissionFileField = keyof Pick<ISubmissionPost, 'application_letter' | 'research_proposal' | 'ethics_clearance_letter' | 'final_report_statement_letter'>;

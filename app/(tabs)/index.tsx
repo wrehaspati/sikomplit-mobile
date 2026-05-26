@@ -222,7 +222,7 @@ export default function HomeScreen() {
             />
           </Svg>
         </View>
-        {/* Card Content */}
+
         <View style={{ flex: 1, justifyContent: 'flex-end', borderRadius: RADIUS.DEFAULT }}>
           <View style={styles.cardContainer}>
             <ThemedText type="subheadline" style={{ color: Colors.light.text.quarternary, fontWeight: '600' }}>
@@ -263,7 +263,7 @@ export default function HomeScreen() {
           )}
         </View>
       </View>
-      {/* End Welcome Card */}
+      {/* End First Card */}
 
       {/* Quick Access Section */}
       <View>
@@ -272,8 +272,7 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.quickAccessContainer}
           snapToAlignment="center"
-          decelerationRate="fast"
-        >
+          decelerationRate="fast">
           {auth?.state.user ? (
             userSubmissions.slice(0, 3).map(element => (
               <HistoryCard key={element.id} submission={element} />
@@ -351,8 +350,7 @@ export default function HomeScreen() {
               paddingVertical: 20
             },
           ]}
-          onPress={() => setOpenModal(true)}
-        >
+          onPress={() => setOpenModal(true)}>
           <IconSymbol size={40} name="document.fill" color={iconBackground} />
           <View style={{ flex: 1, minWidth: 0, marginStart: 12 }}>
             <ThemedText type="caption" style={{ color: Colors.light.text.secondary, fontWeight: '600' }}>
@@ -412,8 +410,7 @@ export default function HomeScreen() {
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center'
-          }}
-        >
+          }}>
           <ThemedText type="default" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
             Selengkapnya
           </ThemedText>
@@ -451,6 +448,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       </View>
+      {/* End Support Section */}
 
       {/* End Content */}
       <BottomSheetModal visible={openModal} title={'Daftar Lampiran'} onClose={() => setOpenModal(false)} height="68%">
@@ -473,8 +471,7 @@ export default function HomeScreen() {
                     !downloading &&
                     styles.guideCardPressed, downloading &&
                     styles.guideCardDisabled
-                  ]}
-                >
+                  ]}>
                   <View style={styles.guideIconWrap}>
                     <IconSymbol size={22} name="arrow.down.app.fill" color={Colors.accentBlue} />
                   </View>
