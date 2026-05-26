@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   header: {
     marginHorizontal: 24,
     marginBottom: 12,
-    top: Platform.OS === 'ios' ? 0 : 54,
+    top: 54,
     position: 'absolute',
   }
 });

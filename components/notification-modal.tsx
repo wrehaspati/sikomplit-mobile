@@ -5,6 +5,7 @@ import { Colors, RADIUS } from '@/constants/theme';
 import { formatDateTime } from '@/services/format-date';
 import { ISubmissionData } from '@/types/submission';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = {
   visible: boolean;
@@ -60,56 +61,58 @@ export default function NotificationModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <ThemedView style={styles.modalContainer} variant="card">
-        <View style={styles.modalTopBar}>
-          <ThemedText type="title4">Detail Pengajuan</ThemedText>
-          <Pressable style={styles.closeButton} onPress={onClose}>
-            <ThemedText type="subheadline" style={{ color: Colors.accentBlue, fontWeight: '700' }}>
-              Tutup
-            </ThemedText>
-          </Pressable>
-        </View>
-
-        {submission && (
-          <ScrollView contentContainerStyle={styles.modalContent}>
-            <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
-              <ThemedText type="headline" style={{ marginBottom: 12 }}>
-                Ringkasan
+      <ThemedView style={styles.modalContainer}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.modalTopBar}>
+            <ThemedText type="title4">Detail Pengajuan</ThemedText>
+            <Pressable style={styles.closeButton} onPress={onClose}>
+              <ThemedText type="subheadline" style={{ color: Colors.accentBlue, fontWeight: '700' }}>
+                Tutup
               </ThemedText>
-              <DetailRow label="Nomor Permintaan" value={submission.request_number} tertiaryText={tertiaryText} />
-              <DetailRow label="Status" value={submission.progress_status} tertiaryText={tertiaryText} />
-              <DetailRow label="Jenis Penelitian" value={submission.research_type.split('/')[0] ?? submission.research_type} tertiaryText={tertiaryText} />
-              <DetailRow label="Judul Penelitian" value={submission.research_upload?.title} tertiaryText={tertiaryText} />
-              <DetailRow label="Dibuat" value={formatDateTime(submission.created_at)} tertiaryText={tertiaryText} />
-              <DetailRow label="Terakhir Diperbarui" value={formatDateTime(submission.updated_at)} tertiaryText={tertiaryText} />
-            </ThemedView>
+            </Pressable>
+          </View>
 
-            <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
-              <ThemedText type="headline" style={{ marginBottom: 12 }}>
-                Informasi Pemohon
-              </ThemedText>
-              <DetailRow label="Nama" value={submission.name} tertiaryText={tertiaryText} />
-              <DetailRow label="Email" value={submission.email} tertiaryText={tertiaryText} />
-              <DetailRow label="No. Telepon" value={submission.phone} tertiaryText={tertiaryText} />
-              <DetailRow label="NIK" value={submission.national_identity_number} tertiaryText={tertiaryText} />
-              <DetailRow label="Tanggal Lahir" value={submission.date_of_birth} tertiaryText={tertiaryText} />
-              <DetailRow label="Gender" value={submission.gender} tertiaryText={tertiaryText} />
-              <DetailRow label="Pendidikan Terakhir" value={submission.last_education} tertiaryText={tertiaryText} />
-              <DetailRow label="Pekerjaan" value={submission.occupation} tertiaryText={tertiaryText} />
-            </ThemedView>
+          {submission && (
+            <ScrollView contentContainerStyle={styles.modalContent}>
+              <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
+                <ThemedText type="headline" style={{ marginBottom: 12 }}>
+                  Ringkasan
+                </ThemedText>
+                <DetailRow label="Nomor Permintaan" value={submission.request_number} tertiaryText={tertiaryText} />
+                <DetailRow label="Status" value={submission.progress_status} tertiaryText={tertiaryText} />
+                <DetailRow label="Jenis Penelitian" value={submission.research_type.split('/')[0] ?? submission.research_type} tertiaryText={tertiaryText} />
+                <DetailRow label="Judul Penelitian" value={submission.research_upload?.title} tertiaryText={tertiaryText} />
+                <DetailRow label="Dibuat" value={formatDateTime(submission.created_at)} tertiaryText={tertiaryText} />
+                <DetailRow label="Terakhir Diperbarui" value={formatDateTime(submission.updated_at)} tertiaryText={tertiaryText} />
+              </ThemedView>
 
-            <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
-              <ThemedText type="headline" style={{ marginBottom: 12 }}>
-                Dokumen
-              </ThemedText>
-              <DocumentRow label="Surat Permohonan" url={submission.application_letter} />
-              <DocumentRow label="Proposal Penelitian" url={submission.research_proposal} />
-              <DocumentRow label="Ethics Clearance" url={submission.ethics_clearance_letter} />
-              <DocumentRow label="Surat Pernyataan Laporan Akhir" url={submission.final_report_statement_letter} />
-              <DocumentRow label="Surat Rekomendasi" url={submission.recommendation_letter} />
-            </ThemedView>
-          </ScrollView>
-        )}
+              <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
+                <ThemedText type="headline" style={{ marginBottom: 12 }}>
+                  Informasi Pemohon
+                </ThemedText>
+                <DetailRow label="Nama" value={submission.name} tertiaryText={tertiaryText} />
+                <DetailRow label="Email" value={submission.email} tertiaryText={tertiaryText} />
+                <DetailRow label="No. Telepon" value={submission.phone} tertiaryText={tertiaryText} />
+                <DetailRow label="NIK" value={submission.national_identity_number} tertiaryText={tertiaryText} />
+                <DetailRow label="Tanggal Lahir" value={submission.date_of_birth} tertiaryText={tertiaryText} />
+                <DetailRow label="Gender" value={submission.gender} tertiaryText={tertiaryText} />
+                <DetailRow label="Pendidikan Terakhir" value={submission.last_education} tertiaryText={tertiaryText} />
+                <DetailRow label="Pekerjaan" value={submission.occupation} tertiaryText={tertiaryText} />
+              </ThemedView>
+
+              <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
+                <ThemedText type="headline" style={{ marginBottom: 12 }}>
+                  Dokumen
+                </ThemedText>
+                <DocumentRow label="Surat Permohonan" url={submission.application_letter} />
+                <DocumentRow label="Proposal Penelitian" url={submission.research_proposal} />
+                <DocumentRow label="Ethics Clearance" url={submission.ethics_clearance_letter} />
+                <DocumentRow label="Surat Pernyataan Laporan Akhir" url={submission.final_report_statement_letter} />
+                <DocumentRow label="Surat Rekomendasi" url={submission.recommendation_letter} />
+              </ThemedView>
+            </ScrollView>
+          )}
+        </SafeAreaView>
       </ThemedView>
     </Modal>
   );

@@ -12,8 +12,15 @@ interface Props {
 
 export default function ImagePreviewModal({ visible, uri, onClose }: Props) {
   return (
-    <Modal visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+      onDismiss={onClose}
+    >
       <ImageViewer
+        key={uri ?? 'empty'}
         imageUrls={[{ url: uri ?? '' }]}
         saveToLocalByLongPress
         menuContext={{ saveToLocal: 'Simpan ke Galeri', cancel: 'Batal' }}

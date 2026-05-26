@@ -101,10 +101,7 @@ export default function HomeScreen() {
 
   // Function to validate if a string is a valid HTTP URL
   const isValidHttpUrl = (value?: string | null) => {
-    if (!value) {
-      return false;
-    }
-
+    if (!value) return false
     return /^https?:\/\//i.test(value);
   };
 
@@ -312,7 +309,7 @@ export default function HomeScreen() {
               lightColor={cardBackground}
               darkColor={cardBackground}>
               <ThemedText type="subheadline" style={{ fontWeight: '600' }}>
-                Akses Dibatasi
+                Akses Terbatas
               </ThemedText>
               <ThemedText type="footnote" style={{ textAlign: 'center' }} darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
                 Silahkan masuk atau registrasi sebelum menggunakan layanan pengajuan.
@@ -347,7 +344,8 @@ export default function HomeScreen() {
               display: 'flex',
               flexDirection: 'row',
               paddingHorizontal: 20,
-              paddingVertical: 20
+              paddingVertical: 20,
+              backgroundColor: cardBackground,
             },
           ]}
           onPress={() => setOpenModal(true)}>
@@ -470,9 +468,14 @@ export default function HomeScreen() {
                     styles.guideCard, pressed &&
                     !downloading &&
                     styles.guideCardPressed, downloading &&
-                    styles.guideCardDisabled
-                  ]}>
-                  <View style={styles.guideIconWrap}>
+                    styles.guideCardDisabled,
+                    {
+                      borderColor: cardBackground,
+                      backgroundColor: backgroundColor,
+                    }
+                  ]}
+                >
+                  <View style={[styles.guideIconWrap, { backgroundColor: cardBackground }]}>
                     <IconSymbol size={22} name="arrow.down.app.fill" color={Colors.accentBlue} />
                   </View>
                   <View style={styles.guideInfo}>
@@ -495,7 +498,7 @@ export default function HomeScreen() {
                         <ActivityIndicator size="small" color={Colors.accentBlue} />
                       </>
                     ) : (
-                      <ThemedText type="caption2" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
+                      <ThemedText type="caption" style={{ color: Colors.accentBlue, fontWeight: '700' }}>
                         Buka
                       </ThemedText>
                     )}
@@ -614,8 +617,6 @@ const styles = StyleSheet.create({
     minHeight: 72,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
-    backgroundColor: Colors.light.background,
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: 'row',
