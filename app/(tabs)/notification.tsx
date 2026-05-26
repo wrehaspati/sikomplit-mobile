@@ -1,15 +1,15 @@
-import { activeSubmission } from "@/api/submission-api";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
+import { useSubmissions } from "@/contexts/submission-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
 import { formatDate } from "@/services/format-date";
 import { shortResearchType } from "@/services/format-text";
 import { ISubmissionData } from "@/types/submission";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -94,38 +94,23 @@ export const getStatusMeta = (status: string) => {
 };
 
 export default function NotificationScreen() {
+  const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, "fill.vibrant.tertiary");
   const sectionBackground = useThemeColor({}, "fill.vibrant.tertiary");
   const tertiaryText = useThemeColor({}, "text.secondary");
   const secondaryText = useThemeColor({}, "text.secondary");
-  const [userSubmissions, setUserSubmissions] = useState<ISubmissionData[] | []>([]);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selectedSubmission, setSelectedSubmission] = useState<ISubmissionData | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
 
-  // Fetch user submissions
-  const fetchUserSubmission = async () => {
-    try {
-      const res = await activeSubmission();
-      setUserSubmissions(res);
-    } catch {
-      setUserSubmissions([]);
-    }
-  };
+  const userSubmissions = useMemo(() => submissions?.userSubmissions ?? [], [submissions?.userSubmissions]);
+  const refreshing = submissions?.isRefreshingUser ?? false;
 
   // Handler for pull-to-refresh action
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchUserSubmission();
-    setRefreshing(false);
+    await submissions?.refreshUserSubmissions();
   };
-
-  // Fetch data on component mount
-  useEffect(() => {
-    fetchUserSubmission();
-  }, []);
 
   // Memoized sorted submissions based on creation date
   const sortedSubmissions = useMemo(() => {

@@ -1,4 +1,3 @@
-import { publishedSubmission } from "@/api/submission-api";
 import ImagePreviewModal from "@/components/image-preview-modal";
 import BottomSheetModal from "@/components/modal";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -10,14 +9,16 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
 import { useBookmarks } from "@/contexts/bookmark-context";
+import { useSubmissions } from "@/contexts/submission-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
 import { IPublishedSubmission } from "@/types/submission";
 import { Image } from "expo-image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 
 export default function LibraryScreen() {
+  const submissions = useSubmissions();
   const cardBackgound = useThemeColor({}, 'fill.vibrant.tertiary');
   const iconColor = useThemeColor({}, 'text.secondary');
   const bookmarks = useBookmarks();
@@ -25,8 +26,6 @@ export default function LibraryScreen() {
   const searchFocusAnim = useRef(new Animated.Value(0)).current;
   const filterButtonScale = useRef(new Animated.Value(1)).current;
   const [query, setQuery] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
-  const [published, setPublished] = useState<IPublishedSubmission[]>();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [selectedPublication, setSelectedPublication] = useState<IPublishedSubmission | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -34,15 +33,8 @@ export default function LibraryScreen() {
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
   const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
 
-  // Fetch published submissions
-  const fetchPublishedSubmissions = async () => {
-    try {
-      const res = await publishedSubmission();
-      setPublished(res);
-    } catch {
-      setPublished([]);
-    }
-  };
+  const published = useMemo(() => submissions?.publishedSubmissions ?? [], [submissions?.publishedSubmissions]);
+  const refreshing = submissions?.isRefreshingPublished ?? false;
 
   // Handler for bookmark toggle
   const handleBookmark = (id: string) => {
@@ -139,15 +131,8 @@ export default function LibraryScreen() {
 
   // Handler for pull-to-refresh action
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchPublishedSubmissions();
-    setRefreshing(false);
+    await submissions?.refreshPublishedSubmissions();
   };
-
-  // Fetch data on component mount
-  useEffect(() => {
-    fetchPublishedSubmissions();
-  }, []);
 
   // Filter published submissions based on search query (case-insensitive) and limit to 6 results for suggestions
   const filteredSuggestions = (published ?? []).filter((item) =>

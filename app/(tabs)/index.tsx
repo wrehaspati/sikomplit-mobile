@@ -6,13 +6,13 @@ import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
 import { BlurView } from "expo-blur";
 import { useVideoPlayer, VideoView } from 'expo-video';
 
-import { activeSubmission, publishedSubmission } from "@/api/submission-api";
 import ImagePreviewModal from "@/components/image-preview-modal";
 import BottomSheetModal from "@/components/modal";
 import NotificationModal from "@/components/notification-modal";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import ThemedSeparator from "@/components/themed-separator";
 import { useAuth } from "@/contexts/auth-context";
+import { useSubmissions } from "@/contexts/submission-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
 import { formatDate } from "@/services/format-date";
@@ -20,7 +20,7 @@ import { shortResearchType } from "@/services/format-text";
 import { IPublishedSubmission, ISubmissionData } from "@/types/submission";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, FeGaussianBlur, Filter, LinearGradient, Path, Stop } from "react-native-svg";
 import NotificationCard from "../../components/notification-card";
@@ -36,7 +36,8 @@ interface IGuideDocument {
   uri: string;
 }
 
-const videoSource = require('@/assets/videos/sample.mp4');
+const videoSource = "https://admin.sikomplit.com/sample.mp4";
+
 const guideDoc: IGuideDocument[] = [
   {
     name: "Surat Pernyataan Tugas Akhir",
@@ -46,53 +47,23 @@ const guideDoc: IGuideDocument[] = [
 
 export default function HomeScreen() {
   const auth = useAuth();
+  const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackground = useThemeColor({}, 'fill.vibrant.tertiary');
   const iconBackground = useThemeColor({}, 'fill.primary');
-  const [userSubmissions, setUserSubmissions] = useState<ISubmissionData[] | []>([]);
-  const [flyers, setFlyers] = useState<IPublishedSubmission[]>();
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
-  const [refreshing, setRefreshing] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
   const [selectedSubmission, setSelectedSubmission] = useState<ISubmissionData | null>(null);
-
-  // Fetch published submissions
-  const fetchPublishedSubmissions = async () => {
-    try {
-      const res = await publishedSubmission();
-      setFlyers(res);
-    } catch {
-      setFlyers([]);
-    }
-  };
-
-  // Fetch user submissions
-  const fetchUserSubmission = async () => {
-    try {
-      const res = await activeSubmission();
-      setUserSubmissions(res);
-    } catch {
-      setUserSubmissions([]);
-    }
-  };
+  const userSubmissions = submissions?.userSubmissions ?? [];
+  const flyers = submissions?.publishedSubmissions ?? [];
+  const refreshing = (submissions?.isRefreshingPublished ?? false) || (submissions?.isRefreshingUser ?? false);
 
   // Handler for pull-to-refresh action
   const handleRefresh = async () => {
-    setRefreshing(true);
-    if (auth?.state.user) {
-      await fetchUserSubmission();
-    }
-    await fetchPublishedSubmissions();
-    setRefreshing(false);
+    await submissions?.refreshAllSubmissions();
   };
-
-  // Fetch data on component mount
-  useEffect(() => {
-    fetchPublishedSubmissions();
-    fetchUserSubmission();
-  }, [auth]);
 
   // Initialize video player
   const player = useVideoPlayer(videoSource, player => {

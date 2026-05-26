@@ -1,16 +1,9 @@
 import axios, { create } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
 // Development base URL configuration
 const getBaseUrl = () => {
-  if (Platform.OS === 'android') {
-    return 'http://192.168.1.50:8000/api/v1';
-  }
-  if (Platform.OS === 'ios') {
-    return 'http://192.168.1.50:8000/api/v1';
-  }
-  return 'http://localhost:8000/api/v1';
+  return 'https://sikomplit.playforfun.my.id';
 };
 
 // Create an Axios instance with the base URL

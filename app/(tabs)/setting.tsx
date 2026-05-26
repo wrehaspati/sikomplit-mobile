@@ -114,7 +114,6 @@ export default function SettingScreen() {
           </View>
         </ThemedView>
       ) : (
-        // Guest view when not signed in
         <ThemedView variant="card" style={styles.guestCard}>
           <ThemedText type="headline">Belum Masuk</ThemedText>
           <ThemedText type="caption" style={styles.guestMessage}>
