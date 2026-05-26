@@ -23,6 +23,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json",
       "package": "com.dereyn.sikomplitmobile"
     },
     "web": {
@@ -54,7 +55,8 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-web-browser",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

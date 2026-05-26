@@ -31,12 +31,12 @@ export default function RegisterScreen() {
     resolver: zodResolver(RegisterSchema),
     mode: "onTouched",
     defaultValues: {
-      name: "Userx1",
-      phone: "081234567890",
-      email: "userx1@example.com",
-      password: "password",
-      confirmPassword: "password",
-    },
+      name: "",
+      phone: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    }
   });
 
   const handleNextStep = async () => {

@@ -31,13 +31,13 @@ export default function LoginScreen() {
     mode: "onTouched",
     defaultValues: {
       email: email ?? "",
-      password: "password",
-    },
+      password: "",
+    }
   });
 
   const onSubmit = async (values: z.infer<typeof FormSchema>) => {
     if (isLoading) return;
-    setIsLoading(isLoading => !isLoading);
+    setIsLoading(true);
     try {
       if (!auth) return;
       await auth.signIn(values);

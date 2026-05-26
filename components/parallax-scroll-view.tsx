@@ -53,7 +53,7 @@ export default function ParallaxScrollView({
         contentInset={Platform.OS === 'ios' ? { top: HEADER_OFFSET } : undefined}
         contentOffset={Platform.OS === 'ios' ? { x: 0, y: -HEADER_OFFSET } : undefined}
         contentContainerStyle={{
-          paddingTop: Platform.OS === 'ios' ? 0 : null,
+          paddingTop: Platform.OS === 'ios' ? 0 : undefined,
         }}
         {...scrollProps}
         automaticallyAdjustContentInsets={false}>

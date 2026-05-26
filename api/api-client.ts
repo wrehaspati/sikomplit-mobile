@@ -6,8 +6,6 @@ import { Platform } from 'react-native';
 const getBaseUrl = () => {
   if (Platform.OS === 'android') {
     return 'http://192.168.1.50:8000/api/v1';
-
-    // return 'http://10.0.2.2:8000/api/v1';
   }
   if (Platform.OS === 'ios') {
     return 'http://192.168.1.50:8000/api/v1';
@@ -15,11 +13,12 @@ const getBaseUrl = () => {
   return 'http://localhost:8000/api/v1';
 };
 
+// Create an Axios instance with the base URL
 export const api = create({
-  baseURL: getBaseUrl()
+  baseURL: getBaseUrl(),
 });
 
-// Attach token to every request
+// Attach the token to every request
 api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync('access_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -36,7 +35,7 @@ api.interceptors.response.use(
     const original = error.config;
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
-      const { data } = await axios.post('/auth/refresh', { refreshToken });
+      const { data } = await axios.post(`${getBaseUrl()}/auth/refresh`, { refreshToken });
       await SecureStore.setItemAsync('access_token', data.accessToken);
       original.headers.Authorization = `Bearer ${data.accessToken}`;
       return api(original);

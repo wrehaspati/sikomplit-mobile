@@ -156,7 +156,7 @@ export default function LibraryScreen() {
 
   const renderCard = (item: IPublishedSubmission) => {
     return (
-      <ThemedView key={item.id} variant="card">
+      <ThemedView key={item.id} variant="card" style={{ marginBottom: 16 }}>
         <View style={styles.container}>
           <View style={styles.cardImage}>
             <Image
@@ -207,8 +207,7 @@ export default function LibraryScreen() {
       contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN_HORIZONTAL }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }
-    >
+      }>
       {/* Content */}
 
       {/* Search Input */}
@@ -241,20 +240,16 @@ export default function LibraryScreen() {
       <Animated.View style={[{
         marginBottom: 16,
         transform: [{ translateY: searchFocusAnim }]
-      }]}
-      >
+      }]}>
         <Animated.View style={{ transform: [{ scale: filterButtonScale }] }}>
           <Pressable
             onPress={() => setShowBookmarksOnly((s) => !s)}
             style={[
               styles.bookmarkFilterButton,
               showBookmarksOnly ? styles.bookmarkFilterButtonActive : null,
-              {
-                backgroundColor: cardBackgound,
-              }
+              { backgroundColor: cardBackgound }
             ]}
-            hitSlop={8}
-          >
+            hitSlop={8}>
             <IconSymbol name={showBookmarksOnly ? 'star.fill' : 'star'} size={14} color={showBookmarksOnly ? Colors.accentYellow : Colors.light.icon} />
             <ThemedText type="caption" style={{ marginLeft: 8 }}>
               {showBookmarksOnly ? 'Tampilkan semua' : `Tersimpan (${bookmarks?.bookmarkedIds.length ?? 0})`}
@@ -267,9 +262,8 @@ export default function LibraryScreen() {
       {isSearchFocused ? (
         <Animated.View style={[
           styles.suggestionPanel,
-          {
-            transform: [{ translateY: searchFocusAnim }]
-          }]}>
+          { transform: [{ translateY: searchFocusAnim }] }
+        ]}>
           <ThemedText type="caption" style={styles.suggestionHeader}>
             {filteredSuggestions.length > 0 ? 'Hasil ditemukan:' : 'Tidak ada hasil ditemukan'}
           </ThemedText>
@@ -329,8 +323,7 @@ export default function LibraryScreen() {
         visible={Boolean(selectedPublication)}
         title="Detail Pustaka"
         onClose={() => setSelectedPublication(null)}
-        height="72%"
-      >
+        height="72%">
         {selectedPublication && (
           <ScrollView contentContainerStyle={styles.modalContent}>
             {/* Sheet Body */}
@@ -359,8 +352,7 @@ export default function LibraryScreen() {
             <Pressable
               onPress={() => openDocument(selectedPublication.research_summary)}
               hitSlop={10}
-              style={styles.downloadSummaryButton}
-            >
+              style={styles.downloadSummaryButton}>
               {selectedPublication.research_summary ? (
                 <IconSymbol name="arrow.down.app.fill" size={20} color={Colors.accentBlue} style={{ marginEnd: 4 }} />
               ) : (

@@ -1,12 +1,19 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { BookmarkProvider } from '@/contexts/bookmark-context';
 import { ThemePreferenceProvider } from '@/contexts/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import {
+  getPushNotificationData,
+  getPushNotificationRoute,
+  registerAndStorePushTokenAsync,
+} from '../services/push-notifications';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -27,11 +34,53 @@ function RootLayoutContent() {
       <BookmarkProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <StatusBar style="auto" />
+          <PushNotificationBootstrap />
           <RootLayoutNav />
         </ThemeProvider>
       </BookmarkProvider>
     </AuthProvider>
   );
+}
+
+function PushNotificationBootstrap() {
+  const auth = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (auth?.state.isLoading || !auth?.state.token) {
+      console.log('Skipping push notification registration');
+      return;
+    }
+
+    registerAndStorePushTokenAsync()
+      .then((token) => {
+        console.log('FCM device token stored:', token);
+      })
+      .catch((error) => {
+        console.warn('Push notification registration failed:', error);
+      });
+
+    const receivedListener = Notifications.addNotificationReceivedListener((notification) => {
+      const data = getPushNotificationData(notification);
+      console.log('Push notification received:', data ?? notification.request.content);
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = getPushNotificationData(response.notification);
+      const route = getPushNotificationRoute(data);
+
+      if (route) {
+        router.push(route as never);
+      }
+    });
+
+    return () => {
+      receivedListener.remove();
+      responseListener.remove();
+    };
+  }, [auth?.state.isLoading, auth?.state.token, router]);
+
+  return null;
 }
 
 function RootLayoutNav() {

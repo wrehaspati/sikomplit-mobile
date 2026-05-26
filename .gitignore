@@ -1,6 +1,7 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# Android Studio
+#IDE
+.vscode/
 .idea/
 
 # dependencies
@@ -44,3 +45,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# services
+google-services.json
