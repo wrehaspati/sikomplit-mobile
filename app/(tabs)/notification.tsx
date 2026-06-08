@@ -15,14 +15,18 @@ import {
   Pressable,
   RefreshControl,
   StyleSheet,
-  View
+  View,
 } from "react-native";
-import NotificationCard, { type NotificationStatusTone } from "../../components/notification-card";
+import NotificationCard, {
+  type NotificationStatusTone,
+} from "../../components/notification-card";
 import NotificationModal from "../../components/notification-modal";
 
+// Interface for filter
 type SortOrder = "newest" | "oldest";
 type StatusFilter = "all" | "pending" | "approved" | "revision";
 
+// Interface for announcement notification
 type AnnouncementNotification = {
   id: string;
   title: string;
@@ -30,41 +34,53 @@ type AnnouncementNotification = {
   created_at: string;
 };
 
+// Interface for feed items
 type FeedItem =
   | { type: "submission"; created_at: string; submission: ISubmissionData }
-  | { type: "announcement"; created_at: string; announcement: AnnouncementNotification };
+  | {
+      type: "announcement";
+      created_at: string;
+      announcement: AnnouncementNotification;
+    };
 
 // Prepared dummy announcements to simulate Firebase push notifications
 const DUMMY_ANNOUNCEMENTS: AnnouncementNotification[] = [
   {
     id: "ann-1",
     title: "Pemeliharaan Sistem Layanan Rekomendasi",
-    message: "Layanan akan mengalami pemeliharaan pada Jumat, 20.00-22.00 WIB. Mohon simpan draft Anda sebelum waktu tersebut.",
+    message:
+      "Layanan akan mengalami pemeliharaan pada Jumat, 20.00-22.00 WIB. Mohon simpan draft Anda sebelum waktu tersebut.",
     created_at: "2026-05-18T13:10:00.000Z",
   },
   {
     id: "ann-2",
     title: "Perubahan Ketentuan Unggah Dokumen",
-    message: "Format dokumen proposal kini mendukung ukuran hingga 25 MB. Pastikan file dapat dibaca dengan jelas sebelum dikirim.",
+    message:
+      "Format dokumen proposal kini mendukung ukuran hingga 25 MB. Pastikan file dapat dibaca dengan jelas sebelum dikirim.",
     created_at: "2026-05-15T08:30:00.000Z",
   },
   {
     id: "ann-3",
     title: "Pengingat Verifikasi Email Akun",
-    message: "Silakan verifikasi email untuk mendapatkan notifikasi status pengajuan terbaru melalui push notification Firebase.",
+    message:
+      "Silakan verifikasi email untuk mendapatkan notifikasi status pengajuan terbaru melalui push notification Firebase.",
     created_at: "2026-05-12T04:45:00.000Z",
   },
 ];
 
 /**
  * Determines the status metadata (badge color, text color, stripe color, and icon) based on the submission status text.
- * @param status 
- * @returns 
+ * @param status
+ * @returns
  */
 export const getStatusMeta = (status: string) => {
   const normalized = status.toLowerCase();
 
-  if (normalized.includes("selesai") || normalized.includes("approved") || normalized.includes("diterima")) {
+  if (
+    normalized.includes("selesai") ||
+    normalized.includes("approved") ||
+    normalized.includes("diterima")
+  ) {
     return {
       kind: "approved" as const,
       badgeBackground: Colors.notificationBadge.approved.background,
@@ -74,7 +90,11 @@ export const getStatusMeta = (status: string) => {
     };
   }
 
-  if (normalized.includes("revisi") || normalized.includes("review") || normalized.includes("perbaikan")) {
+  if (
+    normalized.includes("revisi") ||
+    normalized.includes("review") ||
+    normalized.includes("perbaikan")
+  ) {
     return {
       kind: "revision" as const,
       badgeBackground: Colors.notificationBadge.revision.background,
@@ -101,10 +121,19 @@ export default function NotificationScreen() {
   const secondaryText = useThemeColor({}, "text.secondary");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [selectedSubmission, setSelectedSubmission] = useState<ISubmissionData | null>(null);
-  const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<ISubmissionData | null>(null);
+  const [downloadProgressMap, setDownloadProgressMap] = useState<
+    Record<string, number>
+  >({});
 
-  const userSubmissions = useMemo(() => submissions?.userSubmissions ?? [], [submissions?.userSubmissions]);
+  // Get user submissions from context
+  const userSubmissions = useMemo(
+    () => submissions?.userSubmissions ?? [],
+    [submissions?.userSubmissions],
+  );
+
+  // Get refreshing state from context
   const refreshing = submissions?.isRefreshingUser ?? false;
 
   // Handler for pull-to-refresh action
@@ -119,10 +148,7 @@ export default function NotificationScreen() {
 
   // Memoized filtered submissions based on status filter
   const filteredSubmissions = useMemo(() => {
-    if (statusFilter === "all") {
-      return sortedSubmissions;
-    }
-
+    if (statusFilter === "all") return sortedSubmissions;
     return sortedSubmissions.filter((submission) => {
       const statusMeta = getStatusMeta(submission.progress_status);
       return statusMeta.kind === statusFilter;
@@ -131,17 +157,21 @@ export default function NotificationScreen() {
 
   // Memoized feed items combining submissions and announcements, sorted by creation date
   const feedItems = useMemo(() => {
-    const submissionItems: FeedItem[] = filteredSubmissions.map((submission) => ({
-      type: "submission",
-      created_at: submission.created_at,
-      submission,
-    }));
+    const submissionItems: FeedItem[] = filteredSubmissions.map(
+      (submission) => ({
+        type: "submission",
+        created_at: submission.created_at,
+        submission,
+      }),
+    );
 
-    const announcementItems: FeedItem[] = DUMMY_ANNOUNCEMENTS.map((announcement) => ({
-      type: "announcement",
-      created_at: announcement.created_at,
-      announcement,
-    }));
+    const announcementItems: FeedItem[] = DUMMY_ANNOUNCEMENTS.map(
+      (announcement) => ({
+        type: "announcement",
+        created_at: announcement.created_at,
+        announcement,
+      }),
+    );
 
     const merged = [...submissionItems, ...announcementItems];
 
@@ -171,7 +201,10 @@ export default function NotificationScreen() {
   // Function to open a document URL using authenticated download + open
   const openDocument = async (url?: string | null) => {
     if (!isValidHttpUrl(url)) {
-      Alert.alert("Dokumen tidak tersedia", "Tautan dokumen tidak valid atau belum tersedia.");
+      Alert.alert(
+        "Dokumen tidak tersedia",
+        "Tautan dokumen tidak valid atau belum tersedia.",
+      );
       return;
     }
 
@@ -201,14 +234,20 @@ export default function NotificationScreen() {
     <>
       <ParallaxScrollView
         title="Notifikasi"
-        contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN_HORIZONTAL, paddingBottom: 40 }}
+        contentContainerStyle={{
+          paddingHorizontal: SCREEN_MARGIN_HORIZONTAL,
+          paddingBottom: 40,
+        }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }>
+        }
+      >
         {/* Content */}
 
         {/* Filter */}
-        <ThemedView style={[styles.filterWrap, { backgroundColor: sectionBackground }]}>
+        <ThemedView
+          style={[styles.filterWrap, { backgroundColor: sectionBackground }]}
+        >
           <ThemedText type="caption" style={styles.filterLabel}>
             Urutkan tanggal dibuat
           </ThemedText>
@@ -217,11 +256,19 @@ export default function NotificationScreen() {
               onPress={() => setSortOrder("newest")}
               style={[
                 styles.filterButton,
-                sortOrder === "newest" ? styles.filterButtonActive : styles.filterButtonInactive,
-              ]}>
+                sortOrder === "newest"
+                  ? styles.filterButtonActive
+                  : styles.filterButtonInactive,
+              ]}
+            >
               <ThemedText
                 type="caption"
-                style={sortOrder === "newest" ? styles.filterTextActive : styles.filterTextInactive}>
+                style={
+                  sortOrder === "newest"
+                    ? styles.filterTextActive
+                    : styles.filterTextInactive
+                }
+              >
                 Terbaru
               </ThemedText>
             </Pressable>
@@ -229,17 +276,28 @@ export default function NotificationScreen() {
               onPress={() => setSortOrder("oldest")}
               style={[
                 styles.filterButton,
-                sortOrder === "oldest" ? styles.filterButtonActive : styles.filterButtonInactive,
-              ]}>
+                sortOrder === "oldest"
+                  ? styles.filterButtonActive
+                  : styles.filterButtonInactive,
+              ]}
+            >
               <ThemedText
                 type="caption"
-                style={sortOrder === "oldest" ? styles.filterTextActive : styles.filterTextInactive}>
+                style={
+                  sortOrder === "oldest"
+                    ? styles.filterTextActive
+                    : styles.filterTextInactive
+                }
+              >
                 Terlama
               </ThemedText>
             </Pressable>
           </View>
           {/* Status Filter */}
-          <ThemedText type="caption" style={[styles.filterLabel, { marginTop: 10 }]}>
+          <ThemedText
+            type="caption"
+            style={[styles.filterLabel, { marginTop: 10 }]}
+          >
             Status
           </ThemedText>
           <View style={styles.filterButtonsRowWrap}>
@@ -247,11 +305,19 @@ export default function NotificationScreen() {
               onPress={() => setStatusFilter("all")}
               style={[
                 styles.filterButton,
-                statusFilter === "all" ? styles.filterButtonActive : styles.filterButtonInactive,
-              ]}>
+                statusFilter === "all"
+                  ? styles.filterButtonActive
+                  : styles.filterButtonInactive,
+              ]}
+            >
               <ThemedText
                 type="caption"
-                style={statusFilter === "all" ? styles.filterTextActive : styles.filterTextInactive}>
+                style={
+                  statusFilter === "all"
+                    ? styles.filterTextActive
+                    : styles.filterTextInactive
+                }
+              >
                 Semua
               </ThemedText>
             </Pressable>
@@ -259,17 +325,26 @@ export default function NotificationScreen() {
               onPress={() => setStatusFilter("pending")}
               style={[
                 styles.filterButton,
-                statusFilter === "pending" ? styles.filterButtonActive : styles.filterButtonInactive,
-              ]}>
+                statusFilter === "pending"
+                  ? styles.filterButtonActive
+                  : styles.filterButtonInactive,
+              ]}
+            >
               <View style={styles.filterChipContent}>
                 <IconSymbol
                   name="circle.fill"
                   size={10}
-                  color={statusFilter === "pending" ? "#fff" : Colors.accentBlue}
+                  color={
+                    statusFilter === "pending" ? "#fff" : Colors.accentBlue
+                  }
                 />
                 <ThemedText
                   type="caption"
-                  style={statusFilter === "pending" ? styles.filterTextActive : styles.filterTextInactive}
+                  style={
+                    statusFilter === "pending"
+                      ? styles.filterTextActive
+                      : styles.filterTextInactive
+                  }
                 >
                   Pending
                 </ThemedText>
@@ -279,17 +354,26 @@ export default function NotificationScreen() {
               onPress={() => setStatusFilter("approved")}
               style={[
                 styles.filterButton,
-                statusFilter === "approved" ? styles.filterButtonActive : styles.filterButtonInactive,
-              ]}>
+                statusFilter === "approved"
+                  ? styles.filterButtonActive
+                  : styles.filterButtonInactive,
+              ]}
+            >
               <View style={styles.filterChipContent}>
                 <IconSymbol
                   name="checkmark.shield.fill"
                   size={12}
-                  color={statusFilter === "approved" ? "#fff" : Colors.accentGreen}
+                  color={
+                    statusFilter === "approved" ? "#fff" : Colors.accentGreen
+                  }
                 />
                 <ThemedText
                   type="caption"
-                  style={statusFilter === "approved" ? styles.filterTextActive : styles.filterTextInactive}
+                  style={
+                    statusFilter === "approved"
+                      ? styles.filterTextActive
+                      : styles.filterTextInactive
+                  }
                 >
                   Disetujui
                 </ThemedText>
@@ -299,17 +383,26 @@ export default function NotificationScreen() {
               onPress={() => setStatusFilter("revision")}
               style={[
                 styles.filterButton,
-                statusFilter === "revision" ? styles.filterButtonActive : styles.filterButtonInactive,
-              ]}>
+                statusFilter === "revision"
+                  ? styles.filterButtonActive
+                  : styles.filterButtonInactive,
+              ]}
+            >
               <View style={styles.filterChipContent}>
                 <IconSymbol
                   name="circle.fill"
                   size={12}
-                  color={statusFilter === "revision" ? "#fff" : Colors.accentYellow}
+                  color={
+                    statusFilter === "revision" ? "#fff" : Colors.accentYellow
+                  }
                 />
                 <ThemedText
                   type="caption"
-                  style={statusFilter === "revision" ? styles.filterTextActive : styles.filterTextInactive}
+                  style={
+                    statusFilter === "revision"
+                      ? styles.filterTextActive
+                      : styles.filterTextInactive
+                  }
                 >
                   Perlu Revisi
                 </ThemedText>
@@ -321,12 +414,21 @@ export default function NotificationScreen() {
 
         {/* Notification Items */}
         {feedItems.length === 0 ? (
-          <ThemedView style={[styles.emptyStateCard, { backgroundColor: sectionBackground }]}>
+          <ThemedView
+            style={[
+              styles.emptyStateCard,
+              { backgroundColor: sectionBackground },
+            ]}
+          >
             <ThemedText type="headline" style={styles.emptyStateTitle}>
               Belum Ada Notifikasi
             </ThemedText>
-            <ThemedText type="subheadline" style={{ color: tertiaryText, textAlign: "center" }}>
-              Notifikasi pengajuan akan muncul di sini setelah Anda mengirim formulir.
+            <ThemedText
+              type="subheadline"
+              style={{ color: tertiaryText, textAlign: "center" }}
+            >
+              Notifikasi pengajuan akan muncul di sini setelah Anda mengirim
+              formulir.
             </ThemedText>
           </ThemedView>
         ) : (
@@ -341,11 +443,14 @@ export default function NotificationScreen() {
                   title={item.announcement.title}
                   subtitle={item.announcement.message}
                   footerLabel="Firebase Push Notification"
-                  statusTone={{
-                    badgeBackground: Colors.notificationBadge.announcement.background,
-                    badgeText: Colors.notificationBadge.announcement.text,
-                    iconName: 'circle.fill',
-                  } as NotificationStatusTone}
+                  statusTone={
+                    {
+                      badgeBackground:
+                        Colors.notificationBadge.announcement.background,
+                      badgeText: Colors.notificationBadge.announcement.text,
+                      iconName: "circle.fill",
+                    } as NotificationStatusTone
+                  }
                   announcement
                 />
               );
@@ -372,7 +477,7 @@ export default function NotificationScreen() {
         {/* End Notification Items */}
 
         {/* End Content */}
-      </ParallaxScrollView >
+      </ParallaxScrollView>
 
       <NotificationModal
         visible={selectedSubmission !== null}

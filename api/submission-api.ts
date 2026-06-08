@@ -1,6 +1,11 @@
 import { ApiResponse } from "@/types/response";
-import { IPublishedSubmission, ISubmissionData, ISubmissionPost, ISubmissionUploadFile } from "@/types/submission";
-import { File } from 'expo-file-system';
+import {
+  IPublishedSubmission,
+  ISubmissionData,
+  ISubmissionPost,
+  ISubmissionUploadFile,
+} from "@/types/submission";
+import { File } from "expo-file-system";
 import { api } from "./api-client";
 
 /**
@@ -8,28 +13,41 @@ import { api } from "./api-client";
  * @returns Active submission data.
  */
 export const activeSubmission = async (): Promise<ISubmissionData[]> => {
-  const { data } = await api.get<ApiResponse<ISubmissionData[]>>(`/user/recommendations`);
+  const { data } = await api.get<ApiResponse<ISubmissionData[]>>(
+    `/user/recommendations`,
+  );
   if (!data.data) throw new Error(data.message);
   return data.data;
-}
+};
 
 /**
  * Fetches the published submissions.
  * @returns Published submission data.
  */
-export const publishedSubmission = async (): Promise<IPublishedSubmission[]> => {
-  const { data } = await api.get<ApiResponse<IPublishedSubmission[]>>('/researches');
+export const publishedSubmission = async (): Promise<
+  IPublishedSubmission[]
+> => {
+  const { data } =
+    await api.get<ApiResponse<IPublishedSubmission[]>>("/researches");
   if (!data.data) throw new Error(data.message);
   return data.data;
-}
+};
 
 /**
  * Submits a new research recommendation application.
  * @param data
  * @returns Request response.
  */
-export const applySubmission = async (data: ISubmissionPost): Promise<ApiResponse<ISubmissionData>> => {
-  type SubmissionFileField = keyof Pick<ISubmissionPost, 'application_letter' | 'research_proposal' | 'ethics_clearance_letter' | 'final_report_statement_letter'>;
+export const applySubmission = async (
+  data: ISubmissionPost,
+): Promise<ApiResponse<ISubmissionData>> => {
+  type SubmissionFileField = keyof Pick<
+    ISubmissionPost,
+    | "application_letter"
+    | "research_proposal"
+    | "ethics_clearance_letter"
+    | "final_report_statement_letter"
+  >;
 
   const encodeFile = async (file?: ISubmissionUploadFile) => {
     if (!file?.uri) {
@@ -40,7 +58,7 @@ export const applySubmission = async (data: ISubmissionPost): Promise<ApiRespons
 
     return {
       name: file.name,
-      mimeType: file.mimeType ?? 'application/pdf',
+      mimeType: file.mimeType ?? "application/pdf",
       base64,
     };
   };
@@ -58,9 +76,14 @@ export const applySubmission = async (data: ISubmissionPost): Promise<ApiRespons
     application_letter: await encodeFile(data.application_letter),
     research_proposal: await encodeFile(data.research_proposal),
     ethics_clearance_letter: await encodeFile(data.ethics_clearance_letter),
-    final_report_statement_letter: await encodeFile(data.final_report_statement_letter),
-  } as Record<SubmissionFileField | Exclude<keyof ISubmissionPost, SubmissionFileField>, unknown>;
+    final_report_statement_letter: await encodeFile(
+      data.final_report_statement_letter,
+    ),
+  } as Record<
+    SubmissionFileField | Exclude<keyof ISubmissionPost, SubmissionFileField>,
+    unknown
+  >;
 
-  const res = await api.post('/user/recommendations', payload);
+  const res = await api.post("/user/recommendations", payload);
   return res.data;
-}
+};
