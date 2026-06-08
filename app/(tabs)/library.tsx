@@ -24,6 +24,7 @@ export default function LibraryScreen() {
   const bookmarks = useBookmarks();
   const scrollY = useRef(new Animated.Value(0)).current;
   const searchFocusAnim = useRef(new Animated.Value(0)).current;
+  const titleVisibilityAnim = useRef(new Animated.Value(0)).current;
   const filterButtonScale = useRef(new Animated.Value(1)).current;
   const [query, setQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -52,11 +53,18 @@ export default function LibraryScreen() {
   // Handlers for search input focus and blur animations
   const handleSearchFocus = () => {
     setIsSearchFocused(true);
-    Animated.timing(searchFocusAnim, {
-      toValue: -40,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(searchFocusAnim, {
+        toValue: -40,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(titleVisibilityAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start();
     scrollY.setValue(20);
   };
 
@@ -97,11 +105,18 @@ export default function LibraryScreen() {
 
   // Handlers for search input focus and blur animations
   const handleSearchBlur = () => {
-    Animated.timing(searchFocusAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => setIsSearchFocused(false));
+    Animated.parallel([
+      Animated.timing(searchFocusAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(titleVisibilityAnim, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setIsSearchFocused(false));
     scrollY.setValue(0);
   };
 
@@ -189,6 +204,7 @@ export default function LibraryScreen() {
     <ParallaxScrollView
       title="Pustaka Digital"
       scrollYValue={scrollY}
+      titleVisibilityValue={titleVisibilityAnim}
       contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN_HORIZONTAL }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />

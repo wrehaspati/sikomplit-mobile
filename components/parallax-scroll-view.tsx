@@ -5,6 +5,7 @@ import { ThemedText } from './themed-text';
 type ParallaxScrollViewProps = ScrollViewProps & {
   title: string;
   scrollYValue?: Animated.Value;
+  titleVisibilityValue?: Animated.Value;
 };
 
 const HEADER_OFFSET = 54 + 12 + 41;
@@ -13,10 +14,13 @@ export default function ParallaxScrollView({
   title,
   children,
   scrollYValue,
+  titleVisibilityValue,
   ...Props
 }: ParallaxScrollViewProps) {
   const fallbackScrollY = useRef(new Animated.Value(0)).current;
+  const fallbackTitleVisibility = useRef(new Animated.Value(0)).current;
   const scrollY = scrollYValue ?? fallbackScrollY;
+  const titleVisibility = titleVisibilityValue ?? fallbackTitleVisibility;
   const { refreshControl, ...scrollProps } = Props as ScrollViewProps & { refreshControl?: React.ReactElement<any> };
   const injectedRefreshControl = refreshControl
     ? React.cloneElement(refreshControl as React.ReactElement<any>, {
@@ -30,11 +34,25 @@ export default function ParallaxScrollView({
       <Animated.View
         style={{
           ...styles.header,
-          opacity: adjustedScroll.interpolate({
-            inputRange: [0, 18, 72],
-            outputRange: [1, 0, 0],
-            extrapolate: 'clamp',
-          }),
+          opacity: Animated.multiply(
+            adjustedScroll.interpolate({
+              inputRange: [0, 18, 72],
+              outputRange: [1, 0, 0],
+              extrapolate: 'clamp',
+            }),
+            titleVisibility.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 0],
+            }),
+          ),
+          transform: [
+            {
+              translateY: titleVisibility.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, -16],
+              }),
+            },
+          ],
         }}>
         <ThemedText type="title">
           {title}
