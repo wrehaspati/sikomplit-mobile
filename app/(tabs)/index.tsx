@@ -706,6 +706,9 @@ export default function HomeScreen() {
         onClose={() => setSelectedSubmission(null)}
         onOpenDocument={openDocument}
         downloadProgressMap={downloadProgressMap}
+        onReuploadSuccess={async () => {
+          await submissions?.refreshUserSubmissions();
+        }}
       />
       <ImagePreviewModal
         visible={previewVisible}

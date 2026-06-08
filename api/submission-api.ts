@@ -1,11 +1,10 @@
+import { encodeFile } from "@/services/encode-file";
 import { ApiResponse } from "@/types/response";
 import {
   IPublishedSubmission,
   ISubmissionData,
-  ISubmissionPost,
-  ISubmissionUploadFile,
+  ISubmissionPost
 } from "@/types/submission";
-import { File } from "expo-file-system";
 import { api } from "./api-client";
 
 /**
@@ -48,20 +47,6 @@ export const applySubmission = async (
     | "ethics_clearance_letter"
     | "final_report_statement_letter"
   >;
-
-  const encodeFile = async (file?: ISubmissionUploadFile) => {
-    if (!file?.uri) {
-      return undefined;
-    }
-
-    const base64 = await new File(file.uri).base64();
-
-    return {
-      name: file.name,
-      mimeType: file.mimeType ?? "application/pdf",
-      base64,
-    };
-  };
 
   const payload = {
     research_type_id: data.research_type_id,

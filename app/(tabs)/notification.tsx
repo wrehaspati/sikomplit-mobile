@@ -488,6 +488,9 @@ export default function NotificationScreen() {
         onClose={() => setSelectedSubmission(null)}
         onOpenDocument={openDocument}
         downloadProgressMap={downloadProgressMap}
+        onReuploadSuccess={async () => {
+          await submissions?.refreshUserSubmissions();
+        }}
       />
     </>
   );
