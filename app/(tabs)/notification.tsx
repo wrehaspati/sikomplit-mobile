@@ -3,6 +3,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
 import { useSubmissions } from "@/contexts/submission-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
@@ -43,30 +44,30 @@ type FeedItem =
       announcement: AnnouncementNotification;
     };
 
-// Prepared dummy announcements to simulate Firebase push notifications
-const DUMMY_ANNOUNCEMENTS: AnnouncementNotification[] = [
-  {
-    id: "ann-1",
-    title: "Pemeliharaan Sistem Layanan Rekomendasi",
-    message:
-      "Layanan akan mengalami pemeliharaan pada Jumat, 20.00-22.00 WIB. Mohon simpan draft Anda sebelum waktu tersebut.",
-    created_at: "2026-05-18T13:10:00.000Z",
-  },
-  {
-    id: "ann-2",
-    title: "Perubahan Ketentuan Unggah Dokumen",
-    message:
-      "Format dokumen proposal kini mendukung ukuran hingga 25 MB. Pastikan file dapat dibaca dengan jelas sebelum dikirim.",
-    created_at: "2026-05-15T08:30:00.000Z",
-  },
-  {
-    id: "ann-3",
-    title: "Pengingat Verifikasi Email Akun",
-    message:
-      "Silakan verifikasi email untuk mendapatkan notifikasi status pengajuan terbaru melalui push notification Firebase.",
-    created_at: "2026-05-12T04:45:00.000Z",
-  },
-];
+// Prepared dummy announcements to simulate Firebase push notifications (Unimplemented)
+// const DUMMY_ANNOUNCEMENTS: AnnouncementNotification[] = [
+//   {
+//     id: "ann-1",
+//     title: "Pemeliharaan Sistem Layanan Rekomendasi",
+//     message:
+//       "Layanan akan mengalami pemeliharaan pada Jumat, 20.00-22.00 WIB. Mohon simpan draft Anda sebelum waktu tersebut.",
+//     created_at: "2026-05-18T13:10:00.000Z",
+//   },
+//   {
+//     id: "ann-2",
+//     title: "Perubahan Ketentuan Unggah Dokumen",
+//     message:
+//       "Format dokumen proposal kini mendukung ukuran hingga 25 MB. Pastikan file dapat dibaca dengan jelas sebelum dikirim.",
+//     created_at: "2026-05-15T08:30:00.000Z",
+//   },
+//   {
+//     id: "ann-3",
+//     title: "Pengingat Verifikasi Email Akun",
+//     message:
+//       "Silakan verifikasi email untuk mendapatkan notifikasi status pengajuan terbaru melalui push notification Firebase.",
+//     created_at: "2026-05-12T04:45:00.000Z",
+//   },
+// ];
 
 /**
  * Determines the status metadata (badge color, text color, stripe color, and icon) based on the submission status text.
@@ -114,6 +115,7 @@ export const getStatusMeta = (status: string) => {
 };
 
 export default function NotificationScreen() {
+  const auth = useAuth();
   const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, "fill.vibrant.tertiary");
   const sectionBackground = useThemeColor({}, "fill.vibrant.tertiary");
@@ -165,15 +167,17 @@ export default function NotificationScreen() {
       }),
     );
 
-    const announcementItems: FeedItem[] = DUMMY_ANNOUNCEMENTS.map(
-      (announcement) => ({
-        type: "announcement",
-        created_at: announcement.created_at,
-        announcement,
-      }),
-    );
+    // (Announcement will be implemented in future updates)
+    // const announcementItems: FeedItem[] = DUMMY_ANNOUNCEMENTS.map(
+    //   (announcement) => ({
+    //     type: "announcement",
+    //     created_at: announcement.created_at,
+    //     announcement,
+    //   }),
+    // );
+    // const merged = [...submissionItems, ...announcementItems];
 
-    const merged = [...submissionItems, ...announcementItems];
+    const merged = [...submissionItems];
 
     merged.sort((a, b) => {
       const timeA = new Date(a.created_at).getTime();
@@ -427,8 +431,9 @@ export default function NotificationScreen() {
               type="subheadline"
               style={{ color: tertiaryText, textAlign: "center" }}
             >
-              Notifikasi pengajuan akan muncul di sini setelah Anda mengirim
-              formulir.
+              {!!auth?.state.user
+                ? "Notifikasi pengajuan akan tampil setelah Anda mengirim formulir."
+                : "Notifikasi pengajuan akan tampil setelah Anda login dan mengirimkan formulir."}
             </ThemedText>
           </ThemedView>
         ) : (

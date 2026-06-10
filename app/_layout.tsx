@@ -137,6 +137,10 @@ function RootLayoutNav() {
         name="fullscreen-alert"
         options={{ presentation: "fullScreenModal", headerShown: false }}
       />
+      <Stack.Screen
+        name="term"
+        options={{ presentation: "card", title: "Syarat dan Ketentuan" }}
+      />
     </Stack>
   );
 }

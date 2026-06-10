@@ -1,16 +1,13 @@
-import ThemedButton from "@/components/themed-button";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
-import { BlurView } from "expo-blur";
-import { useVideoPlayer, VideoView } from "expo-video";
-
 import ImagePreviewModal from "@/components/image-preview-modal";
 import BottomSheetModal from "@/components/modal";
 import NotificationModal from "@/components/notification-modal";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
+import ThemedButton from "@/components/themed-button";
 import ThemedSeparator from "@/components/themed-separator";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useSubmissions } from "@/contexts/submission-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -18,13 +15,17 @@ import { downloadAndOpenDocument } from "@/services/document";
 import { formatDate } from "@/services/format-date";
 import { shortResearchType } from "@/services/format-text";
 import { IPublishedSubmission, ISubmissionData } from "@/types/submission";
+import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
+import * as MailComposer from "expo-mail-composer";
 import { router } from "expo-router";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Linking,
   Platform,
   Pressable,
   RefreshControl,
@@ -48,6 +49,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const FIRST_CARD_HEIGHT = SCREEN_WIDTH * 1;
 const SECTION_GAP = 24;
 const CHEVRON_SIZE = Platform.OS === "ios" ? 12 : 16;
+const PHONE_NUMBER = "081238275881";
+const EMAIL = "gedereyna@gmail.com";
 
 // Interface for guide document structure
 interface IGuideDocument {
@@ -82,6 +85,7 @@ export default function HomeScreen() {
     useState<ISubmissionData | null>(null);
   const userSubmissions = submissions?.userSubmissions ?? [];
   const flyers = submissions?.publishedSubmissions ?? [];
+  console.log(flyers);
   const refreshing =
     (submissions?.isRefreshingPublished ?? false) ||
     (submissions?.isRefreshingUser ?? false);
@@ -547,6 +551,11 @@ export default function HomeScreen() {
         <View style={{ display: "flex", flexDirection: "row", gap: 12 }}>
           <ThemedButton
             variant="secondary"
+            onPress={() => {
+              Linking.openURL(
+                `http://api.whatsapp.com/send?phone=${PHONE_NUMBER}`,
+              );
+            }}
             icon={
               <Image
                 source={require("@/assets/images/whatsapp.png")}
@@ -560,6 +569,21 @@ export default function HomeScreen() {
           </ThemedButton>
           <ThemedButton
             variant="secondary"
+            onPress={async () => {
+              const canSend = await MailComposer.isAvailableAsync();
+              if (!canSend) {
+                Alert.alert(
+                  "Email tidak tersedia",
+                  "Email tidak tersedia di perangkat ini. Silakan cek kembali atau gunakan aplikasi email pihak ketiga.",
+                );
+                return;
+              }
+              const options = {
+                subject: "Bantuan Layanan - SIKOMPLIT",
+                recipients: [EMAIL],
+              };
+              await MailComposer.composeAsync(options);
+            }}
             icon={
               <IconSymbol
                 size={25}
@@ -576,7 +600,13 @@ export default function HomeScreen() {
         </View>
         <View>
           <ThemedSeparator style={{ marginTop: SECTION_GAP }} />
-          <Pressable onPress={() => {}} hitSlop={10} style={styles.supportLink}>
+          <Pressable
+            onPress={() => {
+              router.push("/term");
+            }}
+            hitSlop={10}
+            style={styles.supportLink}
+          >
             <ThemedText
               type="footnote"
               lightColor={Colors.light.text.secondary}

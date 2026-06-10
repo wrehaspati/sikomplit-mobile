@@ -49,6 +49,7 @@ export default function RegisterScreen() {
   const auth = useAuth();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [termsVisible, setTermsVisible] = useState(false);
 
   // Initialize form with react hook form
   const form = useForm<z.infer<typeof RegisterSchema>>({
@@ -297,7 +298,9 @@ export default function RegisterScreen() {
         </View>
         <View style={{ width: "100%", marginVertical: 12, gap: 20 }}>
           <Pressable
-            onPress={() => {}}
+            onPress={() => {
+              router.push("/term");
+            }}
             hitSlop={10}
             style={{ alignSelf: "center" }}
           >

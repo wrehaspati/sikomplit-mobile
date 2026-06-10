@@ -289,9 +289,12 @@ export default function SettingScreen() {
           type="footnote"
           style={{ color: Colors.light.text.secondary }}
         >
-          220040054 - Prototipe aplikasi ini dibuat dalam rangka pemenuhan
-          matakuliah Tugas Akhir penyelesaian studi S1-Teknologi Informasi ITB
-          STIKOM BALI.
+          Sikomplit atau sistem rekomendasi penelitian merupakan inovasi berupa
+          aplikasi pelayanan publik yang dihadirkan untuk mempermudah pelayanan
+          penerbitan surat rekomendasi penelitian di kawasan Dinas Kesehatan
+          Kota Denpasar. Aplikasi prototipe ini dikembangkan sebagai bagian dari
+          penelitian dalam upaya pengembangan lanjutan dari sistem rekomendasi
+          penelitian yang sebelumnya hadir dalam bentuk aplikasi berbasis web.
         </ThemedText>
       </ThemedView>
       {/* End About Section */}
