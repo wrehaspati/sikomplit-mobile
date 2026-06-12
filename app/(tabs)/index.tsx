@@ -210,11 +210,11 @@ export default function HomeScreen() {
           contentPosition={"center"}
         />
         <Image
-          source={require("@/assets/images/app-icon.webp")}
+          source={require("@/assets/images/shadow-icon.webp")}
           style={styles.logoIcon}
         />
         <View style={styles.vectorWave}>
-          <Svg viewBox="0 0 422 0" style={StyleSheet.absoluteFill}>
+          <Svg viewBox="0 0 422 56" style={StyleSheet.absoluteFill}>
             <Defs>
               <Filter id="blur">
                 <FeGaussianBlur stdDeviation="8" />
@@ -232,7 +232,7 @@ export default function HomeScreen() {
               </LinearGradient>
             </Defs>
             <Path
-              d="M233.354 40.1323C71.7758 -25.3362 17.6288 0.0686264 0 40.1323V276H422V63.6662C419.274 95.8852 533.5 80.7095 233.354 40.1323Z"
+              d="M233.354 40.1323C71.7758 -5.3362 17.6288 30.0686264 0 0V576H422V93.6662C419.274 155.8852 333.5 80.7095 233.354 40.1323Z"
               fill="url(#paint0_linear_114_324)"
               fillOpacity="1"
               filter="url(#blur)"
@@ -609,7 +609,7 @@ export default function HomeScreen() {
             style={styles.supportLink}
           >
             <ThemedText
-              type="footnote"
+              type="default"
               lightColor={Colors.light.text.secondary}
               darkColor={Colors.light.text.secondary}
             >
@@ -777,6 +777,7 @@ const styles = StyleSheet.create({
   },
   cardBackground: {
     ...StyleSheet.absoluteFill,
+    filter: "brightness(0.9)",
   },
   emptyHistoryCard: {
     justifyContent: "center",
@@ -791,10 +792,10 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   logoIcon: {
-    width: 48 * 1.4,
-    height: 33 * 1.4,
+    width: 64,
+    height: 64,
     alignSelf: "flex-end",
-    margin: 20,
+    margin: 12,
   },
   callAction: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",

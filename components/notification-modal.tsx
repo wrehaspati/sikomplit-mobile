@@ -557,7 +557,8 @@ const styles = StyleSheet.create({
   modalCard: {
     borderRadius: RADIUS.DEFAULT,
     padding: 16,
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)",
+    borderWidth: 1,
+    borderColor: Colors.light.fill.secondary,
   },
   detailRow: {
     marginBottom: 10,

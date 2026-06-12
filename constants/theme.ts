@@ -16,7 +16,7 @@ export const Colors = {
       tertiary: "#BFBFBF",
       quarternary: "#D9D9D9",
     },
-    default: "#fff",
+    default: "#f2f2f2",
     background: "#fff",
     secondary: "#E0E0E0",
     separator: "#C6C6C8",

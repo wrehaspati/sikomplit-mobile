@@ -46,6 +46,8 @@ export default function LibraryScreen() {
     Record<string, number>
   >({});
 
+  const borderColor = useThemeColor({}, "background");
+
   const published = useMemo(
     () => submissions?.publishedSubmissions ?? [],
     [submissions?.publishedSubmissions],
@@ -284,7 +286,10 @@ export default function LibraryScreen() {
             placeholderTextColor={Colors.light.text.secondary}
             onFocus={handleSearchFocus}
             onBlur={handleSearchBlur}
-            inputStyle={[styles.input, { backgroundColor: cardBackgound }]}
+            inputStyle={[
+              styles.input,
+              { backgroundColor: cardBackgound, borderColor, borderWidth: 1 },
+            ]}
             style={{ paddingVertical: 12, paddingRight: 40 }}
             icon={
               <IconSymbol
@@ -325,7 +330,7 @@ export default function LibraryScreen() {
             style={[
               styles.bookmarkFilterButton,
               showBookmarksOnly ? styles.bookmarkFilterButtonActive : null,
-              { backgroundColor: cardBackgound },
+              { backgroundColor: cardBackgound, borderColor, borderWidth: 1 },
             ]}
             hitSlop={8}
           >

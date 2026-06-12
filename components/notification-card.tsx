@@ -1,6 +1,7 @@
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, RADIUS } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 
 // Notification status tone type
@@ -44,6 +45,7 @@ export default function NotificationCard({
 }: Props) {
   const Container = onPress ? Pressable : View;
   const announcementBadge = Colors.notificationBadge.announcement;
+  const borderColor = useThemeColor({}, "background");
 
   return (
     <Container
@@ -51,6 +53,7 @@ export default function NotificationCard({
       style={[
         styles.card,
         { backgroundColor },
+        { borderColor, borderWidth: 1 },
         onPress && styles.pressableCard,
       ]}
     >
