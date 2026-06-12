@@ -5,9 +5,7 @@
     "slug": "sikomplit-mobile",
     "sdkVersion": "55.0.0",
     "version": "1.0.0",
-    "platforms": [
-      "android"
-    ],
+    "platforms": ["android"],
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sikomplitmobile",
@@ -57,7 +55,16 @@
       "expo-web-browser",
       "expo-sharing",
       "expo-notifications",
-      "expo-mail-composer"
+      "expo-mail-composer",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.dereyn.** { *; }"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

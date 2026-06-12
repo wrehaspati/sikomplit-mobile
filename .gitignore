@@ -48,3 +48,4 @@ app-example
 
 # services
 google-services.json
+my-upload-key.keystore
