@@ -7,6 +7,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, RADIUS } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { formatDateTime } from "@/services/format-date";
 import { ISubmissionData } from "@/types/submission";
 import * as DocumentPicker from "expo-document-picker";
@@ -51,6 +52,9 @@ export default function NotificationModal({
   downloadProgressMap,
   onReuploadSuccess,
 }: Props) {
+  const defaultColor = useThemeColor({}, "default");
+  const background = useThemeColor({}, "background");
+
   const isValidHttpUrl = (value?: string | null) =>
     !!value && /^https?:\/\//i.test(value);
 
@@ -313,8 +317,10 @@ export default function NotificationModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.modalContainer}>
-        <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView
+        style={[styles.modalContainer, { backgroundColor: background }]}
+      >
+        <View style={{ flex: 1 }}>
           <View style={styles.modalTopBar}>
             <ThemedText type="title4">Detail Pengajuan</ThemedText>
             <Pressable style={styles.closeButton} onPress={onClose}>
@@ -328,7 +334,12 @@ export default function NotificationModal({
           </View>
 
           {localSubmission && (
-            <ScrollView contentContainerStyle={styles.modalContent}>
+            <ScrollView
+              contentContainerStyle={[
+                styles.modalContent,
+                { backgroundColor: defaultColor },
+              ]}
+            >
               {/* Revision banner */}
               {localSubmission.editable && (
                 <View style={styles.revisionBanner}>
@@ -492,7 +503,7 @@ export default function NotificationModal({
               </ThemedView>
             </ScrollView>
           )}
-        </SafeAreaView>
+        </View>
       </SafeAreaView>
     </Modal>
   );
@@ -530,8 +541,6 @@ const styles = StyleSheet.create({
   modalTopBar: {
     paddingHorizontal: 24,
     paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.fill.secondary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

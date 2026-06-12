@@ -7,6 +7,7 @@ import ThemedSeparator from "@/components/themed-separator";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { EMAIL, PHONE_NUMBER } from "@/constants/contact-person";
 import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useSubmissions } from "@/contexts/submission-context";
@@ -49,8 +50,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const FIRST_CARD_HEIGHT = SCREEN_WIDTH * 1;
 const SECTION_GAP = 24;
 const CHEVRON_SIZE = Platform.OS === "ios" ? 12 : 16;
-const PHONE_NUMBER = "081238275881";
-const EMAIL = "gedereyna@gmail.com";
 
 // Interface for guide document structure
 interface IGuideDocument {
@@ -73,6 +72,7 @@ export default function HomeScreen() {
   const auth = useAuth();
   const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
+  const secondaryColor = useThemeColor({}, "secondary");
   const cardBackground = useThemeColor({}, "fill.vibrant.tertiary");
   const iconBackground = useThemeColor({}, "fill.primary");
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -207,6 +207,7 @@ export default function HomeScreen() {
           source={require("@/assets/images/card-bg.webp")}
           style={styles.cardBackground}
           contentFit="cover"
+          contentPosition={"center"}
         />
         <Image
           source={require("@/assets/images/app-icon.webp")}
@@ -659,7 +660,7 @@ export default function HomeScreen() {
                     pressed && !downloading && styles.guideCardPressed,
                     downloading && styles.guideCardDisabled,
                     {
-                      borderColor: cardBackground,
+                      borderColor: secondaryColor,
                       backgroundColor: backgroundColor,
                     },
                   ]}
@@ -888,7 +889,7 @@ const styles = StyleSheet.create({
   guideAction: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
+    marginHorizontal: 12,
   },
   supportLink: {
     alignSelf: "flex-start",

@@ -15,6 +15,7 @@ export default function SettingScreen() {
   const auth = useAuth();
   const themePreference = useThemePreference();
   const sectionBackground = useThemeColor({}, "fill.vibrant.secondary");
+  const secondaryColor = useThemeColor({}, "secondary");
 
   // Get user from context
   const user = auth?.state.user;
@@ -218,7 +219,10 @@ export default function SettingScreen() {
                 variant={active ? "secondary" : "outlineSecondary"}
                 size="small"
                 onPress={() => handleThemeChange(option.value)}
-                style={styles.themeOptionButton}
+                style={[
+                  styles.themeOptionButton,
+                  { borderColor: secondaryColor },
+                ]}
               >
                 {option.label}
               </ThemedButton>
@@ -368,6 +372,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     minWidth: 96,
     justifyContent: "center",
+    borderWidth: 2,
   },
   sectionLabel: {
     textTransform: "uppercase",

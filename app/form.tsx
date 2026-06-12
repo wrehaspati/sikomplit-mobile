@@ -6,6 +6,7 @@ import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
+import { PHONE_NUMBER } from "@/constants/contact-person";
 import { Colors, RADIUS } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { ISubmissionPost } from "@/types/submission";
@@ -22,6 +23,7 @@ import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -436,7 +438,11 @@ export default function FormScreen() {
             }
             size="small"
             style={{ alignSelf: "flex-start" }}
-            onPress={() => {}}
+            onPress={() => {
+              Linking.openURL(
+                `http://api.whatsapp.com/send?phone=${PHONE_NUMBER}`,
+              );
+            }}
           >
             Whatsapp
           </ThemedButton>

@@ -247,8 +247,9 @@ export default function LibraryScreen() {
             <View>
               <ThemedSeparator style={{ marginVertical: 8 }} />
               <ThemedButton
-                variant="secondary"
+                variant="link"
                 size="small"
+                hitSlop={10}
                 onPress={() => setSelectedPublication(item)}
                 style={styles.detailButton}
               >
@@ -610,6 +611,7 @@ const styles = StyleSheet.create({
   },
   detailButton: {
     alignSelf: "flex-end",
+    marginHorizontal: 12,
   },
   suggestionPanel: {
     marginBottom: 8,
