@@ -219,7 +219,7 @@ export default function TermScreen() {
               lightColor={Colors.light.text.secondary}
               darkColor={Colors.dark.text.secondary}
             >
-              Tanggal Berlaku: Juli 2025
+              Tanggal Berlaku: Juni 2026
             </ThemedText>
           </View>
         </View>
@@ -424,7 +424,7 @@ export default function TermScreen() {
           darkColor={Colors.dark.text.tertiary}
           style={{ textAlign: "center" }}
         >
-          © 2025 SIKOMPLIT — Dinas Kesehatan Kota Denpasar
+          © 2026 SIKOMPLIT — Dinas Kesehatan Kota Denpasar
         </ThemedText>
       </View>
     </ScrollView>
