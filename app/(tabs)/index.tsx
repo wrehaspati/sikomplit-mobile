@@ -324,7 +324,12 @@ export default function HomeScreen() {
           decelerationRate="fast"
         >
           {auth?.state.user ? (
-            userSubmissions
+            [...userSubmissions]
+              .sort(
+                (a, b) =>
+                  new Date(b.updated_at).getTime() -
+                  new Date(a.updated_at).getTime(),
+              )
               .slice(0, 3)
               .map((element) => (
                 <HistoryCard key={element.id} submission={element} />
