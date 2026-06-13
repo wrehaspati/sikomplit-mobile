@@ -21,10 +21,11 @@ import { Image } from "expo-image";
 import * as MailComposer from "expo-mail-composer";
 import { router } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   Linking,
   Platform,
@@ -88,6 +89,16 @@ export default function HomeScreen() {
   const refreshing =
     (submissions?.isRefreshingPublished ?? false) ||
     (submissions?.isRefreshingUser ?? false);
+
+  // Prefetch flyer images on data load for instant display
+  useEffect(() => {
+    if (flyers.length === 0) return;
+    flyers.forEach((item) => {
+      if (item.flyer) {
+        Image.prefetch(item.flyer);
+      }
+    });
+  }, [flyers]);
 
   // Handler for pull-to-refresh action
   const handleRefresh = async () => {
@@ -163,6 +174,29 @@ export default function HomeScreen() {
 
   // Flyer Card Component
   const FlyerCard = ({ data }: { data: IPublishedSubmission }) => {
+    const [loaded, setLoaded] = useState(false);
+    const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+    useEffect(() => {
+      if (loaded) return;
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.6,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      animation.start();
+      return () => animation.stop();
+    }, [loaded, pulseAnim]);
+
     return (
       <Pressable
         onPress={() => {
@@ -173,10 +207,21 @@ export default function HomeScreen() {
         <View style={styles.flyerContainer}>
           <Image
             style={styles.flyerImage}
-            source={data.flyer}
+            source={{ uri: data.flyer }}
             contentFit="cover"
-            transition={1000}
+            transition={300}
+            cachePolicy="memory-disk"
+            onLoad={() => setLoaded(true)}
           />
+          {!loaded && (
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                styles.flyerPlaceholder,
+                { opacity: pulseAnim },
+              ]}
+            />
+          )}
         </View>
       </Pressable>
     );
@@ -838,6 +883,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.fill.tertiary,
     width: "100%",
     aspectRatio: 2 / 3,
+  },
+  flyerPlaceholder: {
+    backgroundColor: Colors.light.fill.tertiary,
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalBody: {
     flex: 1,

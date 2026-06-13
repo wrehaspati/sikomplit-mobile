@@ -46,6 +46,30 @@ export default function LibraryScreen() {
     Record<string, number>
   >({});
 
+  // Image skeleton animation
+  const [loaded, setLoaded] = useState(false);
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    if (loaded) return;
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.6,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [loaded, pulseAnim]);
+
   const borderColor = useThemeColor({}, "background");
 
   const published = useMemo(
@@ -53,6 +77,16 @@ export default function LibraryScreen() {
     [submissions?.publishedSubmissions],
   );
   const refreshing = submissions?.isRefreshingPublished ?? false;
+
+  // Prefetch flyer images on data load for instant display
+  useEffect(() => {
+    if (!published || published.length === 0) return;
+    published.forEach((item) => {
+      if (item.flyer) {
+        Image.prefetch(item.flyer);
+      }
+    });
+  }, [published]);
 
   // Handler for bookmark toggle
   const handleBookmark = (id: string) => {
@@ -184,13 +218,24 @@ export default function LibraryScreen() {
               source={{ uri: item.flyer }}
               contentFit="fill"
               contentPosition="center"
+              cachePolicy="memory-disk"
               style={{
                 width: "100%",
                 borderRadius: 8,
                 backgroundColor: Colors.light.fill.secondary,
                 aspectRatio: 2 / 3,
               }}
+              onLoad={() => setLoaded(true)}
             />
+            {!loaded && (
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFill,
+                  styles.flyerPlaceholder,
+                  { opacity: pulseAnim },
+                ]}
+              />
+            )}
           </View>
           <View style={styles.cardContent}>
             <View>
@@ -543,9 +588,10 @@ export default function LibraryScreen() {
               <View style={styles.flyerContainer}>
                 <Image
                   style={styles.flyerImage}
-                  source={selectedPublication.flyer}
+                  source={{ uri: selectedPublication.flyer }}
                   contentFit="cover"
-                  transition={1000}
+                  transition={300}
+                  cachePolicy="memory-disk"
                 />
               </View>
             </Pressable>
@@ -580,6 +626,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 14,
     top: 16,
+  },
+  flyerPlaceholder: {
+    backgroundColor: Colors.light.fill.tertiary,
+    justifyContent: "center",
+    alignItems: "center",
   },
   bookmarkFilterButton: {
     flexDirection: "row",
