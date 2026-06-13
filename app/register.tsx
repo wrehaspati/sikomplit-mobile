@@ -49,7 +49,6 @@ export default function RegisterScreen() {
   const auth = useAuth();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [termsVisible, setTermsVisible] = useState(false);
 
   // Initialize form with react hook form
   const form = useForm<z.infer<typeof RegisterSchema>>({

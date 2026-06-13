@@ -85,7 +85,6 @@ export default function HomeScreen() {
     useState<ISubmissionData | null>(null);
   const userSubmissions = submissions?.userSubmissions ?? [];
   const flyers = submissions?.publishedSubmissions ?? [];
-  console.log(flyers);
   const refreshing =
     (submissions?.isRefreshingPublished ?? false) ||
     (submissions?.isRefreshingUser ?? false);

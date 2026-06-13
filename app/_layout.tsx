@@ -57,25 +57,14 @@ function PushNotificationBootstrap() {
 
   useEffect(() => {
     if (auth?.state.isLoading || !auth?.state.token) {
-      console.log("Skipping push notification registration");
       return;
     }
 
-    registerAndStorePushTokenAsync()
-      .then((token) => {
-        console.log("FCM device token stored:", token);
-      })
-      .catch((error) => {
-        console.warn("Push notification registration failed:", error);
-      });
+    registerAndStorePushTokenAsync();
 
     const receivedListener = Notifications.addNotificationReceivedListener(
       (notification) => {
-        const data = getPushNotificationData(notification);
-        console.log(
-          "Push notification received:",
-          data ?? notification.request.content,
-        );
+        getPushNotificationData(notification);
       },
     );
 
