@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 
 // Development base URL configuration
 const getBaseUrl = () => {
-  return "https://sikomplit.playforfun.my.id/api/v1";
+  return "http://mobile-api-server.sikomplit.com/api/v1";
 };
 
 // Create an Axios instance with the base URL
