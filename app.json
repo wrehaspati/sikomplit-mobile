@@ -4,7 +4,7 @@
     "description": "Aplikasi pelayanan pengajuan rekomendasi penelitian pada Dinas Kesehatan Kota Denpasar",
     "slug": "sikomplit-mobile",
     "sdkVersion": "55.0.0",
-    "version": "1.1.0",
+    "version": "1.1.1-beta",
     "platforms": ["android"],
     "orientation": "portrait",
     "icon": "./assets/images/favicon.png",
@@ -22,7 +22,8 @@
       },
       "predictiveBackGestureEnabled": false,
       "googleServicesFile": "./google-services.json",
-      "package": "com.dereyn.sikomplitmobile"
+      "package": "com.dereyn.sikomplitmobile",
+      "versionCode": 3
     },
     "web": {
       "output": "static",
@@ -38,6 +39,7 @@
           "resizeMode": "contain",
           "backgroundColor": "#f2f2f2",
           "dark": {
+            "image": "./assets/images/splash-icon.png",
             "backgroundColor": "#000000"
           }
         }
