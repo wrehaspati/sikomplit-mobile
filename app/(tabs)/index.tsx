@@ -90,6 +90,13 @@ export default function HomeScreen() {
     (submissions?.isRefreshingPublished ?? false) ||
     (submissions?.isRefreshingUser ?? false);
 
+  // Close details modal when context starts refreshing
+  useEffect(() => {
+    if (refreshing) {
+      setSelectedSubmission(null);
+    }
+  }, [refreshing]);
+
   // Prefetch flyer images on data load for instant display
   useEffect(() => {
     if (flyers.length === 0) return;

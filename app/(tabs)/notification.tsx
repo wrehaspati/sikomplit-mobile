@@ -10,7 +10,7 @@ import { downloadAndOpenDocument } from "@/services/document";
 import { formatDate } from "@/services/format-date";
 import { shortResearchType } from "@/services/format-text";
 import { ISubmissionData } from "@/types/submission";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -117,7 +117,7 @@ export const getStatusMeta = (status: string) => {
 export default function NotificationScreen() {
   const auth = useAuth();
   const submissions = useSubmissions();
-  const backgroundColor = useThemeColor({}, "fill.vibrant.tertiary");
+  const backgroundColor = useThemeColor({}, "background");
   const sectionBackground = useThemeColor({}, "fill.vibrant.tertiary");
   const tertiaryText = useThemeColor({}, "text.secondary");
   const secondaryText = useThemeColor({}, "text.secondary");
@@ -137,6 +137,13 @@ export default function NotificationScreen() {
 
   // Get refreshing state from context
   const refreshing = submissions?.isRefreshingUser ?? false;
+
+  // Close details modal when context starts refreshing
+  useEffect(() => {
+    if (refreshing) {
+      setSelectedSubmission(null);
+    }
+  }, [refreshing]);
 
   // Handler for pull-to-refresh action
   const handleRefresh = async () => {
@@ -442,7 +449,7 @@ export default function NotificationScreen() {
               return (
                 <NotificationCard
                   key={item.announcement.id}
-                  backgroundColor={backgroundColor}
+                  backgroundColor={sectionBackground}
                   createdAtLabel={formatDate(item.announcement.created_at)}
                   statusLabel="Pengumuman"
                   title={item.announcement.title}
@@ -467,7 +474,7 @@ export default function NotificationScreen() {
             return (
               <NotificationCard
                 key={submission.id}
-                backgroundColor={backgroundColor}
+                backgroundColor={sectionBackground}
                 createdAtLabel={formatDate(submission.updated_at)}
                 statusLabel={submission.progress_status}
                 title={shortResearchType(submission.research_type)}
@@ -487,7 +494,7 @@ export default function NotificationScreen() {
       <NotificationModal
         visible={selectedSubmission !== null}
         submission={selectedSubmission}
-        sectionBackground={sectionBackground}
+        sectionBackground={backgroundColor}
         secondaryText={secondaryText}
         tertiaryText={tertiaryText}
         onClose={() => setSelectedSubmission(null)}

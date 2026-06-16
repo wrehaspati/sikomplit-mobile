@@ -11,6 +11,7 @@ import "react-native-reanimated";
 
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { BookmarkProvider } from "@/contexts/bookmark-context";
+import { SubmissionProvider, useSubmissions } from "@/contexts/submission-context";
 import { ThemePreferenceProvider } from "@/contexts/theme-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
@@ -36,13 +37,15 @@ function RootLayoutContent() {
   return (
     <AuthProvider>
       <BookmarkProvider>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
-          <StatusBar style="auto" />
-          <PushNotificationBootstrap />
-          <RootLayoutNav />
-        </ThemeProvider>
+        <SubmissionProvider>
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <StatusBar style="auto" />
+            <PushNotificationBootstrap />
+            <RootLayoutNav />
+          </ThemeProvider>
+        </SubmissionProvider>
       </BookmarkProvider>
     </AuthProvider>
   );
@@ -54,6 +57,7 @@ function RootLayoutContent() {
 function PushNotificationBootstrap() {
   const auth = useAuth();
   const router = useRouter();
+  const submissions = useSubmissions();
 
   useEffect(() => {
     if (auth?.state.isLoading || !auth?.state.token) {
@@ -65,6 +69,7 @@ function PushNotificationBootstrap() {
     const receivedListener = Notifications.addNotificationReceivedListener(
       (notification) => {
         getPushNotificationData(notification);
+        submissions?.refreshAllSubmissions();
       },
     );
 
@@ -72,6 +77,8 @@ function PushNotificationBootstrap() {
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = getPushNotificationData(response.notification);
         const route = getPushNotificationRoute(data);
+
+        submissions?.refreshAllSubmissions();
 
         if (route) {
           router.push(route as never);
@@ -82,7 +89,7 @@ function PushNotificationBootstrap() {
       receivedListener.remove();
       responseListener.remove();
     };
-  }, [auth?.state.isLoading, auth?.state.token, router]);
+  }, [auth?.state.isLoading, auth?.state.token, router, submissions]);
 
   return null;
 }
