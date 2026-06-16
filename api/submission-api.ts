@@ -3,7 +3,7 @@ import { ApiResponse } from "@/types/response";
 import {
   IPublishedSubmission,
   ISubmissionData,
-  ISubmissionPost
+  ISubmissionPost,
 } from "@/types/submission";
 import { api } from "./api-client";
 
@@ -40,14 +40,6 @@ export const publishedSubmission = async (): Promise<
 export const applySubmission = async (
   data: ISubmissionPost,
 ): Promise<ApiResponse<ISubmissionData>> => {
-  type SubmissionFileField = keyof Pick<
-    ISubmissionPost,
-    | "application_letter"
-    | "research_proposal"
-    | "ethics_clearance_letter"
-    | "final_report_statement_letter"
-  >;
-
   const payload = {
     research_type_id: data.research_type_id,
     name: data.name,
@@ -64,10 +56,7 @@ export const applySubmission = async (
     final_report_statement_letter: await encodeFile(
       data.final_report_statement_letter,
     ),
-  } as Record<
-    SubmissionFileField | Exclude<keyof ISubmissionPost, SubmissionFileField>,
-    unknown
-  >;
+  };
 
   const res = await api.post("/user/recommendations", payload);
   return res.data;

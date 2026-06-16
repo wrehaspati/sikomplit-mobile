@@ -39,6 +39,12 @@ const MAPPING = {
   'arrow.down.app.fill': 'file-download',
   'xmark.octagon.fill': 'error',
   'xmark.circle.fill': 'cancel',
+  'arrow.up.doc.fill': 'file-upload',
+  'arrow.up.circle.fill': 'upload',
+  'exclamationmark.triangle.fill': 'warning',
+  'plus.circle.fill': 'add-circle',
+  'photo.fill': 'image',
+  'text.document.fill': 'article',
 } as IconMapping;
 
 /**
