@@ -103,23 +103,15 @@ export default function NotificationModal({
   const getTimelineStep = (progressStatus?: string | null): number => {
     if (!progressStatus) return 1;
     const status = progressStatus.toLowerCase();
-    console.log(status);
 
     if (
       status.includes("selesai") ||
       status.includes("diterima") ||
-      status.includes("completed") ||
-      status.includes("result_submitted") ||
       status.includes("hasil")
     ) {
       return 4;
     }
-    if (
-      status.includes("setuju") ||
-      status.includes("terbit") ||
-      status.includes("published") ||
-      status.includes("approved")
-    ) {
+    if (status.includes("setuju") || status.includes("terbit")) {
       return 3;
     }
     if (
@@ -127,10 +119,7 @@ export default function NotificationModal({
       status.includes("revisi") ||
       status.includes("perbaikan") ||
       status.includes("disposisi") ||
-      status.includes("review") ||
-      status.includes("verification") ||
-      status.includes("disposition") ||
-      status.includes("requested")
+      status.includes("review")
     ) {
       return 2;
     }
@@ -301,10 +290,6 @@ export default function NotificationModal({
         research_summary: data.research_summary,
         flyer: data.flyer,
       });
-      console.log(
-        "Research upload response:",
-        JSON.stringify(response, null, 2),
-      );
       if (response.data) {
         setLocalSubmission(response.data);
       }
