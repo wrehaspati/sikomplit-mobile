@@ -20,7 +20,7 @@ import { IPoster, ISubmissionData } from "@/types/submission";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import * as MailComposer from "expo-mail-composer";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -89,6 +89,23 @@ export default function HomeScreen() {
     (submissions?.isRefreshingPublished ?? false) ||
     (submissions?.isRefreshingUser ?? false) ||
     (submissions?.isRefreshingPoster ?? false);
+
+  const params = useLocalSearchParams<{ request_number?: string }>();
+  const requestNumberParam = params.request_number;
+
+  // Open notification modal if request_number parameter is present
+  useEffect(() => {
+    if (requestNumberParam && userSubmissions.length > 0) {
+      const submission = userSubmissions.find(
+        (item) => item.request_number === requestNumberParam
+      );
+      if (submission) {
+        setSelectedSubmission(submission);
+        // Clear parameter from URL so it doesn't pop up again
+        router.setParams({ request_number: undefined });
+      }
+    }
+  }, [requestNumberParam, userSubmissions]);
 
   // Close details modal when context starts refreshing
   useEffect(() => {

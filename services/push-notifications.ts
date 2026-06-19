@@ -82,7 +82,14 @@ export function getPushNotificationData(notification: Notifications.Notification
 
 export function getPushNotificationRoute(data?: PushNotificationData) {
   if (typeof data?.screen === 'string' && data.screen.startsWith('/')) {
+    if (data.request_number) {
+      return `${data.screen}${data.screen.includes('?') ? '&' : '?'}request_number=${data.request_number}`;
+    }
     return data.screen;
+  }
+
+  if (data?.request_number) {
+    return `/(tabs)/?request_number=${data.request_number}`;
   }
 
   if (data?.submissionId) {
