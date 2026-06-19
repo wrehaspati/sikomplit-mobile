@@ -1,4 +1,4 @@
-import { File, Paths } from "expo-file-system";
+import * as SecureStore from "expo-secure-store";
 import React, {
   createContext,
   useCallback,
@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 
-const bookmarkFile = new File(Paths.document, "library-bookmarks.json");
+const BOOKMARKS_STORAGE_KEY = "library_bookmarks";
 
 interface IBookmarkContext {
   bookmarkedIds: string[];
@@ -19,73 +19,65 @@ interface IBookmarkContext {
 
 const BookmarkContext = createContext<IBookmarkContext | null>(null);
 
-/**
- * Read bookmark IDs from local file storage.
- * Returns an empty array when the file does not exist yet.
- */
-function readBookmarksFromDisk(): string[] {
-  try {
-    if (!bookmarkFile.exists) return [];
-    const raw = bookmarkFile.textSync();
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return [
-        ...new Set(parsed.filter((id): id is string => typeof id === "string")),
-      ];
-    }
-    return [];
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Persist bookmark IDs to local file storage.
- */
-function writeBookmarksToDisk(ids: string[]): void {
-  try {
-    bookmarkFile.write(JSON.stringify(ids));
-  } catch {
-    // Silently ignore write errors to avoid crashing the app
-  }
-}
-
 export function BookmarkProvider({ children }: { children: React.ReactNode }) {
-  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
-  const [bookmarksLoaded, setBookmarksLoaded] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[] | null>(null);
 
-  // Load bookmarks from file storage on mount (synchronous read is fine for small JSON)
+  // Load bookmarks from SecureStore on mount
   useEffect(() => {
-    const ids = readBookmarksFromDisk();
-    setBookmarkedIds(ids);
-    setBookmarksLoaded(true);
+    async function loadBookmarks() {
+      try {
+        const raw = await SecureStore.getItemAsync(BOOKMARKS_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            setBookmarkedIds([...new Set(parsed)]);
+            return;
+          }
+        }
+        setBookmarkedIds([]);
+      } catch (error) {
+        console.error("Failed to load bookmarks from SecureStore:", error);
+        setBookmarkedIds([]);
+      }
+    }
+    loadBookmarks();
   }, []);
 
-  // Persist bookmarks to file storage whenever they change (but only after initial load)
+  // Persist bookmarks to SecureStore whenever they change (but only after they are loaded)
   useEffect(() => {
-    if (!bookmarksLoaded) return;
-    writeBookmarksToDisk(bookmarkedIds);
-  }, [bookmarkedIds, bookmarksLoaded]);
+    if (bookmarkedIds === null) return;
+    async function saveBookmarks() {
+      try {
+        await SecureStore.setItemAsync(
+          BOOKMARKS_STORAGE_KEY,
+          JSON.stringify(bookmarkedIds),
+        );
+      } catch (error) {
+        console.error("Failed to save bookmarks to SecureStore:", error);
+      }
+    }
+    saveBookmarks();
+  }, [bookmarkedIds]);
 
   /**
    * Toggle bookmark status for a given ID.
    */
   const toggleBookmark = useCallback((id: string) => {
     setBookmarkedIds((prev) => {
-      const exists = prev.includes(id);
+      const current = prev ?? [];
+      const exists = current.includes(id);
       return exists
-        ? prev.filter((bookmarkId) => bookmarkId !== id)
-        : [...new Set([...prev, id])];
+        ? current.filter((bookmarkId) => bookmarkId !== id)
+        : [...new Set([...current, id])];
     });
   }, []);
 
   /**
    * Remove bookmarks whose IDs no longer exist in the valid set.
-   * This is a no-op if bookmarks haven't been loaded yet (prevents the
-   * race condition where network data arrives before stored bookmarks).
    */
   const setValidBookmarks = useCallback((validIds: string[]) => {
     setBookmarkedIds((prev) => {
+      if (prev === null) return null;
       const validSet = new Set(validIds);
       const next = prev.filter((id) => validSet.has(id));
       return next.length === prev.length ? prev : next;
@@ -95,12 +87,12 @@ export function BookmarkProvider({ children }: { children: React.ReactNode }) {
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo(
     () => ({
-      bookmarkedIds,
-      bookmarksLoaded,
+      bookmarkedIds: bookmarkedIds ?? [],
+      bookmarksLoaded: bookmarkedIds !== null,
       toggleBookmark,
       setValidBookmarks,
     }),
-    [bookmarkedIds, bookmarksLoaded, toggleBookmark, setValidBookmarks],
+    [bookmarkedIds, toggleBookmark, setValidBookmarks],
   );
 
   return (

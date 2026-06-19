@@ -94,14 +94,6 @@ export default function LibraryScreen() {
     bookmarks?.toggleBookmark(id);
   };
 
-  // Ensure bookmarks are valid when published submissions are loaded or updated
-  useEffect(() => {
-    if (!published || !bookmarks?.bookmarksLoaded) {
-      return;
-    }
-    bookmarks.setValidBookmarks(published.map((item) => item.id));
-  }, [published, bookmarks]);
-
   // Handlers for search input focus and blur animations
   const handleSearchFocus = () => {
     setIsSearchFocused(true);
@@ -262,11 +254,11 @@ export default function LibraryScreen() {
                 >
                   {bookmarks?.bookmarkedIds.includes(item.id) ? (
                     <IconSymbol
-                      name="star.fill"
-                      color={Colors.accentYellow}
+                      name="bookmark.fill"
+                      color={Colors.accentBlue}
                       size={20}
                       style={{
-                        shadowColor: Colors.accentYellow,
+                        shadowColor: Colors.accentBlue,
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.3,
                         shadowRadius: 4,
@@ -274,7 +266,7 @@ export default function LibraryScreen() {
                     />
                   ) : (
                     <IconSymbol
-                      name="star"
+                      name="bookmark"
                       color={Colors.light.icon}
                       size={20}
                     />
@@ -381,11 +373,9 @@ export default function LibraryScreen() {
             hitSlop={8}
           >
             <IconSymbol
-              name={showBookmarksOnly ? "star.fill" : "star"}
+              name={showBookmarksOnly ? "bookmark.fill" : "bookmark"}
               size={14}
-              color={
-                showBookmarksOnly ? Colors.accentYellow : Colors.light.icon
-              }
+              color={showBookmarksOnly ? Colors.accentBlue : Colors.light.icon}
             />
             <ThemedText type="caption" style={{ marginLeft: 8 }}>
               {showBookmarksOnly
@@ -443,12 +433,12 @@ export default function LibraryScreen() {
                   <IconSymbol
                     name={
                       bookmarks?.bookmarkedIds.includes(item.id)
-                        ? "star.fill"
-                        : "star"
+                        ? "bookmark.fill"
+                        : "bookmark"
                     }
                     color={
                       bookmarks?.bookmarkedIds.includes(item.id)
-                        ? Colors.accentYellow
+                        ? Colors.accentBlue
                         : Colors.light.icon
                     }
                     size={18}
@@ -505,12 +495,12 @@ export default function LibraryScreen() {
                 <IconSymbol
                   name={
                     bookmarks?.bookmarkedIds.includes(selectedPublication.id)
-                      ? "star.fill"
-                      : "star"
+                      ? "bookmark.fill"
+                      : "bookmark"
                   }
                   color={
                     bookmarks?.bookmarkedIds.includes(selectedPublication.id)
-                      ? Colors.accentYellow
+                      ? Colors.accentBlue
                       : Colors.light.icon
                   }
                   size={20}
