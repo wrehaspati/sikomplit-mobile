@@ -1,5 +1,6 @@
 import { reuploadDocument, type ReuploadFileType } from "@/api/reapply-api";
 import { uploadResearch } from "@/api/research-api";
+import DocumentRow from "@/components/document-row";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -27,6 +28,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 import { FullscreenAlert } from "./alert";
+import ThemedButton from "./themed-button";
 
 // Zod schema for research upload form
 const selectedFileSchema = z.object({
@@ -323,8 +325,11 @@ export default function NotificationModal({
     }
   });
 
-  // Document row component
-  const DocumentRow = ({
+  // Expandable abstract state
+  const [abstractExpanded, setAbstractExpanded] = useState(false);
+
+  // Document row with re-upload wrapper
+  const SubmissionDocumentRow = ({
     label,
     url,
     fileType,
@@ -333,61 +338,18 @@ export default function NotificationModal({
     url?: string | null;
     fileType?: ReuploadFileType;
   }) => {
-    const available = isValidHttpUrl(url);
-    const progress = url ? (downloadProgressMap[url] ?? null) : null;
-    const isDownloading = progress !== null && progress >= 0 && progress < 1;
     const isEditable = localSubmission?.editable === true && fileType;
     const pickedFile = fileType ? selectedFiles[fileType] : undefined;
     const isUploading = fileType ? (uploadingFiles[fileType] ?? false) : false;
 
     return (
-      <View style={styles.documentRowWrapper}>
-        <Pressable
-          onPress={() => onOpenDocument(url)}
-          disabled={!available}
-          style={[styles.documentRow, !available && styles.documentRowDisabled]}
-        >
-          <View style={styles.documentLabelBlock}>
-            <IconSymbol
-              name="document.fill"
-              size={16}
-              color={
-                available ? Colors.accentBlue : Colors.light.text.secondary
-              }
-            />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <ThemedText
-                type="subheadline"
-                style={{ fontWeight: "600" }}
-                numberOfLines={1}
-              >
-                {label}
-              </ThemedText>
-              <ThemedText
-                type="caption"
-                style={{ color: available ? Colors.accentBlue : secondaryText }}
-              >
-                {available ? "Buka / Unduh" : "Belum tersedia"}
-              </ThemedText>
-            </View>
-          </View>
-          {isDownloading ? (
-            <ThemedText
-              type="caption"
-              style={{ color: Colors.accentBlue, fontWeight: "700" }}
-            >
-              {Math.round((progress ?? 0) * 100)}%
-            </ThemedText>
-          ) : (
-            available && (
-              <IconSymbol
-                name="chevron.right"
-                size={16}
-                color={Colors.accentBlue}
-              />
-            )
-          )}
-        </Pressable>
+      <View>
+        <DocumentRow
+          label={label}
+          url={url}
+          downloadProgressMap={downloadProgressMap}
+          onPress={(u) => onOpenDocument(u)}
+        />
 
         {/* Re-upload section — only when editable */}
         {isEditable && (
@@ -431,7 +393,10 @@ export default function NotificationModal({
                 <View style={styles.reuploadActions}>
                   <Pressable
                     onPress={() => handleUpload(fileType)}
-                    style={styles.uploadConfirmButton}
+                    style={({ pressed }) => [
+                      styles.uploadConfirmButton,
+                      pressed && { opacity: 0.8 },
+                    ]}
                   >
                     <IconSymbol
                       name="arrow.up.circle.fill"
@@ -450,7 +415,10 @@ export default function NotificationModal({
                   </Pressable>
                   <Pressable
                     onPress={() => cancelPickedFile(fileType)}
-                    style={styles.uploadCancelButton}
+                    style={({ pressed }) => [
+                      styles.uploadCancelButton,
+                      pressed && { opacity: 0.7 },
+                    ]}
                   >
                     <ThemedText
                       type="caption"
@@ -467,7 +435,10 @@ export default function NotificationModal({
             ) : (
               <Pressable
                 onPress={() => pickDocument(fileType)}
-                style={styles.reuploadButton}
+                style={({ pressed }) => [
+                  styles.reuploadButton,
+                  pressed && { opacity: 0.7 },
+                ]}
               >
                 <IconSymbol
                   name="arrow.up.doc.fill"
@@ -513,15 +484,37 @@ export default function NotificationModal({
         style={[styles.modalContainer, { backgroundColor: background }]}
       >
         <View style={{ flex: 1 }}>
-          <View style={styles.modalTopBar}>
-            <ThemedText type="title4">Detail Pengajuan</ThemedText>
-            <Pressable style={styles.closeButton} onPress={onClose}>
-              <ThemedText
-                type="subheadline"
-                style={{ color: Colors.accentBlue, fontWeight: "700" }}
-              >
-                Tutup
+          {/* Refined Header */}
+          <View
+            style={[
+              styles.modalTopBar,
+              { borderBottomColor: Colors.light.fill.secondary },
+            ]}
+          >
+            <View style={styles.headerTitleBlock}>
+              <View style={styles.headerIconCircle}>
+                <IconSymbol
+                  name="document.fill"
+                  size={14}
+                  color={Colors.accentBlue}
+                />
+              </View>
+              <ThemedText type="title4" style={{ fontWeight: "700" }}>
+                Detail Pengajuan
               </ThemedText>
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.closeButton,
+                pressed && { opacity: 0.6 },
+              ]}
+              onPress={onClose}
+            >
+              <IconSymbol
+                name="xmark.circle.fill"
+                size={28}
+                color={Colors.light.text.tertiary}
+              />
             </Pressable>
           </View>
 
@@ -540,11 +533,38 @@ export default function NotificationModal({
                   { backgroundColor: sectionBackground },
                 ]}
               >
-                <ThemedText type="subheadline" style={styles.sectionLabel}>
-                  Status Pengajuan
-                </ThemedText>
+                <View style={styles.sectionHeader}>
+                  <IconSymbol
+                    name="circle.fill"
+                    size={8}
+                    color={Colors.accentBlue}
+                  />
+                  <ThemedText type="subheadline" style={styles.sectionLabel}>
+                    Status Pengajuan
+                  </ThemedText>
+                </View>
 
                 <View style={styles.timelineRow}>
+                  {/* Connecting Lines (behind circles) */}
+                  {steps.map((_, idx) => {
+                    if (idx === steps.length - 1) return null;
+                    const segmentCompleted = currentStep > idx + 1;
+                    return (
+                      <View
+                        key={`line-${idx}`}
+                        style={[
+                          styles.timelineSegment,
+                          {
+                            left: `${((idx + 0.5) / steps.length) * 100}%`,
+                            width: `${(1 / steps.length) * 100}%`,
+                            backgroundColor: segmentCompleted
+                              ? Colors.accentGreen
+                              : Colors.light.fill.secondary,
+                          },
+                        ]}
+                      />
+                    );
+                  })}
                   {steps.map((stepLabel, idx) => {
                     const stepNum = idx + 1;
                     const isCompleted = currentStep > stepNum;
@@ -562,7 +582,7 @@ export default function NotificationModal({
                           {isCompleted ? (
                             <IconSymbol
                               name="checkmark.shield.fill"
-                              size={12}
+                              size={14}
                               color="#fff"
                             />
                           ) : (
@@ -570,7 +590,7 @@ export default function NotificationModal({
                               type="caption"
                               style={{
                                 color: isActive ? "#fff" : secondaryText,
-                                fontWeight: "700",
+                                fontWeight: "800",
                                 fontSize: 11,
                               }}
                             >
@@ -592,14 +612,15 @@ export default function NotificationModal({
                       </View>
                     );
                   })}
-                  {/* Connecting Line */}
-                  <View style={styles.timelineConnectorLine} />
                 </View>
 
                 {/* Visual Status Text badge */}
                 <View style={styles.statusBadgeRow}>
-                  <ThemedText type="caption" style={{ color: tertiaryText }}>
-                    Status saat ini:
+                  <ThemedText
+                    type="caption"
+                    style={{ color: tertiaryText, fontWeight: "500" }}
+                  >
+                    Status saat ini
                   </ThemedText>
                   <View
                     style={[
@@ -643,9 +664,16 @@ export default function NotificationModal({
                   { backgroundColor: sectionBackground },
                 ]}
               >
-                <ThemedText type="subheadline" style={styles.sectionLabel}>
-                  Ringkasan
-                </ThemedText>
+                <View style={styles.sectionHeader}>
+                  <IconSymbol
+                    name="circle.fill"
+                    size={8}
+                    color={Colors.accentBlue}
+                  />
+                  <ThemedText type="subheadline" style={styles.sectionLabel}>
+                    Ringkasan
+                  </ThemedText>
+                </View>
 
                 <View style={styles.gridContainer}>
                   <View style={styles.gridRow}>
@@ -660,6 +688,7 @@ export default function NotificationModal({
                       tertiaryText={tertiaryText}
                     />
                   </View>
+                  <View style={styles.gridDivider} />
                   <View style={styles.gridRow}>
                     <DetailColumn
                       label="Dibuat"
@@ -675,35 +704,38 @@ export default function NotificationModal({
                 </View>
               </ThemedView>
 
-              {/* Revision Banner (inline below summary) */}
+              {/* Revision Banner */}
               {localSubmission.editable && (
                 <View style={styles.revisionBanner}>
-                  <IconSymbol
-                    name="exclamationmark.triangle.fill"
-                    size={22}
-                    color={Colors.notificationBadge.revision.text}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <ThemedText
-                      type="subheadline"
-                      style={{
-                        fontWeight: "700",
-                        color: Colors.notificationBadge.revision.text,
-                      }}
-                    >
-                      Revisi Diperlukan
-                    </ThemedText>
-                    <ThemedText
-                      type="caption"
-                      style={{
-                        color: Colors.notificationBadge.revision.text,
-                        marginTop: 2,
-                        lineHeight: 16,
-                      }}
-                    >
-                      Silakan unggah ulang dokumen di bawah ini sesuai instruksi
-                      revisi yang diberikan.
-                    </ThemedText>
+                  <View style={styles.revisionContent}>
+                    <IconSymbol
+                      name="exclamationmark.triangle.fill"
+                      size={22}
+                      color={Colors.notificationBadge.revision.text}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <ThemedText
+                        type="subheadline"
+                        style={{
+                          fontWeight: "700",
+                          color: Colors.notificationBadge.revision.text,
+                        }}
+                      >
+                        Revisi Diperlukan
+                      </ThemedText>
+                      <ThemedText
+                        type="caption"
+                        style={{
+                          color: Colors.notificationBadge.revision.text,
+                          marginTop: 2,
+                          lineHeight: 16,
+                          opacity: 0.85,
+                        }}
+                      >
+                        Silakan unggah ulang dokumen di bawah ini sesuai
+                        instruksi revisi yang diberikan.
+                      </ThemedText>
+                    </View>
                   </View>
                 </View>
               )}
@@ -715,19 +747,21 @@ export default function NotificationModal({
                   { backgroundColor: sectionBackground },
                 ]}
               >
-                <ThemedText type="subheadline" style={styles.sectionLabel}>
-                  Surat Rekomendasi
-                </ThemedText>
+                <View style={styles.sectionHeader}>
+                  <IconSymbol
+                    name="circle.fill"
+                    size={8}
+                    color={Colors.accentGreen}
+                  />
+                  <ThemedText type="subheadline" style={styles.sectionLabel}>
+                    Surat Rekomendasi
+                  </ThemedText>
+                </View>
 
                 {recommendationAvailable ? (
                   <View style={styles.recommendationBoxActive}>
                     <View style={styles.recommendationHeaderRow}>
-                      <View
-                        style={[
-                          styles.circleIconBadge,
-                          { backgroundColor: "#EAF8EF" },
-                        ]}
-                      >
+                      <View style={styles.successIconCircle}>
                         <IconSymbol
                           name="checkmark.shield.fill"
                           size={20}
@@ -743,7 +777,7 @@ export default function NotificationModal({
                         </ThemedText>
                         <ThemedText
                           type="caption"
-                          style={{ color: tertiaryText, marginTop: 1 }}
+                          style={{ color: tertiaryText, marginTop: 2 }}
                         >
                           Ketuk tombol di bawah untuk membuka atau mengunduh
                           Surat Rekomendasi resmi Anda.
@@ -751,40 +785,42 @@ export default function NotificationModal({
                       </View>
                     </View>
 
-                    <Pressable
+                    <ThemedButton
                       onPress={() =>
                         onOpenDocument(localSubmission.recommendation_letter)
                       }
-                      style={({ pressed }) => [
-                        styles.downloadButton,
-                        pressed && styles.downloadButtonPressed,
-                      ]}
+                      lightColor={Colors.accentGreen}
+                      darkColor={Colors.accentGreen}
+                      icon={
+                        <IconSymbol
+                          name="arrow.down.app.fill"
+                          size={20}
+                          color="#fff"
+                        />
+                      }
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
                     >
-                      <IconSymbol
-                        name="arrow.down.app.fill"
-                        size={16}
-                        color="#fff"
-                      />
                       <ThemedText
-                        type="subheadline"
-                        style={styles.downloadButtonText}
+                        style={{
+                          color: "#fff",
+                          fontWeight: "700",
+                        }}
                       >
-                        Buka Surat Rekomendasi
+                        Surat Rekomendasi
                       </ThemedText>
-                    </Pressable>
+                    </ThemedButton>
                   </View>
                 ) : (
                   <View style={styles.recommendationBoxDisabled}>
                     <View style={styles.recommendationHeaderRow}>
-                      <View
-                        style={[
-                          styles.circleIconBadge,
-                          { backgroundColor: Colors.light.fill.tertiary },
-                        ]}
-                      >
+                      <View style={styles.lockedIconCircle}>
                         <IconSymbol
                           name="lock.fill"
-                          size={18}
+                          size={16}
                           color={Colors.light.text.secondary}
                         />
                       </View>
@@ -797,7 +833,7 @@ export default function NotificationModal({
                         </ThemedText>
                         <ThemedText
                           type="caption"
-                          style={{ color: tertiaryText, marginTop: 1 }}
+                          style={{ color: tertiaryText, marginTop: 2 }}
                         >
                           Surat Rekomendasi akan aktif di sini setelah seluruh
                           proses verifikasi dan disposisi selesai.
@@ -805,6 +841,11 @@ export default function NotificationModal({
                       </View>
                     </View>
                     <View style={styles.disabledActionButton}>
+                      <IconSymbol
+                        name="lock.fill"
+                        size={12}
+                        color={Colors.light.text.secondary}
+                      />
                       <ThemedText
                         type="caption"
                         style={{
@@ -819,54 +860,67 @@ export default function NotificationModal({
                 )}
               </ThemedView>
 
-              {/* Prerequisite Documents Section (Expandable Accordion if approved) */}
+              {/* Prerequisite Documents (Accordion) */}
               <ThemedView
                 style={[
-                  styles.modalCard,
-                  { backgroundColor: sectionBackground, paddingVertical: 12 },
+                  styles.accordionCard,
+                  { backgroundColor: sectionBackground },
                 ]}
               >
                 <Pressable
                   onPress={() => setDocsExpanded(!docsExpanded)}
-                  style={styles.accordionHeader}
+                  style={({ pressed }) => [
+                    styles.accordionHeader,
+                    pressed && { opacity: 0.7 },
+                  ]}
                 >
                   <View style={{ flex: 1, gap: 2 }}>
                     <ThemedText type="headline" style={{ fontWeight: "700" }}>
                       Berkas Persyaratan
                     </ThemedText>
-                    <ThemedText type="caption" style={{ color: tertiaryText }}>
-                      {isDataAwal
-                        ? "1 Dokumen Terlampir"
-                        : "4 Dokumen Terlampir"}
-                    </ThemedText>
+                    <View style={styles.accordionMeta}>
+                      <View style={styles.countPill}>
+                        <ThemedText type="caption" style={styles.countPillText}>
+                          {isDataAwal ? "1" : "4"}
+                        </ThemedText>
+                      </View>
+                      <ThemedText
+                        type="caption"
+                        style={{ color: tertiaryText }}
+                      >
+                        Dokumen Terlampir
+                      </ThemedText>
+                    </View>
                   </View>
-                  <IconSymbol
-                    name={docsExpanded ? "chevron.up" : "chevron.down"}
-                    size={18}
-                    color={Colors.accentBlue}
-                  />
+                  <View style={styles.chevronCircle}>
+                    <IconSymbol
+                      name={docsExpanded ? "chevron.up" : "chevron.down"}
+                      size={14}
+                      color={Colors.accentBlue}
+                    />
+                  </View>
                 </Pressable>
 
                 {docsExpanded && (
-                  <View style={{ marginTop: 12, gap: 10 }}>
-                    <DocumentRow
+                  <View style={styles.accordionBody}>
+                    <SubmissionDocumentRow
                       label="Surat Permohonan"
                       url={localSubmission.application_letter}
                       fileType="application_letter"
                     />
                     {!isDataAwal && (
                       <>
-                        <DocumentRow
+                        <SubmissionDocumentRow
                           label="Proposal Penelitian"
                           url={localSubmission.research_proposal}
                           fileType="research_proposal"
                         />
-                        <DocumentRow
+                        <SubmissionDocumentRow
                           label="Surat Keterangan Etik"
                           url={localSubmission.ethics_clearance_letter}
                           fileType="ethics_clearance_letter"
                         />
-                        <DocumentRow
+                        <SubmissionDocumentRow
                           label="Surat Pernyataan Laporan Akhir"
                           url={localSubmission.final_report_statement_letter}
                           fileType="final_report_statement_letter"
@@ -877,7 +931,7 @@ export default function NotificationModal({
                 )}
               </ThemedView>
 
-              {/* Hasil Penelitian (Research Upload) Section (Only if approved/completed) */}
+              {/* Hasil Penelitian (Research Upload) Section */}
               {currentStep >= 3 && (
                 <ThemedView
                   style={[
@@ -885,23 +939,78 @@ export default function NotificationModal({
                     { backgroundColor: sectionBackground },
                   ]}
                 >
-                  <ThemedText type="subheadline" style={styles.sectionLabel}>
-                    Hasil Penelitian
-                  </ThemedText>
+                  <View style={styles.sectionHeader}>
+                    <IconSymbol
+                      name="circle.fill"
+                      size={8}
+                      color={Colors.accentBlue}
+                    />
+                    <ThemedText type="subheadline" style={styles.sectionLabel}>
+                      Hasil Penelitian
+                    </ThemedText>
+                  </View>
 
                   {localSubmission.research_upload != null ? (
                     /* Display existing research upload data */
-                    <View style={{ gap: 8, marginTop: 4 }}>
+                    <View style={{ gap: 10, marginTop: 4 }}>
                       <DetailRow
                         label="Judul Penelitian"
                         value={localSubmission.research_upload.title}
                         tertiaryText={tertiaryText}
                       />
-                      <DocumentRow
+
+                      {/* Compact expandable abstract */}
+                      {localSubmission.research_upload.abstract ? (
+                        <Pressable
+                          onPress={() => setAbstractExpanded(!abstractExpanded)}
+                          style={({ pressed }) => [
+                            styles.abstractCard,
+                            pressed && { opacity: 0.8 },
+                          ]}
+                        >
+                          <View style={styles.abstractHeader}>
+                            <IconSymbol
+                              name="document.fill"
+                              size={12}
+                              color={Colors.accentBlue}
+                            />
+                            <ThemedText
+                              type="caption"
+                              style={styles.abstractHeaderLabel}
+                            >
+                              Abstrak Penelitian
+                            </ThemedText>
+                            <IconSymbol
+                              name={
+                                abstractExpanded ? "chevron.up" : "chevron.down"
+                              }
+                              size={12}
+                              color={Colors.accentBlue}
+                            />
+                          </View>
+                          <ThemedText
+                            type="caption"
+                            style={styles.abstractText}
+                            numberOfLines={abstractExpanded ? undefined : 2}
+                          >
+                            {localSubmission.research_upload.abstract}
+                          </ThemedText>
+                          {!abstractExpanded && (
+                            <ThemedText
+                              type="caption"
+                              style={styles.abstractReadMore}
+                            >
+                              Ketuk untuk selengkapnya
+                            </ThemedText>
+                          )}
+                        </Pressable>
+                      ) : null}
+
+                      <SubmissionDocumentRow
                         label="Ringkasan Penelitian"
                         url={localSubmission.research_upload.research_summary}
                       />
-                      <DocumentRow
+                      <SubmissionDocumentRow
                         label="Flyer Penelitian"
                         url={localSubmission.research_upload.flyer}
                       />
@@ -930,6 +1039,7 @@ export default function NotificationModal({
                           style={{
                             flex: 1,
                             color: Colors.notificationBadge.pending.text,
+                            lineHeight: 18,
                           }}
                         >
                           Silakan unggah hasil penelitian Anda. Pastikan file
@@ -945,11 +1055,7 @@ export default function NotificationModal({
                           <View style={styles.researchFieldGroup}>
                             <ThemedText
                               type="caption"
-                              style={{
-                                fontWeight: "600",
-                                color: tertiaryText,
-                                marginBottom: 4,
-                              }}
+                              style={styles.fieldLabel}
                             >
                               Judul Penelitian
                             </ThemedText>
@@ -969,10 +1075,7 @@ export default function NotificationModal({
                             {fieldState.error?.message && (
                               <ThemedText
                                 type="caption"
-                                style={{
-                                  color: Colors.accentRed,
-                                  marginTop: 2,
-                                }}
+                                style={styles.fieldError}
                               >
                                 {fieldState.error.message}
                               </ThemedText>
@@ -989,11 +1092,7 @@ export default function NotificationModal({
                           <View style={styles.researchFieldGroup}>
                             <ThemedText
                               type="caption"
-                              style={{
-                                fontWeight: "600",
-                                color: tertiaryText,
-                                marginBottom: 4,
-                              }}
+                              style={styles.fieldLabel}
                             >
                               Abstrak Penelitian
                             </ThemedText>
@@ -1016,10 +1115,7 @@ export default function NotificationModal({
                             {fieldState.error?.message && (
                               <ThemedText
                                 type="caption"
-                                style={{
-                                  color: Colors.accentRed,
-                                  marginTop: 2,
-                                }}
+                                style={styles.fieldError}
                               >
                                 {fieldState.error.message}
                               </ThemedText>
@@ -1036,11 +1132,7 @@ export default function NotificationModal({
                           <View style={styles.researchFieldGroup}>
                             <ThemedText
                               type="caption"
-                              style={{
-                                fontWeight: "600",
-                                color: tertiaryText,
-                                marginBottom: 4,
-                              }}
+                              style={styles.fieldLabel}
                             >
                               Ringkasan / Abstrak Penelitian (PDF)
                             </ThemedText>
@@ -1078,7 +1170,10 @@ export default function NotificationModal({
                             ) : (
                               <Pressable
                                 onPress={pickResearchSummary}
-                                style={styles.researchPickButton}
+                                style={({ pressed }) => [
+                                  styles.researchPickButton,
+                                  pressed && { opacity: 0.7 },
+                                ]}
                               >
                                 <IconSymbol
                                   name="arrow.up.doc.fill"
@@ -1096,19 +1191,13 @@ export default function NotificationModal({
                                 </ThemedText>
                               </Pressable>
                             )}
-                            <ThemedText
-                              type="caption"
-                              style={{ color: tertiaryText, marginTop: 2 }}
-                            >
+                            <ThemedText type="caption" style={styles.fieldHint}>
                               File PDF, maks. 2 MB.
                             </ThemedText>
                             {fieldState.error?.message && (
                               <ThemedText
                                 type="caption"
-                                style={{
-                                  color: Colors.accentRed,
-                                  marginTop: 2,
-                                }}
+                                style={styles.fieldError}
                               >
                                 {fieldState.error.message}
                               </ThemedText>
@@ -1125,11 +1214,7 @@ export default function NotificationModal({
                           <View style={styles.researchFieldGroup}>
                             <ThemedText
                               type="caption"
-                              style={{
-                                fontWeight: "600",
-                                color: tertiaryText,
-                                marginBottom: 4,
-                              }}
+                              style={styles.fieldLabel}
                             >
                               Flyer Penelitian (JPG / PNG)
                             </ThemedText>
@@ -1167,7 +1252,10 @@ export default function NotificationModal({
                             ) : (
                               <Pressable
                                 onPress={pickFlyer}
-                                style={styles.researchPickButton}
+                                style={({ pressed }) => [
+                                  styles.researchPickButton,
+                                  pressed && { opacity: 0.7 },
+                                ]}
                               >
                                 <IconSymbol
                                   name="photo.fill"
@@ -1185,19 +1273,13 @@ export default function NotificationModal({
                                 </ThemedText>
                               </Pressable>
                             )}
-                            <ThemedText
-                              type="caption"
-                              style={{ color: tertiaryText, marginTop: 2 }}
-                            >
+                            <ThemedText type="caption" style={styles.fieldHint}>
                               Gambar PNG atau JPG, maks. 2 MB.
                             </ThemedText>
                             {fieldState.error?.message && (
                               <ThemedText
                                 type="caption"
-                                style={{
-                                  color: Colors.accentRed,
-                                  marginTop: 2,
-                                }}
+                                style={styles.fieldError}
                               >
                                 {fieldState.error.message}
                               </ThemedText>
@@ -1211,9 +1293,10 @@ export default function NotificationModal({
                         <Pressable
                           onPress={handleResearchSubmit}
                           disabled={researchUploading}
-                          style={[
+                          style={({ pressed }) => [
                             styles.researchSubmitButton,
                             researchUploading && { opacity: 0.6 },
+                            pressed && !researchUploading && { opacity: 0.8 },
                           ]}
                         >
                           {researchUploading ? (
@@ -1238,16 +1321,19 @@ export default function NotificationModal({
                 </ThemedView>
               )}
 
-              {/* Applicant Information (Expandable Accordion) */}
+              {/* Applicant Information (Accordion) */}
               <ThemedView
                 style={[
-                  styles.modalCard,
-                  { backgroundColor: sectionBackground, paddingVertical: 12 },
+                  styles.accordionCard,
+                  { backgroundColor: sectionBackground },
                 ]}
               >
                 <Pressable
                   onPress={() => setProfileExpanded(!profileExpanded)}
-                  style={styles.accordionHeader}
+                  style={({ pressed }) => [
+                    styles.accordionHeader,
+                    pressed && { opacity: 0.7 },
+                  ]}
                 >
                   <View style={{ flex: 1, gap: 2 }}>
                     <ThemedText type="headline" style={{ fontWeight: "700" }}>
@@ -1257,15 +1343,17 @@ export default function NotificationModal({
                       {localSubmission.name}
                     </ThemedText>
                   </View>
-                  <IconSymbol
-                    name={profileExpanded ? "chevron.up" : "chevron.down"}
-                    size={18}
-                    color={Colors.accentBlue}
-                  />
+                  <View style={styles.chevronCircle}>
+                    <IconSymbol
+                      name={profileExpanded ? "chevron.up" : "chevron.down"}
+                      size={14}
+                      color={Colors.accentBlue}
+                    />
+                  </View>
                 </Pressable>
 
                 {profileExpanded && (
-                  <View style={{ marginTop: 12, gap: 12 }}>
+                  <View style={styles.accordionBody}>
                     <DetailRow
                       label="Nama Lengkap"
                       value={localSubmission.name}
@@ -1339,14 +1427,7 @@ function DetailRow({
     <View style={styles.detailRow}>
       <ThemedText
         type="caption"
-        style={{
-          color: tertiaryText,
-          marginBottom: 2,
-          fontWeight: "600",
-          textTransform: "uppercase",
-          fontSize: 10,
-          letterSpacing: 0.5,
-        }}
+        style={[styles.detailLabel, { color: tertiaryText }]}
       >
         {label}
       </ThemedText>
@@ -1371,14 +1452,7 @@ function DetailColumn({
     <View style={styles.detailColumn}>
       <ThemedText
         type="caption"
-        style={{
-          color: tertiaryText,
-          marginBottom: 2,
-          fontWeight: "600",
-          textTransform: "uppercase",
-          fontSize: 10,
-          letterSpacing: 0.5,
-        }}
+        style={[styles.detailLabel, { color: tertiaryText }]}
       >
         {label}
       </ThemedText>
@@ -1390,114 +1464,173 @@ function DetailColumn({
 }
 
 const styles = StyleSheet.create({
+  /* Modal Container */
   modalContainer: {
     paddingTop: 14,
     flex: 1,
   },
+
+  /* Header */
   modalTopBar: {
     paddingHorizontal: 24,
     paddingBottom: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    borderBottomWidth: 1,
+  },
+  headerTitleBlock: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 136, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   closeButton: {
-    paddingVertical: 4,
+    padding: 4,
   },
+
+  /* Content */
   modalContent: {
     paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 32,
-    gap: 12,
+    paddingTop: 20,
+    paddingBottom: 40,
+    gap: 14,
   },
-  modalCard: {
-    borderRadius: RADIUS.DEFAULT,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
-  },
-  sectionTitle: {
+
+  /* Section Header (icon + label) */
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     marginBottom: 12,
-    fontWeight: "700",
   },
   sectionLabel: {
     fontWeight: "700",
-    marginBottom: 10,
   },
+
+  /* Cards */
+  modalCard: {
+    borderRadius: RADIUS.DEFAULT,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: Colors.light.fill.secondary,
+  },
+
+  /* Detail Rows/Columns */
   detailRow: {
     marginBottom: 4,
   },
+  detailLabel: {
+    marginBottom: 2,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+  detailColumn: {
+    flex: 1,
+  },
   gridContainer: {
-    gap: 12,
+    gap: 4,
   },
   gridRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 16,
   },
-  detailColumn: {
-    flex: 1,
+  gridDivider: {
+    height: 1,
+    backgroundColor: Colors.light.fill.secondary,
+    marginVertical: 8,
   },
-  documentRowWrapper: {
-    marginBottom: 8,
-  },
-  documentRow: {
+
+  /* Abstract Card */
+  abstractCard: {
+    backgroundColor: Colors.backgroundSecondary,
     borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+  },
+  abstractHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
+    gap: 6,
+    marginBottom: 6,
   },
-  documentRowDisabled: {
-    opacity: 0.6,
-  },
-  documentLabelBlock: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  abstractHeaderLabel: {
     flex: 1,
-    minWidth: 0,
+    fontWeight: "700",
+    color: Colors.accentBlue,
+    textTransform: "uppercase",
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
+  abstractText: {
+    lineHeight: 18,
+    color: Colors.light.text.primary,
+  },
+  abstractReadMore: {
+    color: Colors.accentBlue,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+
+  /* Revision Banner */
   revisionBanner: {
+    flexDirection: "row",
+    borderRadius: RADIUS.DEFAULT,
+    backgroundColor: Colors.notificationBadge.revision.background,
+    borderWidth: 1,
+    borderColor: Colors.notificationBadge.revision.stripe,
+    overflow: "hidden",
+  },
+  revisionStripe: {
+    width: 5,
+    backgroundColor: Colors.notificationBadge.revision.stripe,
+  },
+  revisionContent: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    backgroundColor: Colors.notificationBadge.revision.background,
-    borderRadius: RADIUS.DEFAULT,
     padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.notificationBadge.revision.stripe,
   },
+
+  /* Re-upload */
   reuploadSection: {
-    marginTop: 6,
+    marginTop: 8,
     paddingLeft: 4,
   },
   reuploadButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: 1.5,
     borderColor: Colors.accentBlue,
     alignSelf: "flex-start",
   },
   reuploadConfirmation: {
-    gap: 8,
+    gap: 10,
   },
   pickedFileChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
     backgroundColor: Colors.backgroundSecondary,
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
   reuploadActions: {
     flexDirection: "row",
@@ -1507,14 +1640,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 999,
     backgroundColor: Colors.accentBlue,
   },
   uploadCancelButton: {
-    paddingVertical: 7,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
@@ -1525,9 +1658,12 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 8,
   },
+
+  /* Accordion */
   accordionCard: {
     borderRadius: RADIUS.DEFAULT,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
   },
@@ -1536,9 +1672,45 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  accordionMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 2,
+  },
+  countPill: {
+    backgroundColor: Colors.accentBlue,
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    minWidth: 20,
+    alignItems: "center",
+  },
+  countPillText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 10,
+  },
+  chevronCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 136, 255, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  accordionBody: {
+    marginTop: 14,
+    gap: 10,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.fill.secondary,
+  },
+
+  /* Timeline */
   timelineCard: {
     borderRadius: RADIUS.DEFAULT,
-    padding: 16,
+    padding: 18,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
   },
@@ -1548,32 +1720,39 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     position: "relative",
-    paddingVertical: 10,
-    marginTop: 6,
+    paddingVertical: 12,
+    marginTop: 4,
   },
   timelineNode: {
     alignItems: "center",
     flex: 1,
+    zIndex: 1,
   },
   timelineCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.light.fill.secondary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.light.fill.vibrant.secondary,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: Colors.light.fill.secondary,
+    borderWidth: 2.5,
+    borderColor: Colors.light.fill.vibrant.secondary,
     marginBottom: 6,
-    zIndex: 1,
   },
   timelineCircleActive: {
     backgroundColor: Colors.accentBlue,
-    borderColor: Colors.accentBlue,
+    borderColor: "rgba(0, 136, 255, 0.25)",
   },
   timelineCircleCompleted: {
     backgroundColor: Colors.accentGreen,
-    borderColor: Colors.accentGreen,
+    borderColor: "rgba(52, 199, 89, 0.25)",
+  },
+  timelineSegment: {
+    position: "absolute",
+    top: 26,
+    height: 3,
+    borderRadius: 1.5,
+    zIndex: 0,
   },
   timelineLabel: {
     fontSize: 10,
@@ -1589,104 +1768,111 @@ const styles = StyleSheet.create({
     color: Colors.accentGreen,
     fontWeight: "700",
   },
-  timelineConnectorLine: {
-    position: "absolute",
-    top: 24,
-    left: 40,
-    right: 40,
-    height: 2,
-    backgroundColor: Colors.light.fill.secondary,
-    zIndex: 0,
-  },
+
+  /* Status Badge */
   statusBadgeRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 14,
-    gap: 8,
+    marginTop: 16,
+    gap: 10,
   },
   statusBadgeTextContainer: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
   },
+
+  /* Recommendation */
   recommendationBoxActive: {
-    backgroundColor: "#F4FBF7",
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1.5,
-    borderColor: "#D3F2E0",
-    gap: 12,
-    marginTop: 4,
+    borderColor: "rgba(52, 199, 89, 0.25)",
+    backgroundColor: "rgba(52, 199, 89, 0.04)",
+    gap: 14,
   },
   recommendationBoxDisabled: {
     backgroundColor: Colors.backgroundSecondary,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
-    gap: 12,
-    marginTop: 4,
+    gap: 14,
   },
   recommendationHeaderRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
     alignItems: "center",
   },
-  circleIconBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  downloadButton: {
-    flexDirection: "row",
-    height: 46,
-    borderRadius: 10,
-    backgroundColor: Colors.accentGreen,
+  successIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(52, 199, 89, 0.12)",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
   },
-  downloadButtonPressed: {
-    opacity: 0.85,
-  },
-  downloadButtonText: {
-    color: "#fff",
-    fontWeight: "700",
+  lockedIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.light.fill.tertiary,
+    alignItems: "center",
+    justifyContent: "center",
   },
   disabledActionButton: {
     height: 44,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: Colors.light.fill.secondary,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
+
+  /* Research Form */
   researchForm: {
-    gap: 12,
+    gap: 14,
     marginTop: 8,
   },
   researchFormNotice: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 8,
+    gap: 10,
     backgroundColor: Colors.notificationBadge.pending.background,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
     borderColor: Colors.notificationBadge.pending.stripe,
   },
   researchFieldGroup: {
     gap: 0,
   },
+  fieldLabel: {
+    fontWeight: "600",
+    color: Colors.light.text.secondary,
+    marginBottom: 6,
+    textTransform: "uppercase",
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+  fieldHint: {
+    color: Colors.light.text.tertiary,
+    marginTop: 4,
+  },
+  fieldError: {
+    color: Colors.accentRed,
+    marginTop: 3,
+  },
   researchInput: {
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 14,
     color: Colors.light.text.primary,
+    backgroundColor: Colors.backgroundSecondary,
   },
   researchTextarea: {
     minHeight: 100,
@@ -1694,13 +1880,14 @@ const styles = StyleSheet.create({
   },
   researchInputError: {
     borderColor: Colors.accentRed,
+    borderWidth: 1.5,
   },
   researchPickButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: 1.5,
     borderColor: Colors.accentBlue,
@@ -1709,14 +1896,14 @@ const styles = StyleSheet.create({
   researchFormActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 4,
+    marginTop: 6,
   },
   researchSubmitButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 999,
     backgroundColor: Colors.accentBlue,
   },

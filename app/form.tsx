@@ -8,6 +8,8 @@ import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
 import { PHONE_NUMBER } from "@/constants/contact-person";
 import { Colors, RADIUS } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+import { useSubmissions } from "@/contexts/submission-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { ISubmissionPost } from "@/types/submission";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -87,11 +89,21 @@ const personalInfoSchema = z.object({
   email: z
     .email({ message: "Periksa kembali email yang Anda masukkan." })
     .trim(),
-  phone: z.string().trim().min(1, { message: "Nomor telepon harus diisi." }),
+  phone: z
+    .string()
+    .trim()
+    .min(10, { message: "Nomor telepon minimal terdiri dari 10 karakter." })
+    .max(15, { message: "Nomor telepon tidak boleh lebih dari 15 karakter." })
+    .refine((value) => /^[0-9]+$/.test(value), {
+      message: "Nomor telepon tidak boleh mengandung huruf atau simbol.",
+    }),
   national_identity_number: z
     .string()
     .trim()
-    .min(1, { message: "NIK harus diisi." }),
+    .length(16, { message: "NIK terdiri dari 16 karakter." })
+    .refine((value) => /^[0-9]+$/.test(value), {
+      message: "NIK hanya boleh terdiri dari angka.",
+    }),
   date_of_birth: z.date({ error: "Tanggal lahir harus diisi." }),
   gender: z.enum(["pria", "wanita"], {
     error: () => ({ message: "Jenis kelamin harus dipilih." }),
@@ -177,6 +189,8 @@ const fullSchema = z.intersection(
 export type FormDataType = z.infer<typeof fullSchema>;
 
 export default function FormScreen() {
+  const auth = useAuth();
+  const submissionContext = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
   const today = new Date();
   const defaultBirthDate = new Date(2000, 0, 1);
@@ -199,9 +213,9 @@ export default function FormScreen() {
     resolver: zodResolver(fullSchema),
     mode: "onTouched",
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
+      name: auth?.state.user?.name,
+      email: auth?.state.user?.email,
+      phone: auth?.state.user?.phone || "",
       national_identity_number: "",
       last_education: "",
       occupation: "",
@@ -374,6 +388,7 @@ export default function FormScreen() {
       };
       setIsLoading(true);
       await applySubmission(payload);
+      await submissionContext?.refreshAllSubmissions();
       form.reset();
       FullscreenAlert({
         title: "Berhasil Terkirim",
@@ -516,6 +531,10 @@ export default function FormScreen() {
                     value={field.value}
                     onChangeText={field.onChange}
                     autoComplete="tel"
+                    onBlur={() => {
+                      field.onBlur();
+                      form.trigger("phone");
+                    }}
                     keyboardType="phone-pad"
                     lightColor={backgroundColor}
                     darkColor={backgroundColor}
@@ -538,6 +557,10 @@ export default function FormScreen() {
                     placeholder="Masukan nomor induk kependudukan"
                     value={field.value}
                     onChangeText={field.onChange}
+                    onBlur={() => {
+                      field.onBlur();
+                      form.trigger("national_identity_number");
+                    }}
                     autoComplete="off"
                     keyboardType="number-pad"
                     lightColor={backgroundColor}

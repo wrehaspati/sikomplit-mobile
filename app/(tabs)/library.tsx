@@ -1,3 +1,4 @@
+import DocumentRow from "@/components/document-row";
 import ImagePreviewModal from "@/components/image-preview-modal";
 import BottomSheetModal from "@/components/modal";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -532,50 +533,21 @@ export default function LibraryScreen() {
 
             <ThemedText
               type={selectedPublication.abstract ? "subheadline" : "footnote"}
-              style={{ lineHeight: 20 }}
+              style={{ lineHeight: 20, paddingBottom: 12 }}
             >
               {selectedPublication.abstract || "Abstract tidak tersedia"}
             </ThemedText>
-            <Pressable
-              onPress={() => openDocument(selectedPublication.research_summary)}
-              hitSlop={10}
-              style={styles.downloadSummaryButton}
-            >
-              {selectedPublication.research_summary ? (
-                <IconSymbol
-                  name="arrow.down.app.fill"
-                  size={20}
-                  color={Colors.accentBlue}
-                  style={{ marginEnd: 4 }}
-                />
-              ) : (
-                <IconSymbol
-                  name="xmark.octagon.fill"
-                  size={20}
-                  color={Colors.accentRed}
-                  style={{ marginEnd: 4 }}
-                />
-              )}
-              <ThemedText
-                type="link"
-                style={{
-                  color: selectedPublication.research_summary
-                    ? Colors.accentBlue
-                    : Colors.light.text.secondary,
-                }}
-              >
-                {selectedPublication.research_summary
+
+            <DocumentRow
+              label={
+                selectedPublication.research_summary
                   ? "Unduh Ringkasan Penelitian"
-                  : "Ringkasan Penelitian tidak tersedia"}
-                {downloadProgressMap[
-                  selectedPublication.research_summary ?? ""
-                ] !== undefined && (
-                  <ThemedText type="link" style={{ color: Colors.accentBlue }}>
-                    {` (${Math.round((downloadProgressMap[selectedPublication.research_summary ?? ""] ?? 0) * 100)}%)`}
-                  </ThemedText>
-                )}
-              </ThemedText>
-            </Pressable>
+                  : "Ringkasan Penelitian tidak tersedia"
+              }
+              url={selectedPublication.research_summary}
+              downloadProgressMap={downloadProgressMap}
+              onPress={(url) => openDocument(url)}
+            />
 
             <ThemedSeparator style={{ marginVertical: 12 }} />
 
@@ -722,11 +694,5 @@ const styles = StyleSheet.create({
   flyerImage: {
     width: "100%",
     aspectRatio: 2 / 3,
-  },
-  downloadSummaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    marginTop: 8,
   },
 });

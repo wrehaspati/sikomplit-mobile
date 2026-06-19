@@ -51,6 +51,10 @@ export default function BottomSheetModal({
           onPress={() => undefined}
         >
           <View style={styles.header}>
+            <View style={styles.spacer} />
+            <ThemedText type="defaultSemiBold" style={styles.title}>
+              {title}
+            </ThemedText>
             <Pressable onPress={onClose} hitSlop={10}>
               <ThemedText
                 type="defaultSemiBold"
@@ -60,10 +64,6 @@ export default function BottomSheetModal({
                 {cancelLabel}
               </ThemedText>
             </Pressable>
-            <ThemedText type="defaultSemiBold" style={styles.title}>
-              {title}
-            </ThemedText>
-            <View style={styles.spacer} />
           </View>
           <View style={[styles.content, contentStyle]}>{children}</View>
         </Pressable>

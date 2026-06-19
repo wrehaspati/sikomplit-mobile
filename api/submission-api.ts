@@ -1,6 +1,7 @@
 import { encodeFile } from "@/services/encode-file";
 import { ApiResponse } from "@/types/response";
 import {
+  IPoster,
   IPublishedSubmission,
   ISubmissionData,
   ISubmissionPost,
@@ -60,4 +61,10 @@ export const applySubmission = async (
 
   const res = await api.post("/user/recommendations", payload);
   return res.data;
+};
+
+export const getPoster = async (): Promise<IPoster[]> => {
+  const { data } = await api.get<ApiResponse<IPoster[]>>("/posters");
+  if (!data.data) throw new Error(data.message);
+  return data.data;
 };

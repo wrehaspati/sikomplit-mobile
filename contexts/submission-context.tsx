@@ -1,29 +1,57 @@
-import { activeSubmission, publishedSubmission } from '@/api/submission-api';
-import { useAuth } from '@/contexts/auth-context';
-import { IPublishedSubmission, ISubmissionData } from '@/types/submission';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  activeSubmission,
+  getPoster,
+  publishedSubmission,
+} from "@/api/submission-api";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  IPoster,
+  IPublishedSubmission,
+  ISubmissionData,
+} from "@/types/submission";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type SubmissionContextValue = {
+  poster: IPoster[];
   publishedSubmissions: IPublishedSubmission[];
   userSubmissions: ISubmissionData[];
   isRefreshingPublished: boolean;
   isRefreshingUser: boolean;
+  isRefreshingPoster: boolean;
   refreshPublishedSubmissions: () => Promise<void>;
   refreshUserSubmissions: () => Promise<void>;
+  refreshPoster: () => Promise<void>;
   refreshAllSubmissions: () => Promise<void>;
 };
 
 const SubmissionContext = createContext<SubmissionContextValue | null>(null);
 
-export function SubmissionProvider({ children }: { children: React.ReactNode }) {
+export function SubmissionProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const auth = useAuth();
   const userId = auth?.state.user?.id ?? null;
-  const [publishedSubmissions, setPublishedSubmissions] = useState<IPublishedSubmission[]>([]);
+  const [publishedSubmissions, setPublishedSubmissions] = useState<
+    IPublishedSubmission[]
+  >([]);
   const [userSubmissions, setUserSubmissions] = useState<ISubmissionData[]>([]);
+  const [poster, setPoster] = useState<IPoster[]>([]);
   const [isRefreshingPublished, setIsRefreshingPublished] = useState(false);
   const [isRefreshingUser, setIsRefreshingUser] = useState(false);
+  const [isRefreshingPoster, setIsRefreshingPoster] = useState(false);
   const publishedRequest = useRef<Promise<void> | null>(null);
   const userRequest = useRef<Promise<void> | null>(null);
+  const posterRequest = useRef<Promise<void> | null>(null);
 
   const refreshPublishedSubmissions = useCallback(async () => {
     if (publishedRequest.current) {
@@ -76,9 +104,33 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
     return request;
   }, [userId]);
 
+  const refreshPoster = useCallback(async () => {
+    if (posterRequest.current) {
+      return posterRequest.current;
+    }
+
+    const request = (async () => {
+      setIsRefreshingPoster(true);
+
+      try {
+        const res = await getPoster();
+        setPoster(res);
+      } catch {
+        setPoster([]);
+      } finally {
+        setIsRefreshingPoster(false);
+        posterRequest.current = null;
+      }
+    })();
+
+    posterRequest.current = request;
+    return request;
+  }, []);
+
   useEffect(() => {
     void refreshPublishedSubmissions();
-  }, [refreshPublishedSubmissions]);
+    void refreshPoster();
+  }, [refreshPublishedSubmissions, refreshPoster]);
 
   useEffect(() => {
     if (auth?.state.isLoading) {
@@ -96,31 +148,44 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
   }, [auth?.state.isLoading, refreshUserSubmissions, userId]);
 
   const refreshAllSubmissions = useCallback(async () => {
-    await Promise.all([refreshPublishedSubmissions(), refreshUserSubmissions()]);
-  }, [refreshPublishedSubmissions, refreshUserSubmissions]);
+    await Promise.all([
+      refreshPublishedSubmissions(),
+      refreshUserSubmissions(),
+      refreshPoster(),
+    ]);
+  }, [refreshPublishedSubmissions, refreshUserSubmissions, refreshPoster]);
 
   const value = useMemo(
     () => ({
       publishedSubmissions,
       userSubmissions,
+      poster,
       isRefreshingPublished,
       isRefreshingUser,
+      isRefreshingPoster,
       refreshPublishedSubmissions,
       refreshUserSubmissions,
       refreshAllSubmissions,
+      refreshPoster,
     }),
     [
       publishedSubmissions,
       userSubmissions,
       isRefreshingPublished,
       isRefreshingUser,
+      isRefreshingPoster,
       refreshPublishedSubmissions,
       refreshUserSubmissions,
       refreshAllSubmissions,
-    ]
+      refreshPoster,
+    ],
   );
 
-  return <SubmissionContext.Provider value={value}>{children}</SubmissionContext.Provider>;
+  return (
+    <SubmissionContext.Provider value={value}>
+      {children}
+    </SubmissionContext.Provider>
+  );
 }
 
 export const useSubmissions = () => useContext(SubmissionContext);

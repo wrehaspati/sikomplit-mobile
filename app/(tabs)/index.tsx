@@ -1,3 +1,4 @@
+import DocumentRow from "@/components/document-row";
 import ImagePreviewModal from "@/components/image-preview-modal";
 import BottomSheetModal from "@/components/modal";
 import NotificationModal from "@/components/notification-modal";
@@ -15,7 +16,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
 import { formatDate } from "@/services/format-date";
 import { shortResearchType } from "@/services/format-text";
-import { IPublishedSubmission, ISubmissionData } from "@/types/submission";
+import { IPoster, ISubmissionData } from "@/types/submission";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import * as MailComposer from "expo-mail-composer";
@@ -23,7 +24,6 @@ import { router } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -73,7 +73,6 @@ export default function HomeScreen() {
   const auth = useAuth();
   const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
-  const secondaryColor = useThemeColor({}, "secondary");
   const cardBackground = useThemeColor({}, "fill.vibrant.tertiary");
   const iconBackground = useThemeColor({}, "fill.primary");
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -85,10 +84,11 @@ export default function HomeScreen() {
   const [selectedSubmission, setSelectedSubmission] =
     useState<ISubmissionData | null>(null);
   const userSubmissions = submissions?.userSubmissions ?? [];
-  const flyers = submissions?.publishedSubmissions ?? [];
+  const flyers = submissions?.poster ?? [];
   const refreshing =
     (submissions?.isRefreshingPublished ?? false) ||
-    (submissions?.isRefreshingUser ?? false);
+    (submissions?.isRefreshingUser ?? false) ||
+    (submissions?.isRefreshingPoster ?? false);
 
   // Close details modal when context starts refreshing
   useEffect(() => {
@@ -101,8 +101,8 @@ export default function HomeScreen() {
   useEffect(() => {
     if (flyers.length === 0) return;
     flyers.forEach((item) => {
-      if (item.flyer) {
-        Image.prefetch(item.flyer);
+      if (item.image_url) {
+        Image.prefetch(item.image_url);
       }
     });
   }, [flyers]);
@@ -180,7 +180,7 @@ export default function HomeScreen() {
   };
 
   // Flyer Card Component
-  const FlyerCard = ({ data }: { data: IPublishedSubmission }) => {
+  const FlyerCard = ({ data }: { data: IPoster }) => {
     const [loaded, setLoaded] = useState(false);
     const pulseAnim = useRef(new Animated.Value(0.3)).current;
 
@@ -207,14 +207,14 @@ export default function HomeScreen() {
     return (
       <Pressable
         onPress={() => {
-          setPreviewUri(data.flyer);
+          setPreviewUri(data.image_url);
           setPreviewVisible(true);
         }}
       >
         <View style={styles.flyerContainer}>
           <Image
             style={styles.flyerImage}
-            source={{ uri: data.flyer }}
+            source={{ uri: data.image_url }}
             contentFit="cover"
             transition={300}
             cachePolicy="memory-disk"
@@ -703,82 +703,14 @@ export default function HomeScreen() {
             contentContainerStyle={styles.guideList}
           >
             {guideDoc.map((file) => {
-              const progress = downloadProgressMap[file.uri];
-              const downloading = progress !== undefined;
-              const progressPercent = Math.round((progress ?? 0) * 100);
               return (
-                <Pressable
+                <DocumentRow
                   key={file.uri}
-                  onPress={() => openDocument(file.uri)}
-                  disabled={downloading}
-                  style={({ pressed }) => [
-                    styles.guideCard,
-                    pressed && !downloading && styles.guideCardPressed,
-                    downloading && styles.guideCardDisabled,
-                    {
-                      borderColor: secondaryColor,
-                      backgroundColor: backgroundColor,
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.guideIconWrap,
-                      { backgroundColor: cardBackground },
-                    ]}
-                  >
-                    <IconSymbol
-                      size={22}
-                      name="arrow.down.app.fill"
-                      color={Colors.accentBlue}
-                    />
-                  </View>
-                  <View style={styles.guideInfo}>
-                    <ThemedText
-                      type="defaultSemiBold"
-                      style={styles.guideTitle}
-                    >
-                      {file.name}
-                    </ThemedText>
-                    <ThemedText
-                      type="caption2"
-                      darkColor={Colors.dark.text.secondary}
-                      lightColor={Colors.light.text.secondary}
-                    >
-                      {downloading
-                        ? `${progressPercent}% selesai`
-                        : "Ketuk untuk mengunduh"}
-                    </ThemedText>
-
-                    {downloading && (
-                      <View style={styles.progressTrack}>
-                        <View
-                          style={[
-                            styles.progressFill,
-                            { width: `${Math.max(8, progressPercent)}%` },
-                          ]}
-                        />
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.guideAction}>
-                    {downloading ? (
-                      <>
-                        <ActivityIndicator
-                          size="small"
-                          color={Colors.accentBlue}
-                        />
-                      </>
-                    ) : (
-                      <ThemedText
-                        type="caption"
-                        style={{ color: Colors.accentBlue, fontWeight: "700" }}
-                      >
-                        Buka
-                      </ThemedText>
-                    )}
-                  </View>
-                </Pressable>
+                  label={file.name}
+                  url={file.uri}
+                  downloadProgressMap={downloadProgressMap}
+                  onPress={(url) => openDocument(url)}
+                />
               );
             })}
           </ScrollView>
@@ -903,55 +835,6 @@ const styles = StyleSheet.create({
   guideList: {
     gap: 10,
     paddingBottom: 8,
-  },
-  guideCard: {
-    minHeight: 72,
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  guideCardPressed: {
-    opacity: 0.85,
-  },
-  guideCardDisabled: {
-    opacity: 0.75,
-  },
-  guideIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.backgroundSecondary,
-  },
-  guideInfo: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  guideTitle: {
-    flexShrink: 1,
-  },
-  progressTrack: {
-    height: 4,
-    marginTop: 6,
-    borderRadius: RADIUS.DEFAULT,
-    backgroundColor: Colors.light.fill.secondary,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: RADIUS.DEFAULT,
-    backgroundColor: Colors.accentBlue,
-  },
-  guideAction: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: 12,
   },
   supportLink: {
     alignSelf: "flex-start",
