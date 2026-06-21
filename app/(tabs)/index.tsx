@@ -97,7 +97,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (requestNumberParam && userSubmissions.length > 0) {
       const submission = userSubmissions.find(
-        (item) => item.request_number === requestNumberParam
+        (item) => item.request_number === requestNumberParam,
       );
       if (submission) {
         setSelectedSubmission(submission);
@@ -335,8 +335,8 @@ export default function HomeScreen() {
                 textAlign: "left",
               }}
             >
-              Aplikasi Sistem Pengajuan Rekomendasi Penelitian Dinas Kesehatan
-              Kota Denpasar
+              Purwarupa Aplikasi Sistem Pengajuan Rekomendasi Penelitian Dinas
+              Kesehatan Kota Denpasar
             </ThemedText>
           </View>
           {auth?.state.user ? (
@@ -619,8 +619,8 @@ export default function HomeScreen() {
       <View style={styles.supportContainer}>
         <ThemedText type="title3">Bantuan Layanan</ThemedText>
         <ThemedText type="footnote">
-          Dinas Kesehatan Kota DenpasarJl. Maruti No.8, Pemecutan Kaja, Kec.
-          Denpasar Utara, Kota Denpasar, Bali
+          Bantuan dan informasi mengenai prototipe ini dapat diperoleh melalui
+          kontak berikut.
         </ThemedText>
         <View style={{ display: "flex", flexDirection: "row", gap: 12 }}>
           <ThemedButton

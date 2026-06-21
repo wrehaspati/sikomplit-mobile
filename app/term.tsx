@@ -1,3 +1,4 @@
+import Disclaimer from "@/components/disclaimer";
 import ThemedSeparator from "@/components/themed-separator";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -418,13 +419,14 @@ export default function TermScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
+        <Disclaimer />
         <ThemedText
           type="caption"
           lightColor={Colors.light.text.tertiary}
           darkColor={Colors.dark.text.tertiary}
           style={{ textAlign: "center" }}
         >
-          © 2026 SIKOMPLIT — Dinas Kesehatan Kota Denpasar
+          © 2026 Purwarupa SIKOMPLIT Mobile
         </ThemedText>
       </View>
     </ScrollView>

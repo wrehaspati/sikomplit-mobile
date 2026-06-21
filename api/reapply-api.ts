@@ -1,16 +1,7 @@
 import { encodeFile } from "@/services/encode-file";
 import { ApiResponse } from "@/types/response";
-import { ISubmissionData } from "@/types/submission";
+import { ISubmissionData, ISubmissionUploadFile } from "@/types/submission";
 import { api } from "./api-client";
-
-/**
- * File descriptor for a document picked via expo-document-picker.
- */
-export interface ReuploadFile {
-  uri: string;
-  name: string;
-  mimeType?: string | null;
-}
 
 /**
  * Allowed document field keys that can be re-uploaded.
@@ -33,7 +24,7 @@ export type ReuploadFileType =
 export const reuploadDocument = async (
   submissionId: number,
   fileType: ReuploadFileType,
-  file: ReuploadFile,
+  file: ISubmissionUploadFile,
 ): Promise<ApiResponse<ISubmissionData>> => {
   const payload = {
     [fileType]: await encodeFile(file),

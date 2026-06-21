@@ -1,3 +1,4 @@
+import Disclaimer from "@/components/disclaimer";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
@@ -179,6 +180,7 @@ export default function LoginScreen() {
           </View>
         </View>
         <View style={{ width: "100%", marginVertical: 24, gap: 20 }}>
+          <Disclaimer />
           <ThemedButton
             variant="outline"
             size="default"

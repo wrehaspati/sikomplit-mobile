@@ -1,3 +1,4 @@
+import Disclaimer from "@/components/disclaimer";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
@@ -296,6 +297,7 @@ export default function RegisterScreen() {
           )}
         </View>
         <View style={{ width: "100%", marginVertical: 12, gap: 20 }}>
+          <Disclaimer />
           <Pressable
             onPress={() => {
               router.push("/term");

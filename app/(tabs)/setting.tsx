@@ -9,7 +9,7 @@ import { Colors, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { ThemeMode, useThemePreference } from "@/contexts/theme-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 
 export default function SettingScreen() {
   const auth = useAuth();
@@ -293,6 +293,17 @@ export default function SettingScreen() {
           type="footnote"
           style={{ color: Colors.light.text.secondary }}
         >
+          Informasi resmi, valid, dan legal mengenai prosedur pelayanan serta
+          penerbitan Surat Rekomendasi Penelitian di lingkungan Pemerintah Kota
+          Denpasar sepenuhnya merujuk pada situs resmi instansi pemerintah
+          terkait yang dapat diakses melalui tautan{" "}
+          <Link
+            href={"https://dinkes.denpasarkota.go.id"}
+            style={{ color: Colors.accentBlue }}
+          >
+            https://dinkes.denpasarkota.go.id
+          </Link>
+          {"\n\n"}
           Sikomplit atau sistem rekomendasi penelitian merupakan inovasi berupa
           aplikasi pelayanan publik yang dihadirkan untuk mempermudah pelayanan
           penerbitan surat rekomendasi penelitian di kawasan Dinas Kesehatan
