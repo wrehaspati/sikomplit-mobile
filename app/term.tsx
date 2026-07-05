@@ -1,4 +1,3 @@
-import Disclaimer from "@/components/disclaimer";
 import ThemedSeparator from "@/components/themed-separator";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -13,7 +12,7 @@ const TERMS_SECTIONS = [
     number: "1",
     title: "Layanan",
     items: [
-      "Website ini disediakan untuk memfasilitasi publik dalam mengajukan permohonan surat rekomendasi penelitian kepada instansi yang berwenang. Proses pengajuan sepenuhnya bersifat administratif dan tidak dipungut biaya.",
+      "Platform ini disediakan untuk memfasilitasi publik dalam mengajukan permohonan surat rekomendasi penelitian kepada instansi yang berwenang. Proses pengajuan sepenuhnya bersifat administratif dan tidak dipungut biaya.",
     ],
   },
   {
@@ -34,14 +33,14 @@ const TERMS_SECTIONS = [
     number: "4",
     title: "Penggunaan Data Penelitian",
     items: [
-      "Instansi dan website ini berhak menggunakan bagian dari data non-sensitif seperti abstrak atau ringkasan penelitian dalam bentuk flyer atau materi promosi lainnya untuk tujuan edukasi dan pengembangan penelitian. Penggunaan ini tidak akan menyertakan data sensitif atau identitas pribadi tanpa persetujuan tertulis.",
+      "Instansi dan platform ini berhak menggunakan bagian dari data non-sensitif seperti abstrak atau ringkasan penelitian dalam bentuk flyer atau materi promosi lainnya untuk tujuan edukasi dan pengembangan penelitian. Penggunaan ini tidak akan menyertakan data sensitif atau identitas pribadi tanpa persetujuan tertulis.",
     ],
   },
   {
     number: "5",
     title: "Penafian dan Batasan Tanggung Jawab",
     items: [
-      "Instansi dan pihak pengelola website tidak bertanggung jawab atas kerugian yang timbul akibat kesalahan pengisian data oleh pengguna atau gangguan teknis dari pihak penyedia layanan hosting. Segala bentuk tanggung jawab atas penyimpanan dan perlindungan data yang dikumpulkan berada pada tanggung jawab instansi dan penyedia layanan hosting.",
+      "Instansi dan pihak pengelola platform tidak bertanggung jawab atas kerugian yang timbul akibat kesalahan pengisian data oleh pengguna atau gangguan teknis dari pihak penyedia layanan. Segala bentuk tanggung jawab atas penyimpanan dan perlindungan data yang dikumpulkan berada pada tanggung jawab instansi dan penyedia layanan.",
     ],
   },
 ];
@@ -98,7 +97,7 @@ const PRIVACY_SECTIONS = [
     number: "6",
     title: "Perubahan Kebijakan",
     items: [
-      "Kami dapat memperbarui kebijakan privasi ini dari waktu ke waktu. Perubahan akan diumumkan melalui website,aplikasi, dan media sosial kami yang berlaku segera setelah dipublikasikan.",
+      "Kami dapat memperbarui kebijakan privasi ini dari waktu ke waktu. Perubahan akan diumumkan melalui website, aplikasi, dan media sosial kami yang berlaku segera setelah dipublikasikan.",
     ],
   },
 ];
@@ -302,7 +301,7 @@ export default function TermScreen() {
       {/* Contact Section */}
       <ThemedView variant="card" style={styles.contactCard}>
         <ThemedText type="caption" style={styles.sectionLabel}>
-          Kontak
+          Kontak INSTANSI
         </ThemedText>
         <View style={styles.contactItemsContainer}>
           <View
@@ -419,7 +418,6 @@ export default function TermScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Disclaimer />
         <ThemedText
           type="caption"
           lightColor={Colors.light.text.tertiary}

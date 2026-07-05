@@ -277,10 +277,11 @@ export default function HomeScreen() {
           contentFit="cover"
           contentPosition={"center"}
         />
-        <Image
-          source={require("@/assets/images/shadow-icon.webp")}
+        {/* <Image
+          source={require("@/assets/images/icon-asset.png")}
           style={styles.logoIcon}
-        />
+          contentFit="contain"
+        /> */}
         <View style={styles.vectorWave}>
           <Svg viewBox="0 0 422 56" style={StyleSheet.absoluteFill}>
             <Defs>
@@ -325,9 +326,31 @@ export default function HomeScreen() {
             >
               SELAMAT DATANG DI
             </ThemedText>
-            <ThemedText type="title" style={{ color: "white" }}>
-              SIKOMPLIT
-            </ThemedText>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <ThemedText type="title" style={{ color: "white" }}>
+                SIKOMPLIT
+              </ThemedText>
+              <View style={{ flexDirection: "column" }}>
+                <ThemedText
+                  type="caption"
+                  style={{ color: "white", fontWeight: "900" }}
+                >
+                  MOBILE
+                </ThemedText>
+                <ThemedText
+                  type="caption"
+                  style={{ color: "white", fontWeight: "900" }}
+                >
+                  PROTOTYPE
+                </ThemedText>
+              </View>
+            </View>
             <ThemedText
               type="caption"
               style={{
