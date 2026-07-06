@@ -5,33 +5,33 @@
 
 import { Platform } from "react-native";
 
-const tintColorLight = "#0a7ea4";
+const tintColorLight = "#007AFF";
 const tintColorDark = "#fff";
 
 export const Colors = {
   light: {
     text: {
-      primary: "#1A1A1A",
-      secondary: "#727272",
-      tertiary: "#BFBFBF",
-      quarternary: "#D9D9D9",
+      primary: "#1A1A2E",
+      secondary: "#8E8E93",
+      tertiary: "#C7C7CC",
+      quarternary: "#E5E5EA",
     },
-    default: "#f2f2f2",
-    background: "#fff",
-    secondary: "#E0E0E0",
-    separator: "#C6C6C8",
+    default: "#F7F7FA",
+    background: "#FFFFFF",
+    secondary: "#EEEEF2",
+    separator: "#E5E5EA",
     tint: tintColorLight,
-    icon: "#687076",
-    tabIconDefault: "#687076",
+    icon: "#8E8E93",
+    tabIconDefault: "#8E8E93",
     tabIconSelected: tintColorLight,
     fill: {
-      primary: "rgba(8, 3, 3, 0.2)",
-      secondary: "rgba(120, 120, 128, 0.16)",
-      tertiary: "rgba(118, 118, 128, 0.12)",
+      primary: "rgba(120, 120, 128, 0.12)",
+      secondary: "rgba(120, 120, 128, 0.08)",
+      tertiary: "rgba(118, 118, 128, 0.06)",
       vibrant: {
-        primary: "#CCCCCC",
-        secondary: "#E0E0E0",
-        tertiary: "#EDEDED",
+        primary: "#F0F0F5",
+        secondary: "#F5F5FA",
+        tertiary: "#FAFAFD",
       },
     },
   },
@@ -61,11 +61,11 @@ export const Colors = {
       },
     },
   },
-  accentBlue: "#0088FF",
-  accentRed: "#FF383C",
+  accentBlue: "#007AFF",
+  accentRed: "#FF3B30",
   accentYellow: "#FFCC00",
   accentGreen: "#34C759",
-  backgroundSecondary: "#F2F2F7",
+  backgroundSecondary: "#F7F7FA",
   notificationBadge: {
     announcement: {
       background: "#FFF4E1",
@@ -95,7 +95,7 @@ export const Colors = {
 };
 
 export const RADIUS = {
-  DEFAULT: 20,
+  DEFAULT: 16,
 };
 
 export const SCREEN_MARGIN_HORIZONTAL = 24;

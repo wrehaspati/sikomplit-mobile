@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderWidth: 1,
     justifyContent: 'center',
-    borderColor: Colors.light.fill.secondary,
+    borderColor: Colors.light.fill.vibrant.primary,
   },
   optionSelected: {
     borderColor: Colors.accentBlue,

@@ -52,6 +52,10 @@ const MAPPING = {
   "text.document.fill": "article",
   bookmark: "bookmark-outline",
   "bookmark.fill": "bookmark",
+  "mappin.and.ellipse": "location-on",
+  "arrow.forward": "arrow-forward",
+  "clock.fill": "schedule",
+  "checkmark.seal.fill": "verified",
 } as IconMapping;
 
 /**

@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderRadius: RADIUS.DEFAULT,
     borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
+    borderColor: Colors.light.fill.vibrant.primary,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: RADIUS.DEFAULT,
     borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
+    borderColor: Colors.light.fill.vibrant.primary,
   },
   eyeIcon: {
     padding: 10,

@@ -576,10 +576,10 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
+    borderColor: Colors.light.fill.vibrant.primary,
     paddingHorizontal: 24,
     marginBottom: 16,
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)",
+    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.06)",
   },
   searchInputContainer: {
     position: "relative",
@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
     alignSelf: "flex-start",
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)",
+    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.06)",
   },
   bookmarkFilterButtonActive: {
     backgroundColor: Colors.light.fill.secondary,
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     display: "flex",
     position: "relative",
     overflow: "hidden",
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)",
+    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.06)",
   },
   cardImage: {
     width: "30%",
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.fill.secondary,
+    borderBottomColor: Colors.light.fill.vibrant.primary,
   },
   suggestionTextBlock: {
     flex: 1,

@@ -1,19 +1,22 @@
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { BookmarkProvider } from "@/contexts/bookmark-context";
+import {
+  SubmissionProvider,
+  useSubmissions,
+} from "@/contexts/submission-context";
+import { ThemePreferenceProvider } from "@/contexts/theme-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import * as Notifications from "expo-notifications";
 import {
   DarkTheme,
   DefaultTheme,
+  Stack,
   ThemeProvider,
-} from "@react-navigation/native";
-import * as Notifications from "expo-notifications";
-import { Stack, useRouter } from "expo-router";
+  useRouter,
+} from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
-
-import { AuthProvider, useAuth } from "@/contexts/auth-context";
-import { BookmarkProvider } from "@/contexts/bookmark-context";
-import { SubmissionProvider, useSubmissions } from "@/contexts/submission-context";
-import { ThemePreferenceProvider } from "@/contexts/theme-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   getPushNotificationData,
   getPushNotificationRoute,

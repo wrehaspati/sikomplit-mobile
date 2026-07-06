@@ -1,10 +1,8 @@
 import DocumentRow from "@/components/document-row";
+import HomepageScrollView from "@/components/homapage-scroll-view";
 import ImagePreviewModal from "@/components/image-preview-modal";
 import BottomSheetModal from "@/components/modal";
 import NotificationModal from "@/components/notification-modal";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
-import ThemedButton from "@/components/themed-button";
-import ThemedSeparator from "@/components/themed-separator";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -16,9 +14,10 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
 import { formatDate } from "@/services/format-date";
 import { shortResearchType } from "@/services/format-text";
-import { IPoster, ISubmissionData } from "@/types/submission";
-import { BlurView } from "expo-blur";
+import { ISubmissionData } from "@/types/submission";
+import Constants from "expo-constants";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import * as MailComposer from "expo-mail-composer";
 import { router, useLocalSearchParams } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
@@ -33,16 +32,9 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  useColorScheme,
   View,
 } from "react-native";
-import Svg, {
-  Defs,
-  FeGaussianBlur,
-  Filter,
-  LinearGradient,
-  Path,
-  Stop,
-} from "react-native-svg";
 import NotificationCard from "../../components/notification-card";
 import { getStatusMeta } from "./notification";
 
@@ -69,12 +61,59 @@ const guideDoc: IGuideDocument[] = [
   },
 ];
 
+const SUBMISSION_STEPS = [
+  {
+    id: 1,
+    title: "Ajukan Surat",
+    description: "Isi form dan upload berkas pendukung",
+    icon: "document.fill",
+  },
+  {
+    id: 2,
+    title: "Tunggu 3 Hari",
+    description: "Verifikasi oleh petugas terkait",
+    icon: "clock.fill",
+  },
+  {
+    id: 3,
+    title: "Surat Diterbitkan",
+    description: "Unduh surat pengesahan Anda",
+    icon: "checkmark.seal.fill",
+  },
+  {
+    id: 4,
+    title: "Lakukan Penelitian",
+    description: "Selesaikan riset atau observasi",
+    icon: "magnifyingglass",
+  },
+  {
+    id: 5,
+    title: "Kirimkan Hasil",
+    description: "Unggah dokumen laporan akhir",
+    icon: "paperplane.fill",
+  },
+] as const;
+
 export default function HomeScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const flowBgColors = isDark
+    ? (["#2ea850", "#197532"] as const)
+    : (["#63d980", "#34C759"] as const);
+  const flowTextColor = isDark ? "#ffffff" : "#002106";
+  const flowDescColor = isDark
+    ? "rgba(255, 255, 255, 0.85)"
+    : "rgba(0, 33, 6, 0.75)";
+  const flowIconBg = isDark
+    ? "rgba(255, 255, 255, 0.2)"
+    : "rgba(0, 33, 6, 0.1)";
+  const flowLineColor = isDark ? "#ffffff" : "#002106";
+
   const auth = useAuth();
   const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
   const cardBackground = useThemeColor({}, "fill.vibrant.tertiary");
-  const iconBackground = useThemeColor({}, "fill.primary");
+  const iconBackground = useThemeColor({}, "icon");
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
   const [openModal, setOpenModal] = useState(false);
@@ -89,7 +128,23 @@ export default function HomeScreen() {
     (submissions?.isRefreshingPublished ?? false) ||
     (submissions?.isRefreshingUser ?? false) ||
     (submissions?.isRefreshingPoster ?? false);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const flyerPressAnim = useRef(new Animated.Value(0)).current;
+  const appVersion = Constants.expoConfig?.version ?? "Unknown";
 
+  // Animations for Pustaka Digital Flyers
+  const pressTranslateLeft = flyerPressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -15],
+  });
+  const pressTranslateRight = flyerPressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 15],
+  });
+  const pressScaleCenter = flyerPressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.05],
+  });
   const params = useLocalSearchParams<{ request_number?: string }>();
   const requestNumberParam = params.request_number;
 
@@ -196,215 +251,15 @@ export default function HomeScreen() {
     );
   };
 
-  // Flyer Card Component
-  const FlyerCard = ({ data }: { data: IPoster }) => {
-    const [loaded, setLoaded] = useState(false);
-    const pulseAnim = useRef(new Animated.Value(0.3)).current;
-
-    useEffect(() => {
-      if (loaded) return;
-      const animation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 0.6,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 0.3,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-      animation.start();
-      return () => animation.stop();
-    }, [loaded, pulseAnim]);
-
-    return (
-      <Pressable
-        onPress={() => {
-          setPreviewUri(data.image_url);
-          setPreviewVisible(true);
-        }}
-      >
-        <View style={styles.flyerContainer}>
-          <Image
-            style={styles.flyerImage}
-            source={{ uri: data.image_url }}
-            contentFit="cover"
-            transition={300}
-            cachePolicy="memory-disk"
-            onLoad={() => setLoaded(true)}
-          />
-          {!loaded && (
-            <Animated.View
-              style={[
-                StyleSheet.absoluteFill,
-                styles.flyerPlaceholder,
-                { opacity: pulseAnim },
-              ]}
-            />
-          )}
-        </View>
-      </Pressable>
-    );
-  };
-
   return (
-    <ParallaxScrollView
-      title="Beranda"
+    <HomepageScrollView
+      scrollYValue={scrollY}
+      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }
     >
       {/* Content */}
-
-      {/* First Card */}
-      <View
-        style={[
-          styles.card,
-          {
-            minHeight: FIRST_CARD_HEIGHT,
-            marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
-            borderWidth: 0,
-          },
-        ]}
-      >
-        <Image
-          source={require("@/assets/images/card-bg.webp")}
-          style={styles.cardBackground}
-          contentFit="cover"
-          contentPosition={"center"}
-        />
-        {/* <Image
-          source={require("@/assets/images/icon-asset.png")}
-          style={styles.logoIcon}
-          contentFit="contain"
-        /> */}
-        <View style={styles.vectorWave}>
-          <Svg viewBox="0 0 422 56" style={StyleSheet.absoluteFill}>
-            <Defs>
-              <Filter id="blur">
-                <FeGaussianBlur stdDeviation="8" />
-              </Filter>
-              <LinearGradient
-                id="paint0_linear_114_324"
-                x1="211"
-                y1="0"
-                x2="211"
-                y2="219.998"
-                gradientUnits="userSpaceOnUse"
-              >
-                <Stop stopColor="#000000" stopOpacity="0.2" />
-                <Stop offset="1" stopColor="#000000" stopOpacity="1" />
-              </LinearGradient>
-            </Defs>
-            <Path
-              d="M233.354 40.1323C71.7758 -5.3362 17.6288 30.0686264 0 0V576H422V93.6662C419.274 155.8852 333.5 80.7095 233.354 40.1323Z"
-              fill="url(#paint0_linear_114_324)"
-              fillOpacity="1"
-              filter="url(#blur)"
-            />
-          </Svg>
-        </View>
-
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            borderRadius: RADIUS.DEFAULT,
-          }}
-        >
-          <View style={styles.cardContainer}>
-            <ThemedText
-              type="subheadline"
-              style={{
-                color: Colors.light.text.quarternary,
-                fontWeight: "600",
-              }}
-            >
-              SELAMAT DATANG DI
-            </ThemedText>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <ThemedText type="title" style={{ color: "white" }}>
-                SIKOMPLIT
-              </ThemedText>
-              <View style={{ flexDirection: "column" }}>
-                <ThemedText
-                  type="caption"
-                  style={{ color: "white", fontWeight: "900" }}
-                >
-                  MOBILE
-                </ThemedText>
-                <ThemedText
-                  type="caption"
-                  style={{ color: "white", fontWeight: "900" }}
-                >
-                  PROTOTYPE
-                </ThemedText>
-              </View>
-            </View>
-            <ThemedText
-              type="caption"
-              style={{
-                color: Colors.light.text.quarternary,
-                textAlign: "left",
-              }}
-            >
-              Purwarupa Aplikasi Sistem Pengajuan Rekomendasi Penelitian Dinas
-              Kesehatan Kota Denpasar
-            </ThemedText>
-          </View>
-          {auth?.state.user ? (
-            <BlurView style={styles.callAction} intensity={50} tint="dark">
-              <ThemedButton
-                variant="primary"
-                size="small"
-                style={{ alignSelf: "flex-end" }}
-                onPress={() => {
-                  router.navigate({ pathname: "/form" });
-                }}
-              >
-                Ajukan Rekomendasi
-              </ThemedButton>
-            </BlurView>
-          ) : (
-            <BlurView style={styles.callAction} intensity={50} tint="dark">
-              <ThemedButton
-                variant="primary"
-                size="small"
-                style={{ alignSelf: "flex-end" }}
-                onPress={() => {
-                  router.navigate({ pathname: "/register" });
-                }}
-              >
-                Buat Akun
-              </ThemedButton>
-              <ThemedButton
-                variant="light"
-                size="small"
-                style={{
-                  alignSelf: "flex-end",
-                  backgroundColor: Colors.light.fill.tertiary,
-                }}
-                onPress={() => {
-                  router.navigate({ pathname: "/login" });
-                }}
-              >
-                Masuk
-              </ThemedButton>
-            </BlurView>
-          )}
-        </View>
-      </View>
-      {/* End First Card */}
 
       {/* Quick Access Section */}
       <View>
@@ -414,8 +269,9 @@ export default function HomeScreen() {
           contentContainerStyle={styles.quickAccessContainer}
           snapToAlignment="center"
           decelerationRate="fast"
+          snapToInterval={SCREEN_WIDTH - SCREEN_MARGIN_HORIZONTAL}
         >
-          {auth?.state.user ? (
+          {auth?.state.user &&
             [...userSubmissions]
               .sort(
                 (a, b) =>
@@ -470,34 +326,196 @@ export default function HomeScreen() {
                 ) : (
                   []
                 ),
-              )
-          ) : (
-            <ThemedView
-              style={[
-                styles.card,
-                styles.emptyHistoryCard,
-                { borderColor: backgroundColor },
-              ]}
-              lightColor={cardBackground}
-              darkColor={cardBackground}
-            >
-              <ThemedText type="subheadline" style={{ fontWeight: "600" }}>
-                Akses Terbatas
-              </ThemedText>
-              <ThemedText
-                type="footnote"
-                style={{ textAlign: "center" }}
-                darkColor={Colors.dark.text.secondary}
-                lightColor={Colors.light.text.secondary}
-              >
-                Silahkan masuk atau registrasi sebelum menggunakan layanan
-                pengajuan.
-              </ThemedText>
-            </ThemedView>
-          )}
+              )}
+          {/* Spacer to fix Android ScrollView paddingRight bug */}
+          <View style={{ width: SCREEN_MARGIN_HORIZONTAL - 12 }} />
         </ScrollView>
       </View>
       {/* End Quick Access Section */}
+
+      {/* Highlight Section */}
+      <Pressable
+        onPress={() => router.push("/library")}
+        onPressIn={() => {
+          Animated.spring(flyerPressAnim, {
+            toValue: 1,
+            useNativeDriver: true,
+          }).start();
+        }}
+        onPressOut={() => {
+          Animated.spring(flyerPressAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }}
+        style={{
+          marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+          marginBottom: SECTION_GAP,
+        }}
+      >
+        <LinearGradient
+          colors={["#003f87", "#115cb9"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            borderRadius: RADIUS.DEFAULT,
+            padding: 24,
+            overflow: "hidden",
+            position: "relative",
+            minHeight: 250,
+          }}
+        >
+          {/* Decorative background blur */}
+          <View
+            style={{
+              position: "absolute",
+              top: -60,
+              right: -60,
+              width: 200,
+              height: 200,
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              borderRadius: 100,
+            }}
+          />
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              zIndex: 10,
+            }}
+          >
+            <View>
+              <ThemedText
+                type="title3"
+                style={{ color: "#fff", marginBottom: 4 }}
+              >
+                Pilihan Terbaik
+              </ThemedText>
+              <ThemedText type="subheadline" style={{ color: "#acc7ff" }}>
+                Jelajahi Pustaka Digital
+              </ThemedText>
+            </View>
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: RADIUS.DEFAULT,
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <IconSymbol name="arrow.forward" size={20} color="#fff" />
+            </View>
+          </View>
+
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "flex-end",
+              alignItems: "center",
+              marginTop: 20,
+              zIndex: 10,
+            }}
+          >
+            <View
+              style={{
+                position: "relative",
+                width: "100%",
+                height: 190,
+                alignItems: "center",
+                justifyContent: "flex-end",
+              }}
+            >
+              {flyers && flyers.length > 2 && (
+                <Animated.View
+                  style={{
+                    position: "absolute",
+                    width: 130,
+                    height: 190,
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.2)",
+                    transform: [
+                      { rotate: "6deg" },
+                      { translateX: 30 },
+                      { translateX: pressTranslateRight },
+                    ],
+                    opacity: 0.6,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 20,
+                  }}
+                >
+                  <Image
+                    source={{ uri: flyers[2].image_url }}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                  />
+                </Animated.View>
+              )}
+              {flyers && flyers.length > 1 && (
+                <Animated.View
+                  style={{
+                    position: "absolute",
+                    width: 130,
+                    height: 190,
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.3)",
+                    transform: [
+                      { rotate: "-6deg" },
+                      { translateX: -30 },
+                      { translateX: pressTranslateLeft },
+                    ],
+                    opacity: 0.8,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 20,
+                  }}
+                >
+                  <Image
+                    source={{ uri: flyers[1].image_url }}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                  />
+                </Animated.View>
+              )}
+              {flyers && flyers.length > 0 && (
+                <Animated.View
+                  style={{
+                    position: "absolute",
+                    width: 140,
+                    height: 200,
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    borderWidth: 2,
+                    borderColor: "rgba(255,255,255,0.9)",
+                    zIndex: 20,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 20,
+                    transform: [{ scale: pressScaleCenter }],
+                  }}
+                >
+                  <Image
+                    source={{ uri: flyers[0].image_url }}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                  />
+                </Animated.View>
+              )}
+            </View>
+          </View>
+        </LinearGradient>
+      </Pressable>
+      {/* End Highlight Section */}
 
       {/* Guide Section */}
       <View
@@ -505,9 +523,39 @@ export default function HomeScreen() {
           marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
         }}
       >
-        <ThemedText type="title3" style={{ marginBottom: 12 }}>
-          Dukungan Penggunaan
-        </ThemedText>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: Colors.notificationBadge.pending.background,
+              padding: 12,
+              borderRadius: RADIUS.DEFAULT,
+              borderWidth: 0,
+              width: 40,
+              height: 40,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 12,
+            }}
+          >
+            <IconSymbol
+              name={"person.crop.circle.badge.questionmark"}
+              color={Colors.accentBlue}
+              size={24}
+            />
+          </View>
+          <ThemedText type="title3" style={{ marginBottom: 12 }}>
+            Panduan Penggunaan
+          </ThemedText>
+        </View>
+
+        {/* Video Section */}
         <View style={[styles.card, { borderWidth: 0 }]}>
           <VideoView
             style={{
@@ -521,11 +569,14 @@ export default function HomeScreen() {
             contentFit="fill"
           />
         </View>
+        {/* End Video Section */}
+
+        {/* Attachment Section */}
         <Pressable
           style={[
             styles.card,
             {
-              marginTop: 16,
+              marginTop: SECTION_GAP,
               borderColor: backgroundColor,
               display: "flex",
               flexDirection: "row",
@@ -573,99 +624,223 @@ export default function HomeScreen() {
             </ThemedText>
           </View>
         </Pressable>
+        {/* End Attachment Section */}
       </View>
       {/* End Guide Section */}
 
-      {/* Flyer Section */}
+      {/* App Flow Section */}
       <View
         style={{
           marginTop: SECTION_GAP,
+          marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
         }}
       >
-        <ThemedText
-          type="title3"
+        <LinearGradient
+          colors={["#003f87", "#115cb9"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={{
-            marginBottom: 12,
-            marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+            borderRadius: RADIUS.DEFAULT,
+            paddingHorizontal: 20,
+            paddingVertical: 24,
+            overflow: "hidden",
+            position: "relative",
           }}
         >
-          Pustaka Digital
-        </ThemedText>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            marginBottom: 12,
-            paddingHorizontal: 24,
-            gap: 12,
-          }}
-          decelerationRate="normal"
-        >
-          {flyers &&
-            flyers.map((element, index) => (
-              <FlyerCard key={index} data={element} />
-            ))}
-        </ScrollView>
-        <ThemedSeparator style={{ marginHorizontal: 24 }} />
-        <Pressable
-          onPress={() => {
-            router.navigate("/library");
-          }}
-          hitSlop={10}
-          style={{
-            alignSelf: "flex-start",
-            paddingTop: 12,
-            marginHorizontal: 24,
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
-          <ThemedText
-            type="default"
-            lightColor={Colors.accentBlue}
-            darkColor={Colors.accentBlue}
-          >
-            Selengkapnya
-          </ThemedText>
-          <IconSymbol
-            name="chevron.right"
-            size={CHEVRON_SIZE}
-            color={Colors.accentBlue}
-            style={{ marginStart: 4, marginTop: 3 }}
+          {/* Decorative background shapes */}
+          <View
+            style={{
+              position: "absolute",
+              bottom: -50,
+              left: -50,
+              width: 150,
+              height: 150,
+              backgroundColor: "rgba(255, 255, 255, 0.15)",
+              borderRadius: 75,
+            }}
           />
-        </Pressable>
+          <View
+            style={{
+              position: "absolute",
+              top: 20,
+              right: -30,
+              width: 100,
+              height: 100,
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              borderRadius: 20,
+              transform: [{ rotate: "45deg" }],
+            }}
+          />
+
+          <ThemedText
+            type="title3"
+            style={{ color: flowTextColor, marginBottom: 20 }}
+          >
+            Alur Pengajuan
+          </ThemedText>
+
+          <View>
+            {SUBMISSION_STEPS.map((step, index) => (
+              <View
+                key={step.id}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "stretch",
+                  gap: 16,
+                }}
+              >
+                <View style={{ alignItems: "center" }}>
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: flowIconBg,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: flowIconBg,
+                    }}
+                  >
+                    <IconSymbol
+                      name={step.icon as any}
+                      size={16}
+                      color={flowTextColor}
+                    />
+                  </View>
+                  {/* Vertical line connector */}
+                  {index < SUBMISSION_STEPS.length - 1 && (
+                    <View
+                      style={{
+                        width: 2,
+                        flex: 1,
+                        backgroundColor: flowLineColor,
+                        opacity: 0.15,
+                        marginVertical: 4,
+                      }}
+                    />
+                  )}
+                </View>
+
+                <View
+                  style={{
+                    flex: 1,
+                    paddingTop: 4,
+                    paddingBottom: index < SUBMISSION_STEPS.length - 1 ? 24 : 0,
+                  }}
+                >
+                  <ThemedText
+                    type="defaultSemiBold"
+                    style={{ color: flowTextColor, marginBottom: 2 }}
+                  >
+                    {step.title}
+                  </ThemedText>
+                  <ThemedText type="footnote" style={{ color: flowDescColor }}>
+                    {step.description}
+                  </ThemedText>
+                </View>
+              </View>
+            ))}
+          </View>
+        </LinearGradient>
       </View>
-      {/* End Flyer Section */}
+      {/* End App Flow Section */}
 
       {/* Support Section */}
-      <View style={styles.supportContainer}>
-        <ThemedText type="title3">Bantuan Layanan</ThemedText>
-        <ThemedText type="footnote">
-          Bantuan dan informasi mengenai prototipe ini dapat diperoleh melalui
-          kontak berikut.
+      <ThemedView
+        lightColor={Colors.notificationBadge.pending.background}
+        darkColor={Colors.dark.secondary}
+        style={{
+          marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+          marginTop: SECTION_GAP,
+          marginBottom: 32,
+          borderRadius: RADIUS.DEFAULT,
+          padding: 24,
+          borderWidth: 1,
+          borderColor: "rgba(0,0,0,0.05)",
+          overflow: "hidden",
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <ThemedText type="title3">Butuh Bantuan Layanan?</ThemedText>
+        </View>
+        <ThemedText
+          type="subheadline"
+          style={{ fontWeight: "600", marginBottom: 4 }}
+        >
+          Dinas Kesehatan Kota Denpasar
         </ThemedText>
-        <View style={{ display: "flex", flexDirection: "row", gap: 12 }}>
-          <ThemedButton
-            variant="secondary"
-            onPress={() => {
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            marginBottom: 20,
+            gap: 8,
+          }}
+        >
+          <IconSymbol
+            name="mappin.and.ellipse"
+            size={16}
+            color="#727784"
+            style={{ marginTop: 2 }}
+          />
+          <ThemedText type="footnote" style={{ flex: 1, lineHeight: 20 }}>
+            Jl. Maruti No.8, Pemecutan Kaja, Kec. Denpasar Utara, Kota Denpasar,
+            Bali
+          </ThemedText>
+        </View>
+
+        <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
+          <Pressable
+            onPress={() =>
               Linking.openURL(
                 `http://api.whatsapp.com/send?phone=${PHONE_NUMBER}`,
-              );
-            }}
-            icon={
+              )
+            }
+            style={({ pressed }) => [
+              {
+                flex: 1,
+                backgroundColor: "#fff",
+                borderRadius: RADIUS.DEFAULT,
+                padding: 16,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "rgba(0,0,0,0.05)",
+                transform: [{ scale: pressed ? 0.96 : 1 }],
+              },
+            ]}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: RADIUS.DEFAULT,
+                backgroundColor: "#EAF8EF",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 8,
+              }}
+            >
               <Image
                 source={require("@/assets/images/whatsapp.png")}
-                style={{ width: 20, height: 20, marginEnd: 4, marginStart: -2 }}
+                style={{ width: 20, height: 20, tintColor: "#1F8A4C" }}
               />
-            }
-            size="small"
-            style={{ alignSelf: "flex-start" }}
-          >
-            Whatsapp
-          </ThemedButton>
-          <ThemedButton
-            variant="secondary"
+            </View>
+            <ThemedText
+              type="footnote"
+              style={{ fontWeight: "600", color: "#1a1a2e" }}
+            >
+              Whatsapp
+            </ThemedText>
+          </Pressable>
+
+          <Pressable
             onPress={async () => {
               const canSend = await MailComposer.isAvailableAsync();
               if (!canSend) {
@@ -675,51 +850,80 @@ export default function HomeScreen() {
                 );
                 return;
               }
-              const options = {
+              await MailComposer.composeAsync({
                 subject: "Bantuan Layanan - SIKOMPLIT",
                 recipients: [EMAIL],
-              };
-              await MailComposer.composeAsync(options);
+              });
             }}
-            icon={
-              <IconSymbol
-                size={25}
-                name="envelope.fill"
-                color={Colors.accentBlue}
-                style={{ marginEnd: 2, marginStart: -3 }}
-              />
-            }
-            size="small"
-            style={{ alignSelf: "flex-start" }}
+            style={({ pressed }) => [
+              {
+                flex: 1,
+                backgroundColor: "#fff",
+                borderRadius: RADIUS.DEFAULT,
+                padding: 16,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "rgba(0,0,0,0.05)",
+                transform: [{ scale: pressed ? 0.96 : 1 }],
+              },
+            ]}
           >
-            Email
-          </ThemedButton>
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: RADIUS.DEFAULT,
+                backgroundColor: "#E0F2FF",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 8,
+              }}
+            >
+              <IconSymbol name="envelope.fill" size={20} color="#0B63C7" />
+            </View>
+            <ThemedText
+              type="footnote"
+              style={{ fontWeight: "600", color: "#1a1a2e" }}
+            >
+              Email
+            </ThemedText>
+          </Pressable>
         </View>
-        <View>
-          <ThemedSeparator style={{ marginTop: SECTION_GAP }} />
+
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 8,
+          }}
+        >
           <Pressable
-            onPress={() => {
-              router.push("/term");
-            }}
+            onPress={() => router.push("/term")}
             hitSlop={10}
-            style={styles.supportLink}
+            style={{ flexDirection: "row", alignItems: "center" }}
           >
             <ThemedText
-              type="default"
-              lightColor={Colors.light.text.secondary}
-              darkColor={Colors.light.text.secondary}
+              type="footnote"
+              style={{ fontWeight: "600", color: "#727784" }}
             >
-              Syarat dan Ketentuan Layanan
+              Syarat dan Ketentuan
             </ThemedText>
             <IconSymbol
               name="chevron.right"
-              size={CHEVRON_SIZE}
-              color={Colors.light.text.secondary}
+              size={12}
+              color="#727784"
               style={{ marginStart: 4 }}
             />
           </Pressable>
+          <ThemedText
+            type="caption"
+            style={{ color: "#727784", fontWeight: "500" }}
+          >
+            v{appVersion}
+          </ThemedText>
         </View>
-      </View>
+      </ThemedView>
       {/* End Support Section */}
 
       {/* End Content */}
@@ -777,7 +981,7 @@ export default function HomeScreen() {
           setPreviewUri(undefined);
         }}
       />
-    </ParallaxScrollView>
+    </HomepageScrollView>
   );
 }
 
@@ -789,10 +993,9 @@ const styles = StyleSheet.create({
     marginTop: SECTION_GAP,
   },
   quickAccessContainer: {
-    marginVertical: 16,
+    marginTop: 36,
     marginBottom: SECTION_GAP,
-    marginStart: 24,
-    paddingEnd: 48,
+    paddingLeft: SCREEN_MARGIN_HORIZONTAL,
     gap: 12,
   },
   card: {
@@ -801,7 +1004,7 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
     borderWidth: 1,
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)",
+    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.1)",
   },
   cardBackground: {
     ...StyleSheet.absoluteFill,
