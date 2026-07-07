@@ -6,6 +6,7 @@ import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { PHONE_NUMBER } from "@/constants/contact-person";
 import { Colors, RADIUS } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -20,6 +21,7 @@ import DateTimePicker, {
 import { Checkbox } from "expo-checkbox";
 import * as DocumentPicker from "expo-document-picker";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -128,7 +130,10 @@ const fileSchema = fileBaseSchema.superRefine((data, ctx) => {
     const mimeType = file.mimeType;
     const size = file.size ?? 0;
 
-    return mimeType === "application/pdf" && size <= maxSizeMB * 1024 * 1024;
+    return (
+      (mimeType === "application/pdf" || mimeType === "application/jpg") &&
+      size <= maxSizeMB * 1024 * 1024
+    );
   };
 
   if (!fileValid(data.application_letter, 2)) {
@@ -192,6 +197,7 @@ export default function FormScreen() {
   const auth = useAuth();
   const submissionContext = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text.primary");
   const today = new Date();
   const defaultBirthDate = new Date(2000, 0, 1);
   const [isLoading, setIsLoading] = useState(false);
@@ -309,9 +315,62 @@ export default function FormScreen() {
     });
   };
 
+  // Handles camera capture for a specific field
+  const takePhoto = async (
+    fieldName: FileFieldName,
+    setSelectedFile: React.Dispatch<React.SetStateAction<SelectedFile | null>>,
+  ) => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Izin Kamera",
+        "Maaf, kami memerlukan izin kamera untuk fitur ini.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets?.length) {
+      return;
+    }
+
+    const file = result.assets[0];
+    const selectedFile = {
+      name: file.fileName ?? `photo_${Date.now()}.jpg`,
+      uri: file.uri,
+      size: file.fileSize,
+      mimeType: file.mimeType ?? "image/jpeg",
+    };
+
+    setSelectedFile(selectedFile);
+    form.setValue(fieldName, selectedFile, {
+      shouldTouch: true,
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
   // Handles file card rendering
   const fileCard = (selectedFile: SelectedFile | null) => (
     <View style={styles.fileCard}>
+      {selectedFile?.mimeType?.startsWith("image/") && (
+        <Image
+          source={{ uri: selectedFile.uri }}
+          style={{
+            width: "100%",
+            height: 150,
+            borderRadius: 8,
+            marginBottom: 12,
+            backgroundColor: Colors.light.fill.secondary,
+          }}
+          contentFit="cover"
+        />
+      )}
       <ThemedText type="defaultSemiBold">
         {selectedFile ? selectedFile.name : "Belum ada file dipilih"}
       </ThemedText>
@@ -414,7 +473,7 @@ export default function FormScreen() {
 
   return (
     <ScrollView
-      style={{ paddingVertical: 20 }}
+      style={{ paddingVertical: 20, backgroundColor: backgroundColor }}
       contentInsetAdjustmentBehavior="automatic"
     >
       <View style={{ gap: 8, paddingHorizontal: 24, paddingBottom: 100 }}>
@@ -444,7 +503,7 @@ export default function FormScreen() {
             melalui tombol Whatsapp di bawah.
           </ThemedText>
           <ThemedButton
-            variant="secondary"
+            variant="outlineSecondary"
             icon={
               <Image
                 source={require("@/assets/images/whatsapp.png")}
@@ -838,6 +897,7 @@ export default function FormScreen() {
                         onChange={handleIOSDateChange}
                         maximumDate={today}
                         style={{ backgroundColor }}
+                        textColor={textColor}
                       />
                     </View>
                   </SafeAreaView>
@@ -861,18 +921,39 @@ export default function FormScreen() {
                   darkColor={Colors.dark.text.secondary}
                   lightColor={Colors.light.text.secondary}
                 >
-                  Unggah berkas dalam format PDF, dengan ukuran maksimal 2 MB.
+                  Unggah berkas dalam format JPG/PDF, dengan ukuran maksimal 2
+                  MB.
                 </ThemedText>
               </View>
-              <ThemedButton
-                variant="secondary"
-                onPress={() =>
-                  pickDocument("application_letter", setRequestLetter)
-                }
-                style={{ alignSelf: "flex-start" }}
-              >
-                Pilih file dari perangkat
-              </ThemedButton>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <ThemedButton
+                  variant="primary"
+                  size="small"
+                  onPress={() =>
+                    pickDocument("application_letter", setRequestLetter)
+                  }
+                  style={{ alignSelf: "flex-start", flex: 1 }}
+                >
+                  Pilih file
+                </ThemedButton>
+                <ThemedButton
+                  variant="outlineSecondary"
+                  size="small"
+                  icon={
+                    <IconSymbol
+                      name="camera.fill"
+                      size={18}
+                      color={Colors.light.text.primary}
+                    />
+                  }
+                  onPress={() =>
+                    takePhoto("application_letter", setRequestLetter)
+                  }
+                  style={{ alignSelf: "flex-start", flex: 1 }}
+                >
+                  Ambil Foto
+                </ThemedButton>
+              </View>
               {fileCard(selectedRequestLetter)}
             </ThemedView>
             {selectedPurpose !== "1" && (
@@ -892,15 +973,35 @@ export default function FormScreen() {
                       MB.
                     </ThemedText>
                   </View>
-                  <ThemedButton
-                    variant="secondary"
-                    onPress={() =>
-                      pickDocument("research_proposal", setProposalLetter)
-                    }
-                    style={{ alignSelf: "flex-start" }}
-                  >
-                    Pilih file dari perangkat
-                  </ThemedButton>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <ThemedButton
+                      variant="primary"
+                      size="small"
+                      onPress={() =>
+                        pickDocument("research_proposal", setProposalLetter)
+                      }
+                      style={{ alignSelf: "flex-start", flex: 1 }}
+                    >
+                      Pilih file
+                    </ThemedButton>
+                    <ThemedButton
+                      variant="outlineSecondary"
+                      size="small"
+                      icon={
+                        <IconSymbol
+                          name="camera.fill"
+                          size={18}
+                          color={Colors.light.text.primary}
+                        />
+                      }
+                      onPress={() =>
+                        takePhoto("research_proposal", setProposalLetter)
+                      }
+                      style={{ alignSelf: "flex-start", flex: 1 }}
+                    >
+                      Ambil Foto
+                    </ThemedButton>
+                  </View>
                   {fileCard(selectedProposalLetter)}
                 </ThemedView>
                 <ThemedView style={[styles.card, { gap: 14 }]}>
@@ -918,15 +1019,38 @@ export default function FormScreen() {
                       MB.
                     </ThemedText>
                   </View>
-                  <ThemedButton
-                    variant="secondary"
-                    onPress={() =>
-                      pickDocument("ethics_clearance_letter", setConductLetter)
-                    }
-                    style={{ alignSelf: "flex-start" }}
-                  >
-                    Pilih file dari perangkat
-                  </ThemedButton>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <ThemedButton
+                      variant="primary"
+                      size="small"
+                      onPress={() =>
+                        pickDocument(
+                          "ethics_clearance_letter",
+                          setConductLetter,
+                        )
+                      }
+                      style={{ alignSelf: "flex-start", flex: 1 }}
+                    >
+                      Pilih file
+                    </ThemedButton>
+                    <ThemedButton
+                      variant="outlineSecondary"
+                      size="small"
+                      icon={
+                        <IconSymbol
+                          name="camera.fill"
+                          size={18}
+                          color={Colors.light.text.primary}
+                        />
+                      }
+                      onPress={() =>
+                        takePhoto("ethics_clearance_letter", setConductLetter)
+                      }
+                      style={{ alignSelf: "flex-start", flex: 1 }}
+                    >
+                      Ambil Foto
+                    </ThemedButton>
+                  </View>
                   {fileCard(selectedConductLetter)}
                 </ThemedView>
                 <ThemedView style={[styles.card, { gap: 14 }]}>
@@ -944,18 +1068,41 @@ export default function FormScreen() {
                       MB.
                     </ThemedText>
                   </View>
-                  <ThemedButton
-                    variant="secondary"
-                    onPress={() =>
-                      pickDocument(
-                        "final_report_statement_letter",
-                        setStatementLetter,
-                      )
-                    }
-                    style={{ alignSelf: "flex-start" }}
-                  >
-                    Pilih file dari perangkat
-                  </ThemedButton>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <ThemedButton
+                      variant="primary"
+                      size="small"
+                      onPress={() =>
+                        pickDocument(
+                          "final_report_statement_letter",
+                          setStatementLetter,
+                        )
+                      }
+                      style={{ alignSelf: "flex-start", flex: 1 }}
+                    >
+                      Pilih file
+                    </ThemedButton>
+                    <ThemedButton
+                      variant="outlineSecondary"
+                      size="small"
+                      icon={
+                        <IconSymbol
+                          name="camera.fill"
+                          size={18}
+                          color={Colors.light.text.primary}
+                        />
+                      }
+                      onPress={() =>
+                        takePhoto(
+                          "final_report_statement_letter",
+                          setStatementLetter,
+                        )
+                      }
+                      style={{ alignSelf: "flex-start", flex: 1 }}
+                    >
+                      Ambil Foto
+                    </ThemedButton>
+                  </View>
                   {fileCard(selectedStatementLetter)}
                 </ThemedView>
               </View>
@@ -1132,6 +1279,7 @@ const styles = StyleSheet.create({
     padding: 18,
     borderWidth: 1,
     borderColor: Colors.light.fill.secondary,
+    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
   dateField: {
     borderRadius: RADIUS.DEFAULT,

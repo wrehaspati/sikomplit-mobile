@@ -1,10 +1,11 @@
-import { StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import ThemedButton from "@/components/themed-button";
 import ThemedSeparator from "@/components/themed-separator";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { ThemeMode, useThemePreference } from "@/contexts/theme-context";
@@ -125,6 +126,31 @@ export default function SettingScreen() {
                 </View>
               </View>
             </View>
+
+            {/* Logout Icon Button */}
+            <Pressable
+              hitSlop={10}
+              onPress={() => {
+                Alert.alert("Keluar", "Apakah anda yakin ingin keluar ?", [
+                  { text: "Tidak", style: "cancel", isPreferred: true },
+                  { text: "Ya", onPress: handleSignOut },
+                ]);
+              }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "rgba(220, 38, 38, 0.1)",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <IconSymbol
+                name="rectangle.portrait.and.arrow.right"
+                size={20}
+                color="#DC2626"
+              />
+            </Pressable>
           </View>
 
           <ThemedSeparator style={{ marginVertical: 12 }} />
@@ -184,10 +210,10 @@ export default function SettingScreen() {
           </ThemedText>
           <View style={styles.guestActions}>
             <ThemedButton
-              variant="secondary"
+              variant="primary"
               size="small"
               onPress={handleNavigateToLogin}
-              style={styles.actionButton}
+              style={[styles.actionButton, { flex: 1 }]}
             >
               Masuk
             </ThemedButton>
@@ -195,7 +221,7 @@ export default function SettingScreen() {
               variant="outlineSecondary"
               size="small"
               onPress={handleNavigateToRegister}
-              style={[styles.actionButton, { marginLeft: 8 }]}
+              style={[styles.actionButton, { flex: 1 }]}
             >
               Daftar
             </ThemedButton>
@@ -216,12 +242,12 @@ export default function SettingScreen() {
             return (
               <ThemedButton
                 key={option.value}
-                variant={active ? "secondary" : "outlineSecondary"}
+                variant={active ? "primary" : "outlineSecondary"}
                 size="small"
                 onPress={() => handleThemeChange(option.value)}
                 style={[
                   styles.themeOptionButton,
-                  { borderColor: secondaryColor },
+                  !active && { borderColor: secondaryColor },
                 ]}
               >
                 {option.label}
@@ -239,50 +265,6 @@ export default function SettingScreen() {
         </ThemedText>
       </ThemedView>
       {/* End Theme Section */}
-
-      {/* Session Section */}
-      {user ? (
-        <ThemedView variant="card" style={styles.sectionCard}>
-          <ThemedText type="caption" style={styles.sectionLabel}>
-            Sesi
-          </ThemedText>
-          <ThemedButton
-            variant="secondary"
-            size="small"
-            onPress={handleSignOut}
-            style={styles.actionButton}
-          >
-            Keluar Akun
-          </ThemedButton>
-          <ThemedText
-            type="caption"
-            style={{ color: Colors.light.text.secondary }}
-          >
-            Hapus sesi saat ini dan kembali ke layar masuk
-          </ThemedText>
-        </ThemedView>
-      ) : (
-        <ThemedView variant="card" style={styles.sectionCard}>
-          <ThemedText
-            type="subheadline"
-            style={{ fontWeight: "600", alignSelf: "center" }}
-            darkColor={Colors.dark.text.primary}
-            lightColor={Colors.light.text.primary}
-          >
-            Akses Dibatasi
-          </ThemedText>
-          <ThemedText
-            type="footnote"
-            style={{ textAlign: "center" }}
-            darkColor={Colors.dark.text.secondary}
-            lightColor={Colors.light.text.secondary}
-          >
-            Silahkan masuk atau registrasi sebelum menggunakan layanan
-            pengajuan.
-          </ThemedText>
-        </ThemedView>
-      )}
-      {/* End Session Section */}
 
       {/* About Section */}
       <ThemedView variant="card" style={styles.sectionCard}>
@@ -383,7 +365,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     minWidth: 96,
     justifyContent: "center",
-    borderWidth: 2,
   },
   sectionLabel: {
     textTransform: "uppercase",

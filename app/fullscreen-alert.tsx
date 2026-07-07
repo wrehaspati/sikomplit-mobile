@@ -1,6 +1,7 @@
 import successAnimation from "@/assets/images/success.json";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { RelativePathString, router, useLocalSearchParams } from "expo-router";
 import LottieView from "lottie-react-native";
 import { useEffect, useRef } from "react";
@@ -22,7 +23,9 @@ export default function FullscreenAlertScreen() {
   }
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <ThemedView
+      style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+    >
       <View
         style={{ width: "100%", alignItems: "center", paddingHorizontal: 24 }}
       >
@@ -64,6 +67,6 @@ export default function FullscreenAlertScreen() {
           {buttonText}
         </ThemedButton>
       </View>
-    </View>
+    </ThemedView>
   );
 }

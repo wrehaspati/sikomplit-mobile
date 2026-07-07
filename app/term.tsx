@@ -111,6 +111,7 @@ type SectionData = {
 
 export default function TermScreen() {
   const sectionBackground = useThemeColor({}, "fill.vibrant.secondary");
+  const backgroundColor = useThemeColor({}, "background");
   const accentBg = useThemeColor(
     {
       light: Colors.notificationBadge.pending.background,
@@ -203,7 +204,10 @@ export default function TermScreen() {
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView
+      contentContainerStyle={styles.content}
+      style={{ backgroundColor }}
+    >
       {/* Intro Card */}
       <ThemedView variant="card" style={styles.introCard}>
         <View style={styles.introIconRow}>

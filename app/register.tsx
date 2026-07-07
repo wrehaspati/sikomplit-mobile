@@ -2,6 +2,7 @@ import Disclaimer from "@/components/disclaimer";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
+import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -28,10 +29,8 @@ const RegisterSchema = z
       .regex(/^[0-9+\-\s()]+$/, { message: "Nomor telepon tidak valid." })
       .min(8, { message: "Nomor telepon minimal 8 karakter." }),
     email: z
-      .string()
-      .trim()
-      .min(1, { message: "Email wajib diisi." })
-      .email({ message: "Email harus diisi dengan format yang benar." }),
+      .email({ message: "Email harus diisi dengan format yang benar." })
+      .trim(),
     password: z
       .string()
       .trim()
@@ -119,7 +118,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <ThemedView style={{ flex: 1 }}>
       <SafeAreaView
         style={{
           flex: 1,
@@ -315,6 +314,6 @@ export default function RegisterScreen() {
           </Pressable>
         </View>
       </SafeAreaView>
-    </View>
+    </ThemedView>
   );
 }

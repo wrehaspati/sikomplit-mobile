@@ -118,7 +118,7 @@ export default function NotificationScreen() {
   const auth = useAuth();
   const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
-  const sectionBackground = useThemeColor({}, "fill.vibrant.tertiary");
+  const sectionBackground = useThemeColor({}, "background");
   const tertiaryText = useThemeColor({}, "text.secondary");
   const secondaryText = useThemeColor({}, "text.secondary");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
@@ -256,9 +256,7 @@ export default function NotificationScreen() {
         {/* Content */}
 
         {/* Filter */}
-        <ThemedView
-          style={[styles.filterWrap, { backgroundColor: sectionBackground }]}
-        >
+        <ThemedView style={[styles.filterWrap]} variant="card">
           <ThemedText type="caption" style={styles.filterLabel}>
             Urutkan tanggal dibuat
           </ThemedText>

@@ -2,6 +2,7 @@ import Disclaimer from "@/components/disclaimer";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
+import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -72,7 +73,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <ThemedView style={{ flex: 1 }}>
       <SafeAreaView
         style={{
           flex: 1,
@@ -193,6 +194,6 @@ export default function LoginScreen() {
           </ThemedButton>
         </View>
       </SafeAreaView>
-    </View>
+    </ThemedView>
   );
 }

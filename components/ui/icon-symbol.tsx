@@ -58,6 +58,8 @@ const MAPPING = {
   "checkmark.seal.fill": "verified",
   "tray.and.arrow.down.fill": "archive",
   "questionmark.circle.fill": "question-answer",
+  "rectangle.portrait.and.arrow.right": "logout",
+  "camera.fill": "photo-camera",
 } as IconMapping;
 
 /**

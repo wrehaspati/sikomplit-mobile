@@ -2,6 +2,7 @@ import { resetPassword } from "@/api/auth-api";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
+import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -76,7 +77,7 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <ThemedView style={{ flex: 1 }}>
       <SafeAreaView
         style={{
           flex: 1,
@@ -157,6 +158,6 @@ export default function ResetPasswordScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </View>
+    </ThemedView>
   );
 }
