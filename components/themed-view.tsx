@@ -52,6 +52,6 @@ const styles = StyleSheet.create({
     display: "flex",
     position: "relative",
     overflow: "hidden",
-    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.06)",
+    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
 });

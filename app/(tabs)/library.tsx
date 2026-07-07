@@ -259,9 +259,9 @@ export default function LibraryScreen() {
                       size={20}
                       style={{
                         shadowColor: Colors.accentBlue,
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 4,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.4,
+                        shadowRadius: 8,
                       }}
                     />
                   ) : (
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.fill.vibrant.primary,
     paddingHorizontal: 24,
     marginBottom: 16,
-    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.06)",
+    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
   searchInputContainer: {
     position: "relative",
@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
     alignSelf: "flex-start",
-    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.06)",
+    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
   bookmarkFilterButtonActive: {
     backgroundColor: Colors.light.fill.secondary,
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     display: "flex",
     position: "relative",
     overflow: "hidden",
-    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.06)",
+    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
   cardImage: {
     width: "30%",

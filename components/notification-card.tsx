@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     marginBottom: 10,
-    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.1)",
+    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
   pressableCard: {
     minHeight: 0,

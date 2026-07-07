@@ -90,9 +90,9 @@ export default function ThemedButton({
 const styles = {
   shadow: {
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
   },
   default: {
     paddingVertical: 12,

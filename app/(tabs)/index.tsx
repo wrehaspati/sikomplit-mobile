@@ -97,23 +97,13 @@ const SUBMISSION_STEPS = [
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const flowBgColors = isDark
-    ? (["#2ea850", "#197532"] as const)
-    : (["#63d980", "#34C759"] as const);
-  const flowTextColor = isDark ? "#ffffff" : "#002106";
-  const flowDescColor = isDark
-    ? "rgba(255, 255, 255, 0.85)"
-    : "rgba(0, 33, 6, 0.75)";
-  const flowIconBg = isDark
-    ? "rgba(255, 255, 255, 0.2)"
-    : "rgba(0, 33, 6, 0.1)";
-  const flowLineColor = isDark ? "#ffffff" : "#002106";
 
   const auth = useAuth();
   const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
-  const cardBackground = useThemeColor({}, "fill.vibrant.tertiary");
+  const cardBackground = useThemeColor({}, "background");
   const iconBackground = useThemeColor({}, "icon");
+  const theme = Colors[isDark ? "dark" : "light"];
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
   const [openModal, setOpenModal] = useState(false);
@@ -445,9 +435,9 @@ export default function HomeScreen() {
                     ],
                     opacity: 0.6,
                     shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 10 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 20,
+                    shadowOffset: { width: 0, height: 12 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 24,
                   }}
                 >
                   <Image
@@ -474,9 +464,9 @@ export default function HomeScreen() {
                     ],
                     opacity: 0.8,
                     shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 10 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 20,
+                    shadowOffset: { width: 0, height: 12 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 24,
                   }}
                 >
                   <Image
@@ -498,9 +488,9 @@ export default function HomeScreen() {
                     borderColor: "rgba(255,255,255,0.9)",
                     zIndex: 20,
                     shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 10 },
-                    shadowOpacity: 0.4,
-                    shadowRadius: 20,
+                    shadowOffset: { width: 0, height: 12 },
+                    shadowOpacity: 0.5,
+                    shadowRadius: 24,
                     transform: [{ scale: pressScaleCenter }],
                   }}
                 >
@@ -523,38 +513,6 @@ export default function HomeScreen() {
           marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
         }}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: Colors.notificationBadge.pending.background,
-              padding: 12,
-              borderRadius: RADIUS.DEFAULT,
-              borderWidth: 0,
-              width: 40,
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 12,
-            }}
-          >
-            <IconSymbol
-              name={"person.crop.circle.badge.questionmark"}
-              color={Colors.accentBlue}
-              size={24}
-            />
-          </View>
-          <ThemedText type="title3" style={{ marginBottom: 12 }}>
-            Panduan Penggunaan
-          </ThemedText>
-        </View>
-
         {/* Video Section */}
         <View style={[styles.card, { borderWidth: 0 }]}>
           <VideoView
@@ -636,7 +594,7 @@ export default function HomeScreen() {
         }}
       >
         <LinearGradient
-          colors={["#003f87", "#115cb9"]}
+          colors={theme.components.appFlow.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
@@ -655,7 +613,7 @@ export default function HomeScreen() {
               left: -50,
               width: 150,
               height: 150,
-              backgroundColor: "rgba(255, 255, 255, 0.15)",
+              backgroundColor: theme.components.appFlow.circle1,
               borderRadius: 75,
             }}
           />
@@ -666,7 +624,7 @@ export default function HomeScreen() {
               right: -30,
               width: 100,
               height: 100,
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              backgroundColor: theme.components.appFlow.circle2,
               borderRadius: 20,
               transform: [{ rotate: "45deg" }],
             }}
@@ -674,7 +632,7 @@ export default function HomeScreen() {
 
           <ThemedText
             type="title3"
-            style={{ color: flowTextColor, marginBottom: 20 }}
+            style={{ color: theme.components.appFlow.text, marginBottom: 20 }}
           >
             Alur Pengajuan
           </ThemedText>
@@ -695,17 +653,17 @@ export default function HomeScreen() {
                       width: 36,
                       height: 36,
                       borderRadius: 18,
-                      backgroundColor: flowIconBg,
+                      backgroundColor: theme.components.appFlow.iconBg,
                       alignItems: "center",
                       justifyContent: "center",
                       borderWidth: 1,
-                      borderColor: flowIconBg,
+                      borderColor: theme.components.appFlow.iconBg,
                     }}
                   >
                     <IconSymbol
                       name={step.icon as any}
                       size={16}
-                      color={flowTextColor}
+                      color={theme.components.appFlow.text}
                     />
                   </View>
                   {/* Vertical line connector */}
@@ -714,7 +672,7 @@ export default function HomeScreen() {
                       style={{
                         width: 2,
                         flex: 1,
-                        backgroundColor: flowLineColor,
+                        backgroundColor: theme.components.appFlow.line,
                         opacity: 0.15,
                         marginVertical: 4,
                       }}
@@ -731,11 +689,17 @@ export default function HomeScreen() {
                 >
                   <ThemedText
                     type="defaultSemiBold"
-                    style={{ color: flowTextColor, marginBottom: 2 }}
+                    style={{
+                      color: theme.components.appFlow.text,
+                      marginBottom: 2,
+                    }}
                   >
                     {step.title}
                   </ThemedText>
-                  <ThemedText type="footnote" style={{ color: flowDescColor }}>
+                  <ThemedText
+                    type="footnote"
+                    style={{ color: theme.components.appFlow.desc }}
+                  >
                     {step.description}
                   </ThemedText>
                 </View>
@@ -747,183 +711,304 @@ export default function HomeScreen() {
       {/* End App Flow Section */}
 
       {/* Support Section */}
-      <ThemedView
-        lightColor={Colors.notificationBadge.pending.background}
-        darkColor={Colors.dark.secondary}
+      <View
         style={{
           marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
           marginTop: SECTION_GAP,
           marginBottom: 32,
-          borderRadius: RADIUS.DEFAULT,
-          padding: 24,
-          borderWidth: 1,
-          borderColor: "rgba(0,0,0,0.05)",
-          overflow: "hidden",
         }}
       >
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 12,
+            backgroundColor: theme.components.supportCard.background,
+            borderRadius: RADIUS.DEFAULT + 4,
+            padding: 24,
+            borderWidth: 1,
+            borderColor: theme.components.supportCard.border,
+            boxShadow: theme.components.supportCard.shadow,
+            overflow: "hidden",
+            position: "relative",
           }}
         >
-          <ThemedText type="title3">Butuh Bantuan Layanan?</ThemedText>
-        </View>
-        <ThemedText
-          type="subheadline"
-          style={{ fontWeight: "600", marginBottom: 4 }}
-        >
-          Dinas Kesehatan Kota Denpasar
-        </ThemedText>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-start",
-            marginBottom: 20,
-            gap: 8,
-          }}
-        >
-          <IconSymbol
-            name="mappin.and.ellipse"
-            size={16}
-            color="#727784"
-            style={{ marginTop: 2 }}
+          {/* Decorative background accent */}
+          <View
+            style={{
+              position: "absolute",
+              top: -40,
+              right: -40,
+              width: 120,
+              height: 120,
+              borderRadius: 60,
+              backgroundColor: theme.components.supportCard.accentCircle,
+            }}
           />
-          <ThemedText type="footnote" style={{ flex: 1, lineHeight: 20 }}>
-            Jl. Maruti No.8, Pemecutan Kaja, Kec. Denpasar Utara, Kota Denpasar,
-            Bali
-          </ThemedText>
-        </View>
 
-        <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
-          <Pressable
-            onPress={() =>
-              Linking.openURL(
-                `http://api.whatsapp.com/send?phone=${PHONE_NUMBER}`,
-              )
-            }
-            style={({ pressed }) => [
-              {
-                flex: 1,
-                backgroundColor: "#fff",
-                borderRadius: RADIUS.DEFAULT,
-                padding: 16,
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: "rgba(0,0,0,0.05)",
-                transform: [{ scale: pressed ? 0.96 : 1 }],
-              },
-            ]}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 16,
+              gap: 12,
+            }}
           >
             <View
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: RADIUS.DEFAULT,
-                backgroundColor: "#EAF8EF",
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                backgroundColor: theme.components.supportCard.iconBg,
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: 8,
               }}
             >
-              <Image
-                source={require("@/assets/images/whatsapp.png")}
-                style={{ width: 20, height: 20, tintColor: "#1F8A4C" }}
+              <IconSymbol
+                name="questionmark.circle.fill"
+                size={24}
+                color={theme.components.supportCard.icon}
               />
             </View>
-            <ThemedText
-              type="footnote"
-              style={{ fontWeight: "600", color: "#1a1a2e" }}
-            >
-              Whatsapp
-            </ThemedText>
-          </Pressable>
+            <View style={{ flex: 1 }}>
+              <ThemedText type="title3" style={{ fontWeight: "700" }}>
+                Butuh Bantuan?
+              </ThemedText>
+              <ThemedText
+                type="caption"
+                style={{
+                  color: isDark
+                    ? Colors.dark.text.secondary
+                    : Colors.light.text.secondary,
+                  marginTop: 2,
+                }}
+              >
+                Layanan Informasi dan Bantuan
+              </ThemedText>
+            </View>
+          </View>
 
-          <Pressable
-            onPress={async () => {
-              const canSend = await MailComposer.isAvailableAsync();
-              if (!canSend) {
-                Alert.alert(
-                  "Email tidak tersedia",
-                  "Email tidak tersedia di perangkat ini. Silakan cek kembali atau gunakan aplikasi email pihak ketiga.",
-                );
-                return;
-              }
-              await MailComposer.composeAsync({
-                subject: "Bantuan Layanan - SIKOMPLIT",
-                recipients: [EMAIL],
-              });
+          <LinearGradient
+            colors={theme.components.supportCard.addressCard.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: RADIUS.DEFAULT,
+              padding: 16,
+              marginBottom: 20,
+              borderWidth: 1,
+              borderColor: theme.components.supportCard.addressCard.border,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 16,
             }}
-            style={({ pressed }) => [
-              {
-                flex: 1,
-                backgroundColor: "#fff",
-                borderRadius: RADIUS.DEFAULT,
-                padding: 16,
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: "rgba(0,0,0,0.05)",
-                transform: [{ scale: pressed ? 0.96 : 1 }],
-              },
-            ]}
           >
             <View
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: RADIUS.DEFAULT,
-                backgroundColor: "#E0F2FF",
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor:
+                  theme.components.supportCard.addressCard.iconBg,
+                boxShadow: theme.components.supportCard.addressCard.iconShadow,
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: 8,
               }}
             >
-              <IconSymbol name="envelope.fill" size={20} color="#0B63C7" />
+              <IconSymbol
+                name="mappin.and.ellipse"
+                size={22}
+                color={theme.components.supportCard.addressCard.icon}
+              />
             </View>
-            <ThemedText
-              type="footnote"
-              style={{ fontWeight: "600", color: "#1a1a2e" }}
-            >
-              Email
-            </ThemedText>
-          </Pressable>
-        </View>
+            <View style={{ flex: 1 }}>
+              <ThemedText
+                type="subheadline"
+                style={{
+                  fontWeight: "700",
+                  marginBottom: 4,
+                }}
+                lightColor={
+                  Colors.light.components.supportCard.addressCard.title
+                }
+                darkColor={Colors.dark.components.supportCard.addressCard.title}
+              >
+                Dinas Kesehatan Kota Denpasar
+              </ThemedText>
+              <ThemedText
+                type="caption"
+                style={{
+                  lineHeight: 18,
+                  color: isDark
+                    ? Colors.dark.text.secondary
+                    : Colors.light.text.secondary,
+                }}
+              >
+                Jl. Maruti No.8, Pemecutan Kaja, Kec. Denpasar Utara, Kota
+                Denpasar, Bali
+              </ThemedText>
+            </View>
+          </LinearGradient>
 
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 8,
-          }}
-        >
-          <Pressable
-            onPress={() => router.push("/term")}
-            hitSlop={10}
-            style={{ flexDirection: "row", alignItems: "center" }}
-          >
-            <ThemedText
-              type="footnote"
-              style={{ fontWeight: "600", color: "#727784" }}
+          <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
+            <Pressable
+              onPress={() =>
+                Linking.openURL(
+                  `http://api.whatsapp.com/send?phone=${PHONE_NUMBER}`,
+                )
+              }
+              style={({ pressed }) => [
+                {
+                  flex: 1,
+                  backgroundColor:
+                    theme.components.supportCard.whatsapp.background,
+                  borderRadius: RADIUS.DEFAULT,
+                  padding: 16,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: theme.components.supportCard.whatsapp.border,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                },
+              ]}
             >
-              Syarat dan Ketentuan
-            </ThemedText>
-            <IconSymbol
-              name="chevron.right"
-              size={12}
-              color="#727784"
-              style={{ marginStart: 4 }}
-            />
-          </Pressable>
-          <ThemedText
-            type="caption"
-            style={{ color: "#727784", fontWeight: "500" }}
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: theme.components.supportCard.whatsapp.iconBg,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <Image
+                  source={require("@/assets/images/whatsapp.png")}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    tintColor: theme.components.supportCard.whatsapp.text,
+                  }}
+                />
+              </View>
+              <ThemedText
+                type="footnote"
+                style={{
+                  fontWeight: "700",
+                  color: theme.components.supportCard.whatsapp.text,
+                }}
+              >
+                WhatsApp
+              </ThemedText>
+            </Pressable>
+
+            <Pressable
+              onPress={async () => {
+                const canSend = await MailComposer.isAvailableAsync();
+                if (!canSend) {
+                  Alert.alert(
+                    "Email tidak tersedia",
+                    "Email tidak tersedia di perangkat ini. Silakan cek kembali atau gunakan aplikasi email pihak ketiga.",
+                  );
+                  return;
+                }
+                await MailComposer.composeAsync({
+                  subject: "Bantuan Layanan - SIKOMPLIT",
+                  recipients: [EMAIL],
+                });
+              }}
+              style={({ pressed }) => [
+                {
+                  flex: 1,
+                  backgroundColor:
+                    theme.components.supportCard.email.background,
+                  borderRadius: RADIUS.DEFAULT,
+                  padding: 16,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: theme.components.supportCard.email.border,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                },
+              ]}
+            >
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: theme.components.supportCard.email.iconBg,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <IconSymbol
+                  name="envelope.fill"
+                  size={22}
+                  color={theme.components.supportCard.email.text}
+                />
+              </View>
+              <ThemedText
+                type="footnote"
+                style={{
+                  fontWeight: "700",
+                  color: theme.components.supportCard.email.text,
+                }}
+              >
+                Email
+              </ThemedText>
+            </Pressable>
+          </View>
+
+          {/* Footer Links */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderTopWidth: 1,
+              borderTopColor: theme.components.supportCard.footerBorder,
+              paddingTop: 16,
+            }}
           >
-            v{appVersion}
-          </ThemedText>
+            <Pressable
+              onPress={() => router.push("/term")}
+              hitSlop={10}
+              style={{ flexDirection: "row", alignItems: "center" }}
+            >
+              <ThemedText
+                type="caption"
+                style={{
+                  fontWeight: "600",
+                  color: isDark
+                    ? Colors.dark.text.secondary
+                    : Colors.light.text.secondary,
+                }}
+              >
+                Syarat dan Ketentuan
+              </ThemedText>
+              <IconSymbol
+                name="chevron.right"
+                size={12}
+                color={
+                  isDark
+                    ? Colors.dark.text.secondary
+                    : Colors.light.text.secondary
+                }
+                style={{ marginStart: 4 }}
+              />
+            </Pressable>
+            <ThemedText
+              type="caption"
+              style={{
+                color: isDark
+                  ? Colors.dark.text.tertiary
+                  : Colors.light.text.tertiary,
+                fontWeight: "600",
+              }}
+            >
+              v{appVersion}
+            </ThemedText>
+          </View>
         </View>
-      </ThemedView>
+      </View>
       {/* End Support Section */}
 
       {/* End Content */}
@@ -1004,7 +1089,7 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
     borderWidth: 1,
-    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.1)",
+    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
   cardBackground: {
     ...StyleSheet.absoluteFill,
