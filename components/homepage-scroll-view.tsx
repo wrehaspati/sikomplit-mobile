@@ -187,7 +187,7 @@ export default function HomepageScrollView({
                   style={styles.primaryButtonGradient}
                 >
                   <Text style={styles.primaryButtonText}>
-                    {auth?.state.user ? "Ajukan Rekomendasi" : "Masuk"}
+                    Ajukan Rekomendasi
                   </Text>
                   <IconSymbol
                     name={"arrow.forward"}
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   primaryButtonWrapper: {
-    borderRadius: 16,
+    borderRadius: 24,
     overflow: "hidden",
     shadowColor: "#006e25",
     shadowOffset: { width: 0, height: 4 },
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 32,
   },
   primaryButtonText: {
@@ -355,11 +355,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   secondaryButton: {
-    borderRadius: 16,
+    borderRadius: 24,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 32,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderWidth: 1,

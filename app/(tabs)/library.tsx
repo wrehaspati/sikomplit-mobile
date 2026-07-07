@@ -29,7 +29,8 @@ import {
 
 export default function LibraryScreen() {
   const submissions = useSubmissions();
-  const cardBackgound = useThemeColor({}, "background");
+  const cardBackgound = useThemeColor({}, "card");
+  const textColor = useThemeColor({}, "text.primary");
   const iconColor = useThemeColor({}, "text.secondary");
   const flyers = submissions?.poster ?? [];
   const bookmarks = useBookmarks();
@@ -568,18 +569,14 @@ export default function LibraryScreen() {
                   <IconSymbol
                     name={showBookmarksOnly ? "bookmark.fill" : "bookmark"}
                     size={16}
-                    color={
-                      showBookmarksOnly ? Colors.accentBlue : Colors.light.icon
-                    }
+                    color={showBookmarksOnly ? Colors.accentBlue : textColor}
                   />
                   <ThemedText
                     type="caption"
                     style={{
                       marginLeft: 8,
                       fontWeight: "600",
-                      color: showBookmarksOnly
-                        ? Colors.accentBlue
-                        : Colors.light.text.primary,
+                      color: showBookmarksOnly ? Colors.accentBlue : textColor,
                     }}
                   >
                     {showBookmarksOnly
@@ -609,9 +606,7 @@ export default function LibraryScreen() {
                   style={{
                     fontWeight: "600",
                     color:
-                      sortOrder === "newest"
-                        ? Colors.accentBlue
-                        : Colors.light.text.primary,
+                      sortOrder === "newest" ? Colors.accentBlue : textColor,
                   }}
                 >
                   Terbaru
@@ -638,9 +633,7 @@ export default function LibraryScreen() {
                   style={{
                     fontWeight: "600",
                     color:
-                      sortOrder === "oldest"
-                        ? Colors.accentBlue
-                        : Colors.light.text.primary,
+                      sortOrder === "oldest" ? Colors.accentBlue : textColor,
                   }}
                 >
                   Terlama

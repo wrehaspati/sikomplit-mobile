@@ -25,7 +25,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { z } from "zod";
 import { FullscreenAlert } from "./alert";
 import ThemedButton from "./themed-button";
@@ -87,6 +87,8 @@ export default function NotificationModal({
 }: Props) {
   const defaultColor = useThemeColor({}, "default");
   const background = useThemeColor({}, "background");
+  const secondary = useThemeColor({}, "fill.vibrant.secondary");
+  const borderColor = useThemeColor({}, "components.supportCard.border");
 
   const isValidHttpUrl = (value?: string | null) =>
     !!value && /^https?:\/\//i.test(value);
@@ -480,9 +482,10 @@ export default function NotificationModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <SafeAreaView
-        style={[styles.modalContainer, { backgroundColor: background }]}
-      >
+      <SafeAreaProvider>
+        <SafeAreaView
+          style={[styles.modalContainer, { backgroundColor: background }]}
+        >
         <View style={{ flex: 1 }}>
           {/* Refined Header */}
           <View
@@ -815,7 +818,13 @@ export default function NotificationModal({
                     </ThemedButton>
                   </View>
                 ) : (
-                  <View style={styles.recommendationBoxDisabled}>
+                  <ThemedView
+                    style={[
+                      styles.recommendationBoxDisabled,
+                      { backgroundColor: secondary, borderColor: borderColor },
+                    ]}
+                    variant="card"
+                  >
                     <View style={styles.recommendationHeaderRow}>
                       <View style={styles.lockedIconCircle}>
                         <IconSymbol
@@ -856,7 +865,7 @@ export default function NotificationModal({
                         Menunggu Penerbitan Surat
                       </ThemedText>
                     </View>
-                  </View>
+                  </ThemedView>
                 )}
               </ThemedView>
 
@@ -1404,6 +1413,7 @@ export default function NotificationModal({
           )}
         </View>
       </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }
@@ -1787,11 +1797,9 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   recommendationBoxDisabled: {
-    backgroundColor: Colors.backgroundSecondary,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
     gap: 14,
   },
   recommendationHeaderRow: {

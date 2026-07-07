@@ -35,7 +35,7 @@ export default function ThemedButton({
   );
   const secondaryColor = useThemeColor(
     { light: lightColor, dark: darkColor },
-    "secondary",
+    "components.supportCard.border",
   );
 
   return (

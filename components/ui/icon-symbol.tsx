@@ -60,6 +60,7 @@ const MAPPING = {
   "questionmark.circle.fill": "question-answer",
   "rectangle.portrait.and.arrow.right": "logout",
   "camera.fill": "photo-camera",
+  "doc.text.magnifyingglass": "find-in-page",
 } as IconMapping;
 
 /**

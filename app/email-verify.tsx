@@ -2,11 +2,12 @@ import { verifyEmail } from "@/api/auth-api";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
+import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActivityIndicator, Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,7 +24,14 @@ const FormSchema = z.object({
 
 export default function VerifyEmailScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
-  const [cooldown, setCooldown] = useState(0);
+  const [cooldown, setCooldown] = useState(30);
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Initialize form with Zod resolver
@@ -43,15 +51,6 @@ export default function VerifyEmailScreen() {
       await verifyEmail(values.email);
       setIsLoading(false);
       setCooldown(60);
-      const interval = setInterval(() => {
-        setCooldown((cooldown) => {
-          if (cooldown <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return cooldown - 1;
-        });
-      }, 1000);
     } catch (error: any) {
       setIsLoading(false);
       if (
@@ -79,7 +78,7 @@ export default function VerifyEmailScreen() {
   // Handling access denied if email is not provided
   if (!email) {
     return (
-      <View
+      <ThemedView
         style={{
           flex: 1,
           alignItems: "center",
@@ -94,12 +93,12 @@ export default function VerifyEmailScreen() {
           terverifikasi. Silakan kembali ke halaman sebelumnya dan pastikan Anda
           mengikuti langkah-langkah yang benar untuk memverifikasi email Anda.
         </ThemedText>
-      </View>
+      </ThemedView>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <ThemedView style={{ flex: 1 }}>
       <SafeAreaView
         style={{
           flex: 1,
@@ -193,6 +192,6 @@ export default function VerifyEmailScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </View>
+    </ThemedView>
   );
 }

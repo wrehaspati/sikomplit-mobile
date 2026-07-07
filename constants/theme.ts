@@ -18,6 +18,7 @@ export const Colors = {
     },
     default: "#F7F7FA",
     background: "#FFFFFF",
+    card: "#FFFFFF",
     secondary: "#EEEEF2",
     separator: "#D1D1D6",
     tint: tintColorLight,
@@ -45,7 +46,6 @@ export const Colors = {
         circle2: "rgba(255, 255, 255, 0.1)",
       },
       supportCard: {
-        background: "#FFFFFF",
         border: "rgba(0, 0, 0, 0.05)",
         shadow: "0px 8px 24px rgba(0, 0, 0, 0.04)",
         accentCircle: "rgba(52, 120, 246, 0.04)",
@@ -84,6 +84,7 @@ export const Colors = {
     },
     default: "#000",
     background: "#151718",
+    card: "rgba(255, 255, 255, 0.05)",
     secondary: "#1F1F1F",
     separator: "#38383A",
     tint: tintColorDark,
@@ -111,7 +112,6 @@ export const Colors = {
         circle2: "rgba(255, 255, 255, 0.1)",
       },
       supportCard: {
-        background: "rgba(255, 255, 255, 0.05)",
         border: "rgba(255, 255, 255, 0.1)",
         shadow: "0px 8px 24px rgba(0, 0, 0, 0.2)",
         accentCircle: "rgba(10, 132, 255, 0.05)",

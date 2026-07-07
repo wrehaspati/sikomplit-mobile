@@ -1,10 +1,9 @@
 import DocumentRow from "@/components/document-row";
-import HomepageScrollView from "@/components/homapage-scroll-view";
+import HomepageScrollView from "@/components/homepage-scroll-view";
 import ImagePreviewModal from "@/components/image-preview-modal";
 import BottomSheetModal from "@/components/modal";
 import NotificationModal from "@/components/notification-modal";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { EMAIL, PHONE_NUMBER } from "@/constants/contact-person";
 import { Colors, RADIUS, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
@@ -96,13 +95,17 @@ const SUBMISSION_STEPS = [
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
   const auth = useAuth();
   const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
-  const cardBackground = useThemeColor({}, "background");
-  const iconBackground = useThemeColor({}, "icon");
+  const cardBackground = useThemeColor({}, "card");
+  const textSecondary = useThemeColor({}, "text.secondary");
+  const textTertiary = useThemeColor({}, "text.tertiary");
+  const chevronBg = useThemeColor(
+    { light: "rgba(0,0,0,0.04)", dark: "rgba(255,255,255,0.05)" },
+    "background",
+  );
+  const isDark = colorScheme === "dark";
   const theme = Colors[isDark ? "dark" : "light"];
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
@@ -261,62 +264,64 @@ export default function HomeScreen() {
           decelerationRate="fast"
           snapToInterval={SCREEN_WIDTH - SCREEN_MARGIN_HORIZONTAL}
         >
-          {auth?.state.user &&
-            [...userSubmissions]
-              .sort(
-                (a, b) =>
-                  new Date(b.updated_at).getTime() -
-                  new Date(a.updated_at).getTime(),
-              )
-              .slice(0, 3)
-              .map((element) => (
-                <HistoryCard key={element.id} submission={element} />
-              ))
-              .concat(
-                userSubmissions.length === 0 ? (
-                  <ThemedView
-                    key="empty-history"
-                    style={[
-                      styles.card,
-                      styles.emptyHistoryCard,
-                      { borderColor: backgroundColor },
-                    ]}
-                    lightColor={cardBackground}
-                    darkColor={cardBackground}
-                  >
-                    <ThemedText
-                      type="subheadline"
-                      style={{ fontWeight: "600" }}
-                    >
-                      Belum Ada Pengajuan
-                    </ThemedText>
-                    <ThemedText
-                      type="footnote"
-                      style={{ textAlign: "center" }}
-                      darkColor={Colors.dark.text.secondary}
-                      lightColor={Colors.light.text.secondary}
-                    >
-                      Notifikasi pengingat akan muncul di sini setelah
-                      mengajukan permohonan rekomendasi penelitian.
-                    </ThemedText>
-                    <Pressable
-                      onPress={() => router.push("/form")}
-                      hitSlop={10}
-                      style={{ marginTop: 12 }}
-                    >
-                      <ThemedText
-                        type="defaultSemiBold"
-                        lightColor={Colors.accentBlue}
-                        darkColor={Colors.accentBlue}
-                      >
-                        Ajukan Sekarang
-                      </ThemedText>
-                    </Pressable>
-                  </ThemedView>
-                ) : (
-                  []
-                ),
-              )}
+          {
+            auth?.state.user &&
+              [...userSubmissions]
+                .sort(
+                  (a, b) =>
+                    new Date(b.updated_at).getTime() -
+                    new Date(a.updated_at).getTime(),
+                )
+                .slice(0, 3)
+                .map((element) => (
+                  <HistoryCard key={element.id} submission={element} />
+                ))
+            // .concat(
+            //   userSubmissions.length === 0 ? (
+            //     <ThemedView
+            //       key="empty-history"
+            //       variant="card"
+            //       style={styles.emptyHistoryCard}
+            //     >
+            //       <IconSymbol
+            //         name="doc.text.magnifyingglass"
+            //         size={48}
+            //         color={useThemeColor({}, "text.secondary")}
+            //         style={{ opacity: 0.5, marginBottom: 12 }}
+            //       />
+            //       <ThemedText
+            //         type="subheadline"
+            //         style={{ fontWeight: "600", marginBottom: 4 }}
+            //       >
+            //         Belum Ada Pengajuan
+            //       </ThemedText>
+            //       <ThemedText
+            //         type="footnote"
+            //         style={{ textAlign: "center", marginBottom: 16 }}
+            //         darkColor={Colors.dark.text.secondary}
+            //         lightColor={Colors.light.text.secondary}
+            //       >
+            //         Riwayat pengajuan Anda akan muncul di sini setelah
+            //         mengajukan permohonan rekomendasi penelitian.
+            //       </ThemedText>
+            //       <Pressable
+            //         onPress={() => router.push("/form")}
+            //         hitSlop={10}
+            //       >
+            //         <ThemedText
+            //           type="defaultSemiBold"
+            //           lightColor={Colors.accentBlue}
+            //           darkColor={Colors.accentBlue}
+            //         >
+            //           Ajukan Sekarang
+            //         </ThemedText>
+            //       </Pressable>
+            //     </ThemedView>
+            //   ) : (
+            //     []
+            //   ),
+            // )
+          }
           {/* Spacer to fix Android ScrollView paddingRight bug */}
           <View style={{ width: SCREEN_MARGIN_HORIZONTAL - 12 }} />
         </ScrollView>
@@ -534,7 +539,7 @@ export default function HomeScreen() {
           style={({ pressed }) => [
             {
               marginTop: SECTION_GAP,
-              backgroundColor: theme.components.supportCard.background,
+              backgroundColor: cardBackground,
               borderRadius: RADIUS.DEFAULT + 4,
               padding: 24,
               borderWidth: 1,
@@ -586,9 +591,7 @@ export default function HomeScreen() {
               <ThemedText
                 type="caption"
                 style={{
-                  color: isDark
-                    ? Colors.dark.text.secondary
-                    : Colors.light.text.secondary,
+                  color: textSecondary,
                 }}
               >
                 Unduh dokumen panduan atau template formulir yang dibutuhkan.
@@ -600,9 +603,7 @@ export default function HomeScreen() {
                 width: 32,
                 height: 32,
                 borderRadius: 16,
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.05)"
-                  : "rgba(0,0,0,0.04)",
+                backgroundColor: chevronBg,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -610,11 +611,7 @@ export default function HomeScreen() {
               <IconSymbol
                 name="chevron.right"
                 size={16}
-                color={
-                  isDark
-                    ? Colors.dark.text.secondary
-                    : Colors.light.text.secondary
-                }
+                color={textSecondary}
               />
             </View>
           </View>
@@ -757,7 +754,7 @@ export default function HomeScreen() {
       >
         <View
           style={{
-            backgroundColor: theme.components.supportCard.background,
+            backgroundColor: cardBackground,
             borderRadius: RADIUS.DEFAULT + 4,
             padding: 24,
             borderWidth: 1,
@@ -811,9 +808,7 @@ export default function HomeScreen() {
               <ThemedText
                 type="caption"
                 style={{
-                  color: isDark
-                    ? Colors.dark.text.secondary
-                    : Colors.light.text.secondary,
+                  color: textSecondary,
                   marginTop: 2,
                 }}
               >
@@ -873,9 +868,7 @@ export default function HomeScreen() {
                 type="caption"
                 style={{
                   lineHeight: 18,
-                  color: isDark
-                    ? Colors.dark.text.secondary
-                    : Colors.light.text.secondary,
+                  color: textSecondary,
                 }}
               >
                 Jl. Maruti No.8, Pemecutan Kaja, Kec. Denpasar Utara, Kota
@@ -1014,9 +1007,7 @@ export default function HomeScreen() {
                 type="caption"
                 style={{
                   fontWeight: "600",
-                  color: isDark
-                    ? Colors.dark.text.secondary
-                    : Colors.light.text.secondary,
+                  color: textSecondary,
                 }}
               >
                 Syarat dan Ketentuan
@@ -1024,20 +1015,14 @@ export default function HomeScreen() {
               <IconSymbol
                 name="chevron.right"
                 size={12}
-                color={
-                  isDark
-                    ? Colors.dark.text.secondary
-                    : Colors.light.text.secondary
-                }
+                color={textSecondary}
                 style={{ marginStart: 4 }}
               />
             </Pressable>
             <ThemedText
               type="caption"
               style={{
-                color: isDark
-                  ? Colors.dark.text.tertiary
-                  : Colors.light.text.tertiary,
+                color: textTertiary,
                 fontWeight: "600",
               }}
             >

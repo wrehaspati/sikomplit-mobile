@@ -45,7 +45,7 @@ export default function NotificationCard({
 }: Props) {
   const Container = onPress ? Pressable : View;
   const announcementBadge = Colors.notificationBadge.announcement;
-  const borderColor = useThemeColor({}, "background");
+  const borderColor = useThemeColor({}, "components.supportCard.border");
 
   return (
     <Container

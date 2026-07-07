@@ -16,7 +16,7 @@ export default function SettingScreen() {
   const auth = useAuth();
   const themePreference = useThemePreference();
   const sectionBackground = useThemeColor({}, "fill.vibrant.secondary");
-  const secondaryColor = useThemeColor({}, "secondary");
+  const borderColor = useThemeColor({}, "components.supportCard.border");
 
   // Get user from context
   const user = auth?.state.user;
@@ -247,7 +247,7 @@ export default function SettingScreen() {
                 onPress={() => handleThemeChange(option.value)}
                 style={[
                   styles.themeOptionButton,
-                  !active && { borderColor: secondaryColor },
+                  !active && { borderColor: borderColor },
                 ]}
               >
                 {option.label}

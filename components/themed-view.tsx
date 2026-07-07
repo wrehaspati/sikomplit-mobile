@@ -22,7 +22,11 @@ export function ThemedView({
   );
   const cardBackgroundColor = useThemeColor(
     { light: lightColor, dark: darkColor },
-    "background",
+    "card",
+  );
+  const borderColor = useThemeColor(
+    { light: lightColor, dark: darkColor },
+    "components.supportCard.border",
   );
 
   return (
@@ -34,7 +38,7 @@ export function ThemedView({
               styles.card,
               {
                 backgroundColor: cardBackgroundColor,
-                borderColor: backgroundColor,
+                borderColor: borderColor,
                 borderWidth: 1,
               },
             ]

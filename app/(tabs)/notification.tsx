@@ -118,7 +118,7 @@ export default function NotificationScreen() {
   const auth = useAuth();
   const submissions = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
-  const sectionBackground = useThemeColor({}, "background");
+  const cardBackgound = useThemeColor({}, "card");
   const tertiaryText = useThemeColor({}, "text.secondary");
   const secondaryText = useThemeColor({}, "text.secondary");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
@@ -423,12 +423,7 @@ export default function NotificationScreen() {
 
         {/* Notification Items */}
         {feedItems.length === 0 ? (
-          <ThemedView
-            style={[
-              styles.emptyStateCard,
-              { backgroundColor: sectionBackground },
-            ]}
-          >
+          <ThemedView style={[styles.emptyStateCard]} variant="card">
             <ThemedText type="headline" style={styles.emptyStateTitle}>
               Belum Ada Notifikasi
             </ThemedText>
@@ -447,7 +442,7 @@ export default function NotificationScreen() {
               return (
                 <NotificationCard
                   key={item.announcement.id}
-                  backgroundColor={sectionBackground}
+                  backgroundColor={cardBackgound}
                   createdAtLabel={formatDate(item.announcement.created_at)}
                   statusLabel="Pengumuman"
                   title={item.announcement.title}
@@ -472,7 +467,7 @@ export default function NotificationScreen() {
             return (
               <NotificationCard
                 key={submission.id}
-                backgroundColor={sectionBackground}
+                backgroundColor={cardBackgound}
                 createdAtLabel={formatDate(submission.updated_at)}
                 statusLabel={submission.progress_status}
                 title={shortResearchType(submission.research_type)}
@@ -528,8 +523,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterButton: {
-    borderRadius: 999,
-    paddingVertical: 7,
+    borderRadius: 16,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderWidth: 1,
   },
