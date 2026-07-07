@@ -106,13 +106,6 @@ const personalInfoSchema = z.object({
     .refine((value) => /^[0-9]+$/.test(value), {
       message: "Nomor telepon tidak boleh mengandung huruf atau simbol.",
     }),
-  national_identity_number: z
-    .string()
-    .trim()
-    .length(16, { message: "NIK terdiri dari 16 karakter." })
-    .refine((value) => /^[0-9]+$/.test(value), {
-      message: "NIK hanya boleh terdiri dari angka.",
-    }),
   date_of_birth: z.date({ error: "Tanggal lahir harus diisi." }),
   gender: z.enum(["pria", "wanita"], {
     error: () => ({ message: "Jenis kelamin harus dipilih." }),
@@ -149,15 +142,16 @@ const fileSchema = fileBaseSchema.superRefine((data, ctx) => {
   if (!fileValid(data.application_letter, 2)) {
     ctx.addIssue({
       path: ["application_letter"],
-      message: "Surat permohonan wajib dan harus berupa PDF/JPG/PNG maksimal 2MB",
+      message:
+        "Surat permohonan wajib dan harus berupa PDF/JPG/PNG maksimal 2MB",
       code: "custom",
     });
   }
 
-  if (data.research_type_id !== "1" && !fileValid(data.research_proposal, 2)) {
+  if (data.research_type_id !== "1" && !fileValid(data.research_proposal, 10)) {
     ctx.addIssue({
       path: ["research_proposal"],
-      message: "Proposal penelitian harus berupa PDF/JPG/PNG maksimal 2MB",
+      message: "Proposal penelitian harus berupa PDF/JPG/PNG maksimal 10MB",
       code: "custom",
     });
   }
@@ -179,7 +173,8 @@ const fileSchema = fileBaseSchema.superRefine((data, ctx) => {
   ) {
     ctx.addIssue({
       path: ["final_report_statement_letter"],
-      message: "Surat pernyataan wajib dan harus berupa PDF/JPG/PNG maksimal 2MB",
+      message:
+        "Surat pernyataan wajib dan harus berupa PDF/JPG/PNG maksimal 2MB",
       code: "custom",
     });
   }
@@ -233,7 +228,6 @@ export default function FormScreen() {
       name: auth?.state.user?.name,
       email: auth?.state.user?.email,
       phone: auth?.state.user?.phone || "",
-      national_identity_number: "",
       last_education: "",
       occupation: "",
       gender: undefined,
@@ -492,7 +486,7 @@ export default function FormScreen() {
     onTakePhoto,
   }: {
     onPickDocument: () => void;
-    onTakePhoto: () => void;
+    onTakePhoto?: () => void;
   }) => {
     return (
       <View style={{ flexDirection: "row", gap: 8 }}>
@@ -505,21 +499,23 @@ export default function FormScreen() {
         >
           Pilih file
         </ThemedButton>
-        <ThemedButton
-          variant="outlineSecondary"
-          size="small"
-          icon={
-            <IconSymbol
-              name="camera.fill"
-              size={18}
-              color={Colors.light.text.primary}
-            />
-          }
-          onPress={onTakePhoto}
-          style={{ flex: 1, justifyContent: "center" }}
-        >
-          Ambil Foto
-        </ThemedButton>
+        {onTakePhoto && (
+          <ThemedButton
+            variant="outlineSecondary"
+            size="small"
+            icon={
+              <IconSymbol
+                name="camera.fill"
+                size={18}
+                color={Colors.light.text.primary}
+              />
+            }
+            onPress={onTakePhoto}
+            style={{ flex: 1, justifyContent: "center" }}
+          >
+            Ambil Foto
+          </ThemedButton>
+        )}
       </View>
     );
   };
@@ -576,15 +572,14 @@ export default function FormScreen() {
         name: data.name,
         email: data.email,
         phone: data.phone,
-        national_identity_number: data.national_identity_number,
         date_of_birth: data.date_of_birth.toISOString().split("T")[0],
         gender: data.gender,
         last_education: data.last_education,
         occupation: data.occupation,
       };
       setIsLoading(true);
-      await applySubmission(payload);
-      await submissionContext?.refreshAllSubmissions();
+      applySubmission(payload);
+      submissionContext?.refreshAllSubmissions();
       form.reset();
       FullscreenAlert({
         title: "Berhasil Terkirim",
@@ -738,33 +733,6 @@ export default function FormScreen() {
                         form.trigger("phone");
                       }}
                       keyboardType="phone-pad"
-                      lightColor={backgroundColor}
-                      darkColor={backgroundColor}
-                      errorMessage={fieldState.error?.message}
-                      underline
-                      required
-                    />
-                  )}
-                />
-              </ThemedView>
-              {/* NIK */}
-              <ThemedView style={styles.card}>
-                <Controller
-                  control={form.control}
-                  name="national_identity_number"
-                  render={({ field, fieldState }) => (
-                    <ThemedTextInput
-                      title="Nomor Induk Kependudukan (NIK)"
-                      variant="transparent"
-                      placeholder="Masukan nomor induk kependudukan"
-                      value={field.value}
-                      onChangeText={field.onChange}
-                      onBlur={() => {
-                        field.onBlur();
-                        form.trigger("national_identity_number");
-                      }}
-                      autoComplete="off"
-                      keyboardType="number-pad"
                       lightColor={backgroundColor}
                       darkColor={backgroundColor}
                       errorMessage={fieldState.error?.message}
@@ -1083,7 +1051,10 @@ export default function FormScreen() {
                 />
                 {fileCard(selectedRequestLetter)}
                 {form.formState.errors.application_letter?.message && (
-                  <ThemedText type="caption" style={{ color: Colors.accentRed, marginTop: -6 }}>
+                  <ThemedText
+                    type="caption"
+                    style={{ color: Colors.accentRed, marginTop: -6 }}
+                  >
                     {form.formState.errors.application_letter.message as string}
                   </ThemedText>
                 )}
@@ -1101,22 +1072,25 @@ export default function FormScreen() {
                         darkColor={Colors.dark.text.secondary}
                         lightColor={Colors.light.text.secondary}
                       >
-                        Unggah berkas dalam format PDF, dengan ukuran maksimal 2
-                        MB.
+                        Unggah berkas dalam format PDF, dengan ukuran maksimal
+                        10 MB.
                       </ThemedText>
                     </View>
                     <UploadActionButtons
                       onPickDocument={() =>
                         pickDocument("research_proposal", setProposalLetter)
                       }
-                      onTakePhoto={() =>
-                        takePhoto("research_proposal", setProposalLetter)
-                      }
                     />
                     {fileCard(selectedProposalLetter)}
                     {form.formState.errors.research_proposal?.message && (
-                      <ThemedText type="caption" style={{ color: Colors.accentRed, marginTop: -6 }}>
-                        {form.formState.errors.research_proposal.message as string}
+                      <ThemedText
+                        type="caption"
+                        style={{ color: Colors.accentRed, marginTop: -6 }}
+                      >
+                        {
+                          form.formState.errors.research_proposal
+                            .message as string
+                        }
                       </ThemedText>
                     )}
                   </ThemedView>
@@ -1148,8 +1122,14 @@ export default function FormScreen() {
                     />
                     {fileCard(selectedConductLetter)}
                     {form.formState.errors.ethics_clearance_letter?.message && (
-                      <ThemedText type="caption" style={{ color: Colors.accentRed, marginTop: -6 }}>
-                        {form.formState.errors.ethics_clearance_letter.message as string}
+                      <ThemedText
+                        type="caption"
+                        style={{ color: Colors.accentRed, marginTop: -6 }}
+                      >
+                        {
+                          form.formState.errors.ethics_clearance_letter
+                            .message as string
+                        }
                       </ThemedText>
                     )}
                   </ThemedView>
@@ -1183,9 +1163,16 @@ export default function FormScreen() {
                       }
                     />
                     {fileCard(selectedStatementLetter)}
-                    {form.formState.errors.final_report_statement_letter?.message && (
-                      <ThemedText type="caption" style={{ color: Colors.accentRed, marginTop: -6 }}>
-                        {form.formState.errors.final_report_statement_letter.message as string}
+                    {form.formState.errors.final_report_statement_letter
+                      ?.message && (
+                      <ThemedText
+                        type="caption"
+                        style={{ color: Colors.accentRed, marginTop: -6 }}
+                      >
+                        {
+                          form.formState.errors.final_report_statement_letter
+                            .message as string
+                        }
                       </ThemedText>
                     )}
                   </ThemedView>

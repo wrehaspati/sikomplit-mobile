@@ -1370,11 +1370,6 @@ export default function NotificationModal({
                       tertiaryText={tertiaryText}
                     />
                     <DetailRow
-                      label="NIK"
-                      value={localSubmission.national_identity_number}
-                      tertiaryText={tertiaryText}
-                    />
-                    <DetailRow
                       label="Tanggal Lahir"
                       value={localSubmission.date_of_birth}
                       tertiaryText={tertiaryText}

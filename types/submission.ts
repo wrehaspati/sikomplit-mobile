@@ -12,7 +12,6 @@ export interface ISubmissionData {
   name: string;
   email: string;
   phone: string;
-  national_identity_number: string;
   date_of_birth: string;
   gender: string;
   last_education: string;
@@ -38,7 +37,6 @@ export interface ISubmissionPost {
   name: string;
   email: string;
   phone: string;
-  national_identity_number: string;
   date_of_birth: string;
   gender: string;
   last_education: string;
