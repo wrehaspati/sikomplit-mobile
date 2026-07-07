@@ -119,7 +119,10 @@ export const Colors = {
         icon: "#6EB5FF",
         footerBorder: "rgba(255, 255, 255, 0.1)",
         addressCard: {
-          gradient: ["rgba(10, 132, 255, 0.1)", "rgba(10, 132, 255, 0.02)"] as [string, string],
+          gradient: ["rgba(10, 132, 255, 0.1)", "rgba(10, 132, 255, 0.02)"] as [
+            string,
+            string,
+          ],
           border: "rgba(10, 132, 255, 0.15)",
           iconBg: "rgba(10, 132, 255, 0.2)",
           iconShadow: "none",

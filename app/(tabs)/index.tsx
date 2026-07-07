@@ -531,55 +531,92 @@ export default function HomeScreen() {
 
         {/* Attachment Section */}
         <Pressable
-          style={[
-            styles.card,
+          style={({ pressed }) => [
             {
               marginTop: SECTION_GAP,
-              borderColor: backgroundColor,
-              display: "flex",
-              flexDirection: "row",
-              paddingHorizontal: 20,
-              paddingVertical: 20,
-              backgroundColor: cardBackground,
+              backgroundColor: theme.components.supportCard.background,
+              borderRadius: RADIUS.DEFAULT + 4,
+              padding: 24,
+              borderWidth: 1,
+              borderColor: theme.components.supportCard.border,
+              boxShadow: theme.components.supportCard.shadow,
+              overflow: "hidden",
+              position: "relative",
+              transform: [{ scale: pressed ? 0.98 : 1 }],
             },
           ]}
           onPress={() => setOpenModal(true)}
         >
-          <IconSymbol size={40} name="document.fill" color={iconBackground} />
-          <View style={{ flex: 1, minWidth: 0, marginStart: 12 }}>
-            <ThemedText
-              type="caption"
-              style={{ color: Colors.light.text.secondary, fontWeight: "600" }}
-            >
-              LAMPIRAN
-            </ThemedText>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
             <View
               style={{
-                display: "flex",
-                flexDirection: "row",
+                width: 48,
+                height: 48,
+                borderRadius: 16,
+                backgroundColor: theme.components.supportCard.iconBg,
                 alignItems: "center",
+                justifyContent: "center",
               }}
             >
+              <IconSymbol
+                name="tray.and.arrow.down.fill"
+                size={24}
+                color={theme.components.supportCard.icon}
+              />
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <ThemedText
+                type="caption"
+                style={{
+                  color: theme.components.supportCard.icon,
+                  fontWeight: "700",
+                  letterSpacing: 0.5,
+                  marginBottom: 4,
+                }}
+              >
+                LAMPIRAN PANDUAN
+              </ThemedText>
               <ThemedText
                 type="headline"
-                style={{ fontWeight: "600", marginBottom: 4, flexShrink: 1 }}
+                style={{ fontWeight: "700", marginBottom: 2 }}
               >
                 Berkas Pendukung
               </ThemedText>
+              <ThemedText
+                type="caption"
+                style={{
+                  color: isDark
+                    ? Colors.dark.text.secondary
+                    : Colors.light.text.secondary,
+                }}
+              >
+                Unduh dokumen panduan atau template formulir yang dibutuhkan.
+              </ThemedText>
+            </View>
+
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.05)"
+                  : "rgba(0,0,0,0.04)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <IconSymbol
                 name="chevron.right"
-                size={CHEVRON_SIZE}
-                color={Colors.light.text.secondary}
-                style={{ marginStart: 4 }}
+                size={16}
+                color={
+                  isDark
+                    ? Colors.dark.text.secondary
+                    : Colors.light.text.secondary
+                }
               />
             </View>
-            <ThemedText
-              type="caption"
-              style={{ color: Colors.light.text.secondary, flexShrink: 1 }}
-            >
-              Berikut dilampirkan dokumen panduan atau template formulir yang
-              dapat diunduh.
-            </ThemedText>
           </View>
         </Pressable>
         {/* End Attachment Section */}

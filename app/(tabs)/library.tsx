@@ -13,7 +13,7 @@ import { useBookmarks } from "@/contexts/bookmark-context";
 import { useSubmissions } from "@/contexts/submission-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
-import { IPublishedSubmission } from "@/types/submission";
+import { IPoster, IPublishedSubmission } from "@/types/submission";
 import { Image } from "expo-image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -29,8 +29,9 @@ import {
 
 export default function LibraryScreen() {
   const submissions = useSubmissions();
-  const cardBackgound = useThemeColor({}, "fill.vibrant.tertiary");
+  const cardBackgound = useThemeColor({}, "background");
   const iconColor = useThemeColor({}, "text.secondary");
+  const flyers = submissions?.poster ?? [];
   const bookmarks = useBookmarks();
   const scrollY = useRef(new Animated.Value(0)).current;
   const searchFocusAnim = useRef(new Animated.Value(0)).current;
@@ -43,6 +44,7 @@ export default function LibraryScreen() {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | undefined>(undefined);
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [downloadProgressMap, setDownloadProgressMap] = useState<
     Record<string, number>
   >({});
@@ -174,6 +176,61 @@ export default function LibraryScreen() {
     Keyboard.dismiss();
   };
 
+  // Flyer Card Component
+  const FlyerCard = ({ data }: { data: IPoster }) => {
+    const [loaded, setLoaded] = useState(false);
+    const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+    useEffect(() => {
+      if (loaded) return;
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.6,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      animation.start();
+      return () => animation.stop();
+    }, [loaded, pulseAnim]);
+
+    return (
+      <Pressable
+        onPress={() => {
+          setPreviewUri(data.image_url);
+          setPreviewVisible(true);
+        }}
+      >
+        <View style={styles.flyerContainer}>
+          <Image
+            style={styles.flyerImage}
+            source={{ uri: data.image_url }}
+            contentFit="cover"
+            transition={300}
+            cachePolicy="memory-disk"
+            onLoad={() => setLoaded(true)}
+          />
+          {!loaded && (
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                styles.flyerPlaceholder,
+                { opacity: pulseAnim },
+              ]}
+            />
+          )}
+        </View>
+      </Pressable>
+    );
+  };
+
   // Animation for filter button
   useEffect(() => {
     Animated.sequence([
@@ -204,7 +261,14 @@ export default function LibraryScreen() {
 
   const renderCard = (item: IPublishedSubmission) => {
     return (
-      <ThemedView key={item.id} variant="card" style={{ marginBottom: 16 }}>
+      <ThemedView
+        key={item.id}
+        variant="card"
+        style={{
+          marginBottom: 16,
+          marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+        }}
+      >
         <View style={styles.container}>
           <View style={styles.cardImage}>
             <Image
@@ -307,7 +371,6 @@ export default function LibraryScreen() {
       title="Pustaka Digital"
       scrollYValue={scrollY}
       titleVisibilityValue={titleVisibilityAnim}
-      contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN_HORIZONTAL }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }
@@ -315,7 +378,14 @@ export default function LibraryScreen() {
       {/* Content */}
 
       {/* Search Input */}
-      <Animated.View style={[{ transform: [{ translateY: searchFocusAnim }] }]}>
+      <Animated.View
+        style={[
+          {
+            transform: [{ translateY: searchFocusAnim }],
+            marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+          },
+        ]}
+      >
         <View style={styles.searchInputContainer}>
           <ThemedTextInput
             value={query}
@@ -353,45 +423,15 @@ export default function LibraryScreen() {
         </View>
       </Animated.View>
 
-      {/* Compact bookmark filter button */}
-      <Animated.View
-        style={[
-          {
-            marginBottom: 16,
-            transform: [{ translateY: searchFocusAnim }],
-          },
-        ]}
-      >
-        <Animated.View style={{ transform: [{ scale: filterButtonScale }] }}>
-          <Pressable
-            onPress={() => setShowBookmarksOnly((s) => !s)}
-            style={[
-              styles.bookmarkFilterButton,
-              showBookmarksOnly ? styles.bookmarkFilterButtonActive : null,
-              { backgroundColor: cardBackgound, borderColor, borderWidth: 1 },
-            ]}
-            hitSlop={8}
-          >
-            <IconSymbol
-              name={showBookmarksOnly ? "bookmark.fill" : "bookmark"}
-              size={14}
-              color={showBookmarksOnly ? Colors.accentBlue : Colors.light.icon}
-            />
-            <ThemedText type="caption" style={{ marginLeft: 8 }}>
-              {showBookmarksOnly
-                ? "Tampilkan semua"
-                : `Tersimpan (${bookmarks?.bookmarkedIds.length ?? 0})`}
-            </ThemedText>
-          </Pressable>
-        </Animated.View>
-      </Animated.View>
-
       {/* Search Suggestions / Results */}
       {isSearchFocused ? (
         <Animated.View
           style={[
             styles.suggestionPanel,
-            { transform: [{ translateY: searchFocusAnim }] },
+            {
+              transform: [{ translateY: searchFocusAnim }],
+              marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+            },
           ]}
         >
           <ThemedText type="caption" style={styles.suggestionHeader}>
@@ -454,22 +494,188 @@ export default function LibraryScreen() {
         </Animated.View>
       ) : (
         <View>
+          {/* Flyer Section */}
+          <View>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 16,
+                marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+              }}
+            >
+              <ThemedText type="title3" style={{ fontWeight: "700" }}>
+                Rekomendasi Terkini
+              </ThemedText>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                marginBottom: 24,
+                paddingLeft: SCREEN_MARGIN_HORIZONTAL,
+                gap: 16,
+              }}
+              snapToInterval={176 + 16}
+              snapToAlignment="start"
+              decelerationRate="normal"
+            >
+              {flyers &&
+                flyers.map((element, index) => (
+                  <FlyerCard key={index} data={element} />
+                ))}
+              <View style={{ width: SCREEN_MARGIN_HORIZONTAL - 12 }} />
+            </ScrollView>
+          </View>
+          {/* End Flyer Section */}
+
+          {/* Compact filter buttons */}
+          <Animated.View
+            style={[
+              {
+                transform: [{ translateY: searchFocusAnim }],
+              },
+            ]}
+          >
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: SCREEN_MARGIN_HORIZONTAL,
+                gap: 12,
+                paddingBottom: 24,
+              }}
+            >
+              <Animated.View
+                style={{ transform: [{ scale: filterButtonScale }] }}
+              >
+                <Pressable
+                  onPress={() => setShowBookmarksOnly((s) => !s)}
+                  style={[
+                    styles.bookmarkFilterButton,
+                    showBookmarksOnly
+                      ? styles.bookmarkFilterButtonActive
+                      : null,
+                    {
+                      backgroundColor: cardBackgound,
+                      borderColor,
+                      borderWidth: 1,
+                    },
+                  ]}
+                  hitSlop={8}
+                >
+                  <IconSymbol
+                    name={showBookmarksOnly ? "bookmark.fill" : "bookmark"}
+                    size={16}
+                    color={
+                      showBookmarksOnly ? Colors.accentBlue : Colors.light.icon
+                    }
+                  />
+                  <ThemedText
+                    type="caption"
+                    style={{
+                      marginLeft: 8,
+                      fontWeight: "600",
+                      color: showBookmarksOnly
+                        ? Colors.accentBlue
+                        : Colors.light.text.primary,
+                    }}
+                  >
+                    {showBookmarksOnly
+                      ? "Tampilkan Semua"
+                      : `Tersimpan (${bookmarks?.bookmarkedIds.length ?? 0})`}
+                  </ThemedText>
+                </Pressable>
+              </Animated.View>
+
+              <Pressable
+                onPress={() => setSortOrder("newest")}
+                style={[
+                  styles.bookmarkFilterButton,
+                  sortOrder === "newest"
+                    ? styles.bookmarkFilterButtonActive
+                    : null,
+                  {
+                    backgroundColor: cardBackgound,
+                    borderColor,
+                    borderWidth: 1,
+                  },
+                ]}
+                hitSlop={8}
+              >
+                <ThemedText
+                  type="caption"
+                  style={{
+                    fontWeight: "600",
+                    color:
+                      sortOrder === "newest"
+                        ? Colors.accentBlue
+                        : Colors.light.text.primary,
+                  }}
+                >
+                  Terbaru
+                </ThemedText>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setSortOrder("oldest")}
+                style={[
+                  styles.bookmarkFilterButton,
+                  sortOrder === "oldest"
+                    ? styles.bookmarkFilterButtonActive
+                    : null,
+                  {
+                    backgroundColor: cardBackgound,
+                    borderColor,
+                    borderWidth: 1,
+                  },
+                ]}
+                hitSlop={8}
+              >
+                <ThemedText
+                  type="caption"
+                  style={{
+                    fontWeight: "600",
+                    color:
+                      sortOrder === "oldest"
+                        ? Colors.accentBlue
+                        : Colors.light.text.primary,
+                  }}
+                >
+                  Terlama
+                </ThemedText>
+              </Pressable>
+            </ScrollView>
+          </Animated.View>
+
           {published?.length === 0 ? (
-            <ThemedText type="default" style={{ textAlign: "center" }}>
+            <ThemedText
+              type="default"
+              style={{
+                textAlign: "center",
+                marginHorizontal: SCREEN_MARGIN_HORIZONTAL,
+              }}
+            >
               Belum ada penelitian yang dipublikasikan.
             </ThemedText>
           ) : (
-            // apply bookmarks-only filter when toggled
+            // apply filters and sorting
             (published ?? [])
               .filter((item) =>
                 item.title.toLowerCase().includes(query.toLowerCase()),
               )
               .filter((item) =>
                 showBookmarksOnly
-                  ? (bookmarks?.bookmarkedIds ?? []).includes(item.id)
+                  ? bookmarks?.bookmarkedIds.includes(item.id)
                   : true,
               )
-              .map(renderCard)
+              .sort((a, b) => {
+                const dateA = new Date(a.created_at).getTime();
+                const dateB = new Date(b.created_at).getTime();
+                return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+              })
+              .map((item, index) => renderCard(item))
           )}
         </View>
       )}
@@ -677,12 +883,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   flyerContainer: {
-    borderRadius: 12,
+    borderRadius: 4,
     overflow: "hidden",
     backgroundColor: Colors.light.fill.secondary,
+    width: 176,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
   },
   flyerImage: {
     width: "100%",
-    aspectRatio: 2 / 3,
+    height: 256,
   },
 });

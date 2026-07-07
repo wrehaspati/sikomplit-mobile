@@ -22,7 +22,7 @@ export function ThemedView({
   );
   const cardBackgroundColor = useThemeColor(
     { light: lightColor, dark: darkColor },
-    "fill.vibrant.tertiary",
+    "background",
   );
 
   return (

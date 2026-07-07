@@ -56,6 +56,8 @@ const MAPPING = {
   "arrow.forward": "arrow-forward",
   "clock.fill": "schedule",
   "checkmark.seal.fill": "verified",
+  "tray.and.arrow.down.fill": "archive",
+  "questionmark.circle.fill": "question-answer",
 } as IconMapping;
 
 /**
