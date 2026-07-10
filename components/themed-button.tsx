@@ -118,7 +118,7 @@ const styles = {
   outline: {
     paddingVertical: 11,
     paddingHorizontal: 23,
-    borderWidth: 2,
+    borderWidth: 1,
     backgroundColor: "transparent",
     borderColor: Colors.accentBlue,
     shadowColor: "transparent",
@@ -135,8 +135,10 @@ const styles = {
     shadowColor: "transparent",
   },
   outlineSecondary: {
-    borderWidth: 2,
+    borderWidth: 1,
     backgroundColor: "transparent",
     shadowColor: "transparent",
+
+    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.04)",
   },
 } as const;

@@ -25,9 +25,11 @@ const RegisterSchema = z
     phone: z
       .string()
       .trim()
-      .min(1, { message: "Nomor telepon wajib diisi." })
-      .regex(/^[0-9+\-\s()]+$/, { message: "Nomor telepon tidak valid." })
-      .min(8, { message: "Nomor telepon minimal 8 karakter." }),
+      .min(10, { message: "Nomor telepon minimal terdiri dari 10 karakter." })
+      .max(15, { message: "Nomor telepon tidak boleh lebih dari 15 karakter." })
+      .refine((value) => /^[0-9]+$/.test(value), {
+        message: "Nomor telepon tidak boleh mengandung huruf atau simbol.",
+      }),
     email: z
       .email({ message: "Email harus diisi dengan format yang benar." })
       .trim(),

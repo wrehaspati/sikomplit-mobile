@@ -1,8 +1,7 @@
-import { ThemedText } from '@/components/themed-text';
-import { Colors, RADIUS } from '@/constants/theme';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ThemedText } from "@/components/themed-text";
+import { Colors, RADIUS } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { Pressable, StyleSheet, View } from "react-native";
 
 type Option<T = string> = {
   label: string;
@@ -14,12 +13,22 @@ type Props<T = string> = {
   selectedValue?: T | null;
   onValueChange: (value: T) => void;
   column?: number;
-  textAlign?: 'flex-start' | 'flex-end' | 'center';
+  textAlign?: "flex-start" | "flex-end" | "center";
   onError?: boolean;
+  background?: string;
 };
 
-export default function SelectCard<T = string>({ options, selectedValue, onValueChange, onError, column = 2, textAlign = 'center' }: Props<T>) {
-  const backgroundColor = useThemeColor({}, 'background');
+export default function SelectCard<T = string>({
+  options,
+  selectedValue,
+  onValueChange,
+  onError,
+  column = 2,
+  background,
+  textAlign = "center",
+}: Props<T>) {
+  const backgroundColor = useThemeColor({}, "background");
+  const borderColor = useThemeColor({}, "components.supportCard.border");
 
   return (
     <View style={styles.container}>
@@ -32,13 +41,23 @@ export default function SelectCard<T = string>({ options, selectedValue, onValue
             onPress={() => onValueChange(opt.value)}
             style={({ pressed }) => [
               styles.optionCard,
-              { backgroundColor, flexBasis: `${100 / column - 2}%`, alignItems: textAlign },
+              {
+                borderColor: borderColor,
+                backgroundColor: background ? background : backgroundColor,
+                flexBasis: `${100 / column - 2}%`,
+                alignItems: textAlign,
+              },
               selected && styles.optionSelected,
-              onError ? { borderColor: Colors.accentRed, borderWidth: 1 } : null,
+              onError
+                ? { borderColor: Colors.accentRed, borderWidth: 1 }
+                : null,
               pressed && styles.pressed,
             ]}
           >
-            <ThemedText type={selected ? "default" : "default"} style={selected ? styles.selectedText : undefined}>
+            <ThemedText
+              type={selected ? "default" : "default"}
+              style={selected ? styles.selectedText : undefined}
+            >
               {opt.label}
             </ThemedText>
           </Pressable>
@@ -50,8 +69,8 @@ export default function SelectCard<T = string>({ options, selectedValue, onValue
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   optionCard: {
@@ -60,15 +79,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderWidth: 1,
-    justifyContent: 'center',
-    borderColor: Colors.light.fill.vibrant.primary,
+    justifyContent: "center",
   },
   optionSelected: {
     borderColor: Colors.accentBlue,
     backgroundColor: Colors.accentBlue,
   },
   selectedText: {
-    color: '#fff',
+    color: "#fff",
   },
   pressed: { opacity: 0.85 },
 });

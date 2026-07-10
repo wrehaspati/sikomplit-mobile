@@ -1,4 +1,4 @@
-import React, { type ReactNode } from "react";
+import { type ReactNode } from "react";
 import {
   Modal,
   Pressable,
@@ -81,7 +81,6 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: SCREEN_MARGIN_HORIZONTAL,
     paddingTop: 12,
     paddingBottom: 20,
   },
@@ -91,6 +90,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 8,
     marginBottom: 16,
+    paddingHorizontal: SCREEN_MARGIN_HORIZONTAL,
   },
   title: {
     textAlign: "center",

@@ -117,11 +117,11 @@ function RootLayoutNav() {
       <Stack.Protected guard={!auth?.state.token}>
         <Stack.Screen
           name="login"
-          options={{ presentation: "card", title: "Masuk SIKOMPLIT" }}
+          options={{ presentation: "card", title: "Login" }}
         />
         <Stack.Screen
           name="register"
-          options={{ presentation: "card", title: "Daftar SIKOMPLIT" }}
+          options={{ presentation: "card", title: "Registrasi" }}
         />
         <Stack.Screen
           name="reset-password"

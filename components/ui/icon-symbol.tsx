@@ -61,6 +61,7 @@ const MAPPING = {
   "rectangle.portrait.and.arrow.right": "logout",
   "camera.fill": "photo-camera",
   "doc.text.magnifyingglass": "find-in-page",
+  clock: "schedule",
 } as IconMapping;
 
 /**

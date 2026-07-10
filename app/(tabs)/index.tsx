@@ -26,7 +26,6 @@ import {
   Animated,
   Dimensions,
   Linking,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -39,9 +38,7 @@ import { getStatusMeta } from "./notification";
 
 // CONSTANT VALUE
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const FIRST_CARD_HEIGHT = SCREEN_WIDTH * 1;
-const SECTION_GAP = 24;
-const CHEVRON_SIZE = Platform.OS === "ios" ? 12 : 16;
+const SECTION_GAP = 16;
 
 // Interface for guide document structure
 interface IGuideDocument {
@@ -1101,7 +1098,6 @@ const styles = StyleSheet.create({
   },
   quickAccessContainer: {
     marginTop: 36,
-    marginBottom: SECTION_GAP,
     paddingLeft: SCREEN_MARGIN_HORIZONTAL,
     gap: 12,
   },
@@ -1179,6 +1175,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalBody: {
+    paddingHorizontal: SCREEN_MARGIN_HORIZONTAL,
     flex: 1,
     gap: 12,
   },

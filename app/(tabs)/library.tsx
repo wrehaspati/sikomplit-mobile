@@ -32,6 +32,7 @@ export default function LibraryScreen() {
   const cardBackgound = useThemeColor({}, "card");
   const textColor = useThemeColor({}, "text.primary");
   const iconColor = useThemeColor({}, "text.secondary");
+  const borderColor = useThemeColor({}, "components.supportCard.border");
   const flyers = submissions?.poster ?? [];
   const bookmarks = useBookmarks();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -73,8 +74,6 @@ export default function LibraryScreen() {
     animation.start();
     return () => animation.stop();
   }, [loaded, pulseAnim]);
-
-  const borderColor = useThemeColor({}, "background");
 
   const published = useMemo(
     () => submissions?.publishedSubmissions ?? [],
@@ -392,7 +391,6 @@ export default function LibraryScreen() {
             value={query}
             onChangeText={setQuery}
             placeholder={"Cari Judul Penelitian..."}
-            placeholderTextColor={Colors.light.text.secondary}
             onFocus={handleSearchFocus}
             onBlur={handleSearchBlur}
             inputStyle={[
@@ -545,7 +543,7 @@ export default function LibraryScreen() {
               contentContainerStyle={{
                 paddingHorizontal: SCREEN_MARGIN_HORIZONTAL,
                 gap: 12,
-                paddingBottom: 24,
+                paddingBottom: 16,
               }}
             >
               <Animated.View
@@ -777,7 +775,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.fill.vibrant.primary,
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 24,
     boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
   searchInputContainer: {
@@ -861,6 +859,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     paddingBottom: 24,
+    paddingHorizontal: 24,
   },
   modalImage: {
     width: "100%",

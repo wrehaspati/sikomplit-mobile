@@ -1,7 +1,9 @@
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { ThemedView } from "./themed-view";
 
 export interface DocumentRowProps {
   /** Primary label shown on the row */
@@ -34,6 +36,7 @@ export default function DocumentRow({
   loading = false,
 }: DocumentRowProps) {
   const available = isValidHttpUrl(url);
+  const borderColor = useThemeColor({}, "components.supportCard.border");
   const progress =
     url && downloadProgressMap ? (downloadProgressMap[url] ?? null) : null;
   const isDownloading =
@@ -44,12 +47,13 @@ export default function DocumentRow({
     subtitle ?? (available ? "Ketuk untuk membuka" : "Belum tersedia");
 
   return (
-    <View style={styles.wrapper}>
+    <ThemedView variant="card" style={styles.wrapper}>
       <Pressable
         onPress={() => onPress?.(url)}
         disabled={!available && !onPress}
         style={({ pressed }) => [
           styles.row,
+          { borderColor: borderColor },
           !available && styles.rowDisabled,
           pressed && available && { opacity: 0.7 },
         ]}
@@ -135,18 +139,16 @@ export default function DocumentRow({
           )
         )}
       </Pressable>
-    </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
     marginBottom: 6,
+    boxShadow: "0px 0px 0px 0px rgba(0, 0, 0, 0.08)",
   },
   row: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
     paddingVertical: 12,
     paddingHorizontal: 14,
     paddingLeft: 18,
@@ -165,8 +167,6 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    borderTopLeftRadius: 14,
-    borderBottomLeftRadius: 14,
   },
   iconCircle: {
     width: 32,

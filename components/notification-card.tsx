@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 10,
+    marginBottom: 16,
     boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
   pressableCard: {

@@ -46,7 +46,6 @@ export const applySubmission = async (
     name: data.name,
     email: data.email,
     phone: data.phone,
-    national_identity_number: data.national_identity_number,
     date_of_birth: data.date_of_birth,
     gender: data.gender,
     last_education: data.last_education,

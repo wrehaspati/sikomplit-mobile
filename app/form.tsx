@@ -46,13 +46,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-// Define the structure of a selected file
-type SelectedFile = {
-  name: string;
-  uri: string;
-  size?: number | null;
-  mimeType?: string | null;
-};
+import FileUploader, { SelectedFile } from "@/components/file-uploader";
 
 // Define the options for the "Pendidikan Terakhir" field
 const LastEducationOption = [
@@ -203,6 +197,7 @@ export default function FormScreen() {
   const submissionContext = useSubmissions();
   const backgroundColor = useThemeColor({}, "background");
   const textColor = useThemeColor({}, "text.primary");
+  const borderColor = useThemeColor({}, "components.supportCard.border");
   const today = new Date();
   const defaultBirthDate = new Date(2000, 0, 1);
   const [isLoading, setIsLoading] = useState(false);
@@ -289,236 +284,7 @@ export default function FormScreen() {
     }
   };
 
-  // Handles document picking for a specific field
-  const pickDocument = async (
-    fieldName: FileFieldName,
-    setSelectedFile: React.Dispatch<React.SetStateAction<SelectedFile | null>>,
-  ) => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["application/pdf", "image/*"],
-      multiple: false,
-      copyToCacheDirectory: true,
-    });
 
-    if (result.canceled || !result.assets?.length) {
-      return;
-    }
-
-    const file = result.assets[0];
-    let fileUri = file.uri;
-    let fileSize = file.size;
-
-    // Compress if it's an image and size > 2MB
-    if (
-      file.mimeType?.startsWith("image/") &&
-      fileSize &&
-      fileSize > 2 * 1024 * 1024
-    ) {
-      try {
-        const manipResult = await ImageManipulator.manipulateAsync(
-          fileUri,
-          [{ resize: { width: 1024 } }],
-          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
-        );
-        fileUri = manipResult.uri;
-
-        const fileInfo = await FileSystem.getInfoAsync(fileUri);
-        if (fileInfo.exists) {
-          fileSize = fileInfo.size;
-        }
-      } catch (error) {
-        console.error("Gagal melakukan kompresi gambar:", error);
-      }
-    }
-
-    const selectedFile = {
-      name: file.name ?? "Berkas tidak bernama",
-      uri: fileUri,
-      size: fileSize,
-      mimeType: file.mimeType,
-    };
-
-    setSelectedFile(selectedFile);
-    form.setValue(fieldName, selectedFile, {
-      shouldTouch: true,
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
-
-  // Handles camera capture for a specific field
-  const takePhoto = async (
-    fieldName: FileFieldName,
-    setSelectedFile: React.Dispatch<React.SetStateAction<SelectedFile | null>>,
-  ) => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Izin Kamera Diperlukan",
-        "Silahkan izinkan penggunaan kamera untuk menggunakan fitur ini",
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      quality: 0.5,
-      base64: true,
-    });
-
-    if (result.canceled || !result.assets?.length) {
-      return;
-    }
-
-    const file = result.assets[0];
-    let fileUri = file.uri;
-    let fileSize = file.fileSize;
-
-    // Compress if size > 2MB
-    if (fileSize && fileSize > 2 * 1024 * 1024) {
-      try {
-        const manipResult = await ImageManipulator.manipulateAsync(
-          fileUri,
-          [{ resize: { width: 1024 } }],
-          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
-        );
-        fileUri = manipResult.uri;
-
-        const fileInfo = await FileSystem.getInfoAsync(fileUri);
-        if (fileInfo.exists) {
-          fileSize = fileInfo.size;
-        }
-      } catch (error) {
-        console.error("Gagal melakukan kompresi gambar:", error);
-      }
-    }
-
-    const selectedFile = {
-      name: file.fileName ?? `photo_${Date.now()}.jpg`,
-      uri: fileUri,
-      size: fileSize,
-      mimeType: file.mimeType ?? "image/jpeg",
-    };
-
-    setSelectedFile(selectedFile);
-    form.setValue(fieldName, selectedFile, {
-      shouldTouch: true,
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
-
-  // Handles file card rendering
-  const fileCard = (selectedFile: SelectedFile | null) => {
-    if (!selectedFile) {
-      return (
-        <View style={styles.fileCard}>
-          <ThemedText type="defaultSemiBold">Belum ada file dipilih</ThemedText>
-          <ThemedText
-            type="caption"
-            darkColor={Colors.dark.text.secondary}
-            lightColor={Colors.light.text.secondary}
-            style={{ marginTop: 4 }}
-          >
-            File akan tampil di sini setelah dipilih.
-          </ThemedText>
-        </View>
-      );
-    }
-
-    return (
-      <Pressable
-        style={({ pressed }) => [
-          styles.fileCard,
-          { opacity: pressed ? 0.7 : 1 },
-        ]}
-        onPress={() => setPreviewFile(selectedFile)}
-      >
-        {selectedFile.mimeType?.startsWith("image/") && (
-          <Image
-            source={{ uri: selectedFile.uri }}
-            style={{
-              width: "100%",
-              height: 150,
-              borderRadius: 8,
-              marginBottom: 12,
-              backgroundColor: Colors.light.fill.secondary,
-            }}
-            contentFit="cover"
-          />
-        )}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ flex: 1, paddingRight: 16 }}>
-            <ThemedText type="defaultSemiBold" numberOfLines={1}>
-              {selectedFile.name}
-            </ThemedText>
-            <ThemedText
-              type="caption"
-              darkColor={Colors.dark.text.secondary}
-              lightColor={Colors.light.text.secondary}
-              style={{ marginTop: 4 }}
-            >
-              {`${selectedFile.mimeType ?? "Jenis file tidak terdeteksi"}${selectedFile.size ? ` · ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB` : ""}`}
-            </ThemedText>
-          </View>
-          <View style={{ alignItems: "center" }}>
-            <IconSymbol name="eye.fill" size={20} color={Colors.light.tint} />
-            <ThemedText
-              type="caption"
-              style={{ color: Colors.light.tint, marginTop: 4 }}
-            >
-              Lihat
-            </ThemedText>
-          </View>
-        </View>
-      </Pressable>
-    );
-  };
-
-  const UploadActionButtons = ({
-    onPickDocument,
-    onTakePhoto,
-  }: {
-    onPickDocument: () => void;
-    onTakePhoto?: () => void;
-  }) => {
-    return (
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <ThemedButton
-          variant="primary"
-          size="small"
-          icon={<IconSymbol name="doc.fill" size={18} color="white" />}
-          onPress={onPickDocument}
-          style={{ flex: 1, justifyContent: "center" }}
-        >
-          Pilih file
-        </ThemedButton>
-        {onTakePhoto && (
-          <ThemedButton
-            variant="outlineSecondary"
-            size="small"
-            icon={
-              <IconSymbol
-                name="camera.fill"
-                size={18}
-                color={Colors.light.text.primary}
-              />
-            }
-            onPress={onTakePhoto}
-            style={{ flex: 1, justifyContent: "center" }}
-          >
-            Ambil Foto
-          </ThemedButton>
-        )}
-      </View>
-    );
-  };
 
   // Handles step navigation in the form
   const changeStep = async (newStep: number) => {
@@ -578,8 +344,8 @@ export default function FormScreen() {
         occupation: data.occupation,
       };
       setIsLoading(true);
-      applySubmission(payload);
-      submissionContext?.refreshAllSubmissions();
+      await applySubmission(payload);
+      await submissionContext?.refreshUserSubmissions();
       form.reset();
       FullscreenAlert({
         title: "Berhasil Terkirim",
@@ -609,9 +375,14 @@ export default function FormScreen() {
         style={{ paddingVertical: 20, backgroundColor: backgroundColor }}
         contentInsetAdjustmentBehavior="automatic"
       >
-        <View style={{ gap: 8, paddingHorizontal: 24, paddingBottom: 100 }}>
+        <ThemedView
+          style={{ gap: 8, paddingHorizontal: 24, paddingBottom: 100 }}
+        >
           {/* Header */}
-          <ThemedView style={[styles.card, { gap: 8, marginBottom: 8 }]}>
+          <ThemedView
+            variant="card"
+            style={[styles.card, { gap: 8, marginBottom: 8 }]}
+          >
             <ThemedText type="title4" style={{}}>
               Formulir Rekomendasi Penelitian
             </ThemedText>
@@ -636,7 +407,7 @@ export default function FormScreen() {
               kami melalui tombol Whatsapp di bawah.
             </ThemedText>
             <ThemedButton
-              variant="outlineSecondary"
+              variant="secondary"
               icon={
                 <Image
                   source={require("@/assets/images/whatsapp.png")}
@@ -671,7 +442,7 @@ export default function FormScreen() {
           {step === 1 && (
             <View style={{ gap: 16 }}>
               {/* Email */}
-              <ThemedView style={styles.card}>
+              <ThemedView style={styles.card} variant="card">
                 <Controller
                   control={form.control}
                   name="email"
@@ -694,7 +465,7 @@ export default function FormScreen() {
                 />
               </ThemedView>
               {/* Nama Lengkap */}
-              <ThemedView style={styles.card}>
+              <ThemedView style={styles.card} variant="card">
                 <Controller
                   control={form.control}
                   name="name"
@@ -716,7 +487,7 @@ export default function FormScreen() {
                 />
               </ThemedView>
               {/* Nomor Telepon */}
-              <ThemedView style={styles.card}>
+              <ThemedView style={styles.card} variant="card">
                 <Controller
                   control={form.control}
                   name="phone"
@@ -743,7 +514,7 @@ export default function FormScreen() {
                 />
               </ThemedView>
               {/* Tanggal Lahir */}
-              <ThemedView style={styles.card}>
+              <ThemedView style={styles.card} variant="card">
                 <Controller
                   control={form.control}
                   name="date_of_birth"
@@ -764,7 +535,7 @@ export default function FormScreen() {
                           fieldState.error
                             ? { borderColor: Colors.accentRed, borderWidth: 1 }
                             : null,
-                          { backgroundColor },
+                          { borderColor: borderColor },
                           pressed && styles.dateFieldPressed,
                         ]}
                       >
@@ -808,7 +579,7 @@ export default function FormScreen() {
                 />
               </ThemedView>
               {/* Jenis Kelamin */}
-              <ThemedView style={styles.card}>
+              <ThemedView style={styles.card} variant="card">
                 <Controller
                   control={form.control}
                   name="gender"
@@ -822,6 +593,7 @@ export default function FormScreen() {
                         <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
                       </ThemedText>
                       <SelectCard
+                        background="transparent"
                         options={[
                           { label: "Laki-laki", value: "pria" },
                           { label: "Perempuan", value: "wanita" },
@@ -846,7 +618,7 @@ export default function FormScreen() {
                 />
               </ThemedView>
               {/* Pendidikan Terakhir */}
-              <ThemedView style={styles.card}>
+              <ThemedView style={styles.card} variant="card">
                 <Controller
                   control={form.control}
                   name="last_education"
@@ -860,6 +632,7 @@ export default function FormScreen() {
                         <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
                       </ThemedText>
                       <SelectCard
+                        background="transparent"
                         options={LastEducationOption}
                         onError={!!fieldState.error}
                         selectedValue={field.value}
@@ -870,7 +643,7 @@ export default function FormScreen() {
                 />
               </ThemedView>
               {/* Pekerjaan */}
-              <ThemedView style={styles.card}>
+              <ThemedView style={styles.card} variant="card">
                 <Controller
                   control={form.control}
                   name="occupation"
@@ -884,6 +657,7 @@ export default function FormScreen() {
                         <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
                       </ThemedText>
                       <Combobox
+                        background="transparent"
                         options={OccupationOption}
                         selectedValue={field.value}
                         onValueChange={field.onChange}
@@ -897,7 +671,7 @@ export default function FormScreen() {
                 />
               </ThemedView>
               {/* Pekerjaan */}
-              <ThemedView style={styles.card}>
+              <ThemedView style={styles.card} variant="card">
                 <Controller
                   control={form.control}
                   name="research_type_id"
@@ -911,6 +685,7 @@ export default function FormScreen() {
                         <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
                       </ThemedText>
                       <SelectCard
+                        background="transparent"
                         options={[
                           {
                             label: "Permohonan Data Awal/Studi Pendahuluan",
@@ -1026,7 +801,7 @@ export default function FormScreen() {
           {/* Step 2 Fields */}
           {step === 2 && (
             <View style={{ gap: 8 }}>
-              <ThemedView style={[styles.card, { gap: 14 }]}>
+              <ThemedView variant="card" style={[styles.card, { gap: 14 }]}>
                 <View style={{ gap: 4 }}>
                   <ThemedText type="defaultSemiBold">
                     Surat Permohonan Rekomendasi
@@ -1041,15 +816,15 @@ export default function FormScreen() {
                     MB.
                   </ThemedText>
                 </View>
-                <UploadActionButtons
-                  onPickDocument={() =>
-                    pickDocument("application_letter", setRequestLetter)
-                  }
-                  onTakePhoto={() =>
-                    takePhoto("application_letter", setRequestLetter)
-                  }
+                <FileUploader
+                  selectedFile={selectedRequestLetter}
+                  onFileSelect={(file) => {
+                    setRequestLetter(file);
+                    form.setValue("application_letter", file as any, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                  }}
+                  onPreview={(file) => setPreviewFile(file)}
+                  textColor={textColor}
                 />
-                {fileCard(selectedRequestLetter)}
                 {form.formState.errors.application_letter?.message && (
                   <ThemedText
                     type="caption"
@@ -1061,7 +836,7 @@ export default function FormScreen() {
               </ThemedView>
               {selectedPurpose !== "1" && (
                 <View style={{ gap: 8 }}>
-                  <ThemedView style={[styles.card, { gap: 14 }]}>
+                  <ThemedView variant="card" style={[styles.card, { gap: 14 }]}>
                     <View style={{ gap: 4 }}>
                       <ThemedText type="defaultSemiBold">
                         Surat Proposal Penelitian
@@ -1076,12 +851,18 @@ export default function FormScreen() {
                         10 MB.
                       </ThemedText>
                     </View>
-                    <UploadActionButtons
-                      onPickDocument={() =>
-                        pickDocument("research_proposal", setProposalLetter)
-                      }
+                    <FileUploader
+                      selectedFile={selectedProposalLetter}
+                      onFileSelect={(file) => {
+                        setProposalLetter(file);
+                        form.setValue("research_proposal", file as any, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                      }}
+                      onPreview={(file) => setPreviewFile(file)}
+                      allowCamera={false}
+                      allowedTypes={["application/pdf"]}
+                      maxSizeMB={10}
+                      textColor={textColor}
                     />
-                    {fileCard(selectedProposalLetter)}
                     {form.formState.errors.research_proposal?.message && (
                       <ThemedText
                         type="caption"
@@ -1094,7 +875,7 @@ export default function FormScreen() {
                       </ThemedText>
                     )}
                   </ThemedView>
-                  <ThemedView style={[styles.card, { gap: 14 }]}>
+                  <ThemedView variant="card" style={[styles.card, { gap: 14 }]}>
                     <View style={{ gap: 4 }}>
                       <ThemedText type="defaultSemiBold">
                         Surat Keterangan Etik
@@ -1109,18 +890,15 @@ export default function FormScreen() {
                         MB.
                       </ThemedText>
                     </View>
-                    <UploadActionButtons
-                      onPickDocument={() =>
-                        pickDocument(
-                          "ethics_clearance_letter",
-                          setConductLetter,
-                        )
-                      }
-                      onTakePhoto={() =>
-                        takePhoto("ethics_clearance_letter", setConductLetter)
-                      }
+                    <FileUploader
+                      selectedFile={selectedConductLetter}
+                      onFileSelect={(file) => {
+                        setConductLetter(file);
+                        form.setValue("ethics_clearance_letter", file as any, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                      }}
+                      onPreview={(file) => setPreviewFile(file)}
+                      textColor={textColor}
                     />
-                    {fileCard(selectedConductLetter)}
                     {form.formState.errors.ethics_clearance_letter?.message && (
                       <ThemedText
                         type="caption"
@@ -1133,7 +911,7 @@ export default function FormScreen() {
                       </ThemedText>
                     )}
                   </ThemedView>
-                  <ThemedView style={[styles.card, { gap: 14 }]}>
+                  <ThemedView variant="card" style={[styles.card, { gap: 14 }]}>
                     <View style={{ gap: 4 }}>
                       <ThemedText type="defaultSemiBold">
                         Surat Pernyataan Laporan Akhir
@@ -1148,21 +926,15 @@ export default function FormScreen() {
                         MB.
                       </ThemedText>
                     </View>
-                    <UploadActionButtons
-                      onPickDocument={() =>
-                        pickDocument(
-                          "final_report_statement_letter",
-                          setStatementLetter,
-                        )
-                      }
-                      onTakePhoto={() =>
-                        takePhoto(
-                          "final_report_statement_letter",
-                          setStatementLetter,
-                        )
-                      }
+                    <FileUploader
+                      selectedFile={selectedStatementLetter}
+                      onFileSelect={(file) => {
+                        setStatementLetter(file);
+                        form.setValue("final_report_statement_letter", file as any, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                      }}
+                      onPreview={(file) => setPreviewFile(file)}
+                      textColor={textColor}
                     />
-                    {fileCard(selectedStatementLetter)}
                     {form.formState.errors.final_report_statement_letter
                       ?.message && (
                       <ThemedText
@@ -1184,7 +956,7 @@ export default function FormScreen() {
           {/* Step 3 Fields */}
           {step === 3 && (
             <View style={{ gap: 8 }}>
-              <ThemedView style={[styles.card, { gap: 16 }]}>
+              <ThemedView variant={"card"} style={[styles.card, { gap: 16 }]}>
                 <ThemedText type="subheadline">
                   Dengan mengisi formulir ini, Anda menyetujui syarat dan
                   ketentuan yang berlaku. Pastikan semua informasi yang Anda
@@ -1217,11 +989,7 @@ export default function FormScreen() {
                               field.onChange(!field.value);
                             }}
                           >
-                            <ThemedText
-                              type="subheadline"
-                              darkColor={Colors.dark.text.secondary}
-                              lightColor={Colors.light.text.secondary}
-                            >
+                            <ThemedText type="subheadline">
                               Saya mengetahui bahwa proses pengajuan membutuhkan
                               waktu maximal 3 hari kerja
                             </ThemedText>
@@ -1256,11 +1024,7 @@ export default function FormScreen() {
                               field.onChange(!field.value);
                             }}
                           >
-                            <ThemedText
-                              type="subheadline"
-                              darkColor={Colors.dark.text.secondary}
-                              lightColor={Colors.light.text.secondary}
-                            >
+                            <ThemedText type="subheadline">
                               Saya menyetujui bahwa segala bentuk pengajuan ini
                               akan menjadi hak milik dinas
                             </ThemedText>
@@ -1343,7 +1107,7 @@ export default function FormScreen() {
               </ThemedButton>
             )}
           </View>
-        </View>
+        </ThemedView>
       </ScrollView>
 
       {/* Image Preview Modal */}
@@ -1395,18 +1159,13 @@ export default function FormScreen() {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: RADIUS.DEFAULT,
     padding: 18,
-    borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
-    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.12)",
   },
   dateField: {
     borderRadius: RADIUS.DEFAULT,
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
