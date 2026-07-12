@@ -170,7 +170,7 @@ export default function VerifyEmailScreen() {
                     <ThemedText type="defaultSemiBold"> </ThemedText>
                   </View>
                 ) : (
-                  "Kirim Ulang" + (cooldown > 0 ? ` (${cooldown})` : "")
+                  "Kirim" + (cooldown > 0 ? ` (${cooldown})` : "")
                 )}
               </ThemedButton>
               <ThemedButton
