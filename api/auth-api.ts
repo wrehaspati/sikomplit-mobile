@@ -3,7 +3,10 @@ import { ICredentials, ISession } from "@/types/session";
 import { api } from "./api-client";
 
 interface LoginResponse extends ApiResponse<ISession> {
-  token: string;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
 }
 
 interface UserRegister extends ICredentials {
@@ -14,17 +17,17 @@ interface UserRegister extends ICredentials {
 /**
  * Authenticate user with email and password.
  * @param credentials
- * @returns token and user data
+ * @returns access_token, refresh_token and user data
  */
 export const loginUser = async (
   credentials: ICredentials,
-): Promise<{ token: string; user: ISession }> => {
+): Promise<{ token: string; refresh_token: string; user: ISession }> => {
   const { data } = await api.post<LoginResponse>(
     "/user/auth/login",
     credentials,
   );
   if (!data.data) throw new Error(data.message);
-  return { token: data.token, user: data.data };
+  return { token: data.access_token, refresh_token: data.refresh_token, user: data.data };
 };
 
 /**
@@ -57,4 +60,11 @@ export const verifyEmail = async (email: string): Promise<void> => {
  */
 export const resetPassword = async (email: string): Promise<void> => {
   await api.post("/user/auth/send-reset-password", { email });
+};
+
+/**
+ * Logout user, invalidating all tokens.
+ */
+export const logoutUser = async (): Promise<void> => {
+  await api.post("/user/auth/logout");
 };
