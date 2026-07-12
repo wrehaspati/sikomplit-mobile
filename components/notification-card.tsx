@@ -6,9 +6,8 @@ import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 
 // Notification status tone type
 export type NotificationStatusTone = {
-  badgeBackground: string;
-  badgeText: string;
-  iconName: "checkmark.shield.fill" | "circle.fill";
+  kind: "approved" | "pending" | "revision" | "announcement";
+  iconName: "checkmark.shield.fill" | "circle.fill" | "bell.fill";
 };
 
 // Define interface for NotificationCard component
@@ -44,8 +43,28 @@ export default function NotificationCard({
   onPress,
 }: Props) {
   const Container = onPress ? Pressable : View;
-  const announcementBadge = Colors.notificationBadge.announcement;
+  
+  const badgeColors = {
+    approved: {
+      bg: useThemeColor({ light: Colors.notificationBadge.approved.background, dark: "rgba(52, 199, 89, 0.15)" }, "background"),
+      text: useThemeColor({ light: Colors.notificationBadge.approved.text, dark: Colors.accentGreen }, "text.primary"),
+    },
+    pending: {
+      bg: useThemeColor({ light: Colors.notificationBadge.pending.background, dark: "rgba(0, 122, 255, 0.15)" }, "background"),
+      text: useThemeColor({ light: Colors.notificationBadge.pending.text, dark: Colors.accentBlue }, "text.primary"),
+    },
+    revision: {
+      bg: useThemeColor({ light: Colors.notificationBadge.revision.background, dark: "rgba(255, 204, 0, 0.1)" }, "background"),
+      text: useThemeColor({ light: Colors.notificationBadge.revision.text, dark: Colors.accentYellow }, "text.primary"),
+    },
+    announcement: {
+      bg: useThemeColor({ light: Colors.notificationBadge.announcement.background, dark: "rgba(88, 86, 214, 0.15)" }, "background"),
+      text: useThemeColor({ light: Colors.notificationBadge.announcement.text, dark: "#5E5CE6" }, "text.primary"),
+    },
+  };
+
   const borderColor = useThemeColor({}, "components.supportCard.border");
+  const currentBadgeColor = badgeColors[announcement ? "announcement" : statusTone.kind];
 
   return (
     <Container
@@ -60,15 +79,13 @@ export default function NotificationCard({
       <View
         style={[
           styles.statusIconWrap,
-          announcement
-            ? { backgroundColor: announcementBadge.background }
-            : { backgroundColor: statusTone.badgeBackground },
+          { backgroundColor: currentBadgeColor.bg },
         ]}
       >
         <IconSymbol
           name={announcement ? "bell.fill" : statusTone.iconName}
           size={18}
-          color={announcement ? announcementBadge.icon : statusTone.badgeText}
+          color={currentBadgeColor.text}
         />
       </View>
       <View style={styles.cardBody}>
@@ -78,9 +95,7 @@ export default function NotificationCard({
               styles.statusBadge,
               announcement && styles.announcementBadge,
               {
-                backgroundColor: announcement
-                  ? announcementBadge.background
-                  : statusTone.badgeBackground,
+                backgroundColor: currentBadgeColor.bg,
               },
             ]}
           >
@@ -90,9 +105,7 @@ export default function NotificationCard({
                 styles.statusBadgeText,
                 announcement && styles.announcementBadgeText,
                 {
-                  color: announcement
-                    ? announcementBadge.text
-                    : statusTone.badgeText,
+                  color: currentBadgeColor.text,
                 },
               ]}
             >

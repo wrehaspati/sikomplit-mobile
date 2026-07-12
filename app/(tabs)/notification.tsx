@@ -74,7 +74,7 @@ type FeedItem =
  * @param status
  * @returns
  */
-export const getStatusMeta = (status: string) => {
+export const getStatusMeta = (status: string): NotificationStatusTone => {
   const normalized = status.toLowerCase();
 
   if (
@@ -83,11 +83,8 @@ export const getStatusMeta = (status: string) => {
     normalized.includes("diterima")
   ) {
     return {
-      kind: "approved" as const,
-      badgeBackground: Colors.notificationBadge.approved.background,
-      badgeText: Colors.notificationBadge.approved.text,
-      stripe: Colors.notificationBadge.approved.stripe,
-      iconName: "checkmark.shield.fill" as const,
+      kind: "approved",
+      iconName: "checkmark.shield.fill",
     };
   }
 
@@ -97,20 +94,14 @@ export const getStatusMeta = (status: string) => {
     normalized.includes("perbaikan")
   ) {
     return {
-      kind: "revision" as const,
-      badgeBackground: Colors.notificationBadge.revision.background,
-      badgeText: Colors.notificationBadge.revision.text,
-      stripe: Colors.notificationBadge.revision.stripe,
-      iconName: "circle.fill" as const,
+      kind: "revision",
+      iconName: "circle.fill",
     };
   }
 
   return {
-    kind: "pending" as const,
-    badgeBackground: Colors.notificationBadge.pending.background,
-    badgeText: Colors.notificationBadge.pending.text,
-    stripe: Colors.notificationBadge.pending.stripe,
-    iconName: "circle.fill" as const,
+    kind: "pending",
+    iconName: "circle.fill",
   };
 };
 

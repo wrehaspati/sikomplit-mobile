@@ -91,6 +91,55 @@ export default function NotificationModal({
   const fontColor = useThemeColor({}, "text.primary");
   const secondary = useThemeColor({}, "card");
   const borderColor = useThemeColor({}, "components.supportCard.border");
+  const revisionBg = useThemeColor(
+    {
+      light: Colors.notificationBadge.revision.background,
+      dark: "rgba(255, 204, 0, 0.1)",
+    },
+    "background",
+  );
+  const revisionText = useThemeColor(
+    {
+      light: Colors.notificationBadge.revision.text,
+      dark: Colors.accentYellow,
+    },
+    "text.primary",
+  );
+  const revisionBorder = useThemeColor(
+    {
+      light: Colors.notificationBadge.revision.stripe,
+      dark: "rgba(255, 204, 0, 0.3)",
+    },
+    "text.primary",
+  );
+  const approvedBg = useThemeColor(
+    {
+      light: Colors.notificationBadge.approved.background,
+      dark: "rgba(52, 199, 89, 0.15)",
+    },
+    "background",
+  );
+  const approvedText = useThemeColor(
+    {
+      light: Colors.notificationBadge.approved.text,
+      dark: Colors.accentGreen,
+    },
+    "text.primary",
+  );
+  const pendingBg = useThemeColor(
+    {
+      light: Colors.notificationBadge.pending.background,
+      dark: "rgba(0, 122, 255, 0.15)",
+    },
+    "background",
+  );
+  const pendingText = useThemeColor(
+    {
+      light: Colors.notificationBadge.pending.text,
+      dark: Colors.accentBlue,
+    },
+    "text.primary",
+  );
 
   const isValidHttpUrl = (value?: string | null) =>
     !!value && /^https?:\/\//i.test(value);
@@ -536,12 +585,12 @@ export default function NotificationModal({
                         {
                           backgroundColor:
                             currentStep === 4
-                              ? Colors.notificationBadge.approved.background
+                              ? approvedBg
                               : currentStep === 3
-                                ? Colors.notificationBadge.approved.background
+                                ? approvedBg
                                 : localSubmission.editable
-                                  ? Colors.notificationBadge.revision.background
-                                  : Colors.notificationBadge.pending.background,
+                                  ? revisionBg
+                                  : pendingBg,
                         },
                       ]}
                     >
@@ -551,12 +600,12 @@ export default function NotificationModal({
                           fontWeight: "700",
                           color:
                             currentStep === 4
-                              ? Colors.notificationBadge.approved.text
+                              ? approvedText
                               : currentStep === 3
-                                ? Colors.notificationBadge.approved.text
+                                ? approvedText
                                 : localSubmission.editable
-                                  ? Colors.notificationBadge.revision.text
-                                  : Colors.notificationBadge.pending.text,
+                                  ? revisionText
+                                  : pendingText,
                         }}
                       >
                         {localSubmission.progress_status}
@@ -618,19 +667,28 @@ export default function NotificationModal({
 
                 {/* Revision Banner */}
                 {localSubmission.editable && (
-                  <ThemedView variant="card" style={styles.revisionBanner}>
+                  <ThemedView
+                    variant="card"
+                    style={[
+                      styles.revisionBanner,
+                      {
+                        backgroundColor: revisionBg,
+                        borderColor: revisionBorder,
+                      },
+                    ]}
+                  >
                     <View style={styles.revisionContent}>
                       <IconSymbol
                         name="exclamationmark.triangle.fill"
                         size={22}
-                        color={Colors.notificationBadge.revision.text}
+                        color={revisionText}
                       />
                       <View style={{ flex: 1 }}>
                         <ThemedText
                           type="subheadline"
                           style={{
                             fontWeight: "700",
-                            color: Colors.notificationBadge.revision.text,
+                            color: revisionText,
                           }}
                         >
                           Revisi Diperlukan
@@ -638,7 +696,7 @@ export default function NotificationModal({
                         <ThemedText
                           type="caption"
                           style={{
-                            color: Colors.notificationBadge.revision.text,
+                            color: revisionText,
                             marginTop: 2,
                             lineHeight: 16,
                             opacity: 0.85,
