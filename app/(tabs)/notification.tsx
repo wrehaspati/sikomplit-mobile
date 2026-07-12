@@ -441,6 +441,7 @@ export default function NotificationScreen() {
                   footerLabel="Firebase Push Notification"
                   statusTone={
                     {
+                      kind: "announcement",
                       badgeBackground:
                         Colors.notificationBadge.announcement.background,
                       badgeText: Colors.notificationBadge.announcement.text,

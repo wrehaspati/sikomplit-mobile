@@ -124,12 +124,16 @@ function RootLayoutNav() {
           options={{ presentation: "card", title: "Registrasi" }}
         />
         <Stack.Screen
-          name="reset-password"
+          name="send-reset-password"
           options={{ presentation: "card", title: "Reset Kata Sandi" }}
         />
         <Stack.Screen
           name="email-verify"
           options={{ presentation: "card", title: "Verifikasi Email" }}
+        />
+        <Stack.Screen
+          name="reset-password"
+          options={{ presentation: "card", title: "Reset Kata Sandi" }}
         />
       </Stack.Protected>
       <Stack.Screen

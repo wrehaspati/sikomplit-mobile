@@ -27,7 +27,11 @@ export const loginUser = async (
     credentials,
   );
   if (!data.data) throw new Error(data.message);
-  return { token: data.access_token, refresh_token: data.refresh_token, user: data.data };
+  return {
+    token: data.access_token,
+    refresh_token: data.refresh_token,
+    user: data.data,
+  };
 };
 
 /**
@@ -39,7 +43,7 @@ export const registerUser = async (
   credentials: UserRegister,
 ): Promise<{ user: ISession }> => {
   const { data } = await api.post<ApiResponse<ISession>>(
-    "/user/auth/register",
+    "/mobile/auth/register",
     credentials,
   );
   if (!data.data) throw new Error(data.message);
@@ -51,15 +55,15 @@ export const registerUser = async (
  * @param email
  */
 export const verifyEmail = async (email: string): Promise<void> => {
-  await api.post("/user/auth/resend-verify-email", { email });
+  await api.post("/mobile/auth/resend-verify-email", { email });
 };
 
 /**
  * Send a password reset request for the given email.
  * @param email
  */
-export const resetPassword = async (email: string): Promise<void> => {
-  await api.post("/user/auth/send-reset-password", { email });
+export const sendResetPassword = async (email: string): Promise<void> => {
+  await api.post("/mobile/auth/send-reset-password", { email });
 };
 
 /**
@@ -67,4 +71,30 @@ export const resetPassword = async (email: string): Promise<void> => {
  */
 export const logoutUser = async (): Promise<void> => {
   await api.post("/user/auth/logout");
+};
+
+/**
+ * Verify email using token from deeplink.
+ * @param email
+ * @param token
+ */
+export const verifyEmailToken = async (
+  email: string,
+  token: string,
+): Promise<void> => {
+  await api.get("/mobile/auth/verify-email", { params: { email, token } });
+};
+
+/**
+ * Submit new password using token from deeplink.
+ * @param email
+ * @param token
+ * @param password
+ */
+export const submitNewPassword = async (
+  email: string,
+  token: string,
+  password: string,
+): Promise<void> => {
+  await api.post("/mobile/auth/reset-password", { email, token, password });
 };

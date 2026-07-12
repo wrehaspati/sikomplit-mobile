@@ -4,7 +4,7 @@
     "description": "Pengembangan Sistem Layanan Rekomendasi Penelitian",
     "slug": "sikomplit-mobile",
     "sdkVersion": "57.0.0",
-    "version": "1.3.2-beta",
+    "version": "1.4.0-beta",
     "platforms": ["android"],
     "orientation": "portrait",
     "icon": "./assets/images/android-icon-foreground.png",
@@ -23,7 +23,7 @@
       "predictiveBackGestureEnabled": false,
       "googleServicesFile": "./google-services.json",
       "package": "com.dereyn.sikomplitmobile",
-      "versionCode": 8
+      "versionCode": 9
     },
     "web": {
       "output": "static",

@@ -24,7 +24,7 @@ const FormSchema = z.object({
 
 export default function VerifyEmailScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
-  const [cooldown, setCooldown] = useState(30);
+  const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
     if (cooldown > 0) {

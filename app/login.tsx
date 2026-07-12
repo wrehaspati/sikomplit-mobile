@@ -165,7 +165,7 @@ export default function LoginScreen() {
             </ThemedButton>
             <Pressable
               onPress={() => {
-                router.navigate("/reset-password");
+                router.navigate("/send-reset-password");
               }}
               hitSlop={10}
               style={{ alignSelf: "center" }}
