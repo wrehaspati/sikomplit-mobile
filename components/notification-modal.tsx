@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components */
 import { reuploadDocument, type ReuploadFileType } from "@/api/reapply-api";
 import { uploadResearch } from "@/api/research-api";
 import DocumentRow from "@/components/document-row";
@@ -144,13 +145,16 @@ export default function NotificationModal({
   const isValidHttpUrl = (value?: string | null) =>
     !!value && /^https?:\/\//i.test(value);
 
-  // Local submission state
+  // Local submission state — synced from prop without useEffect to avoid
+  // cascading renders. See: react.dev/learn/you-might-not-need-an-effect
   const [localSubmission, setLocalSubmission] =
     useState<ISubmissionData | null>(submission);
+  const [prevSubmissionId, setPrevSubmissionId] = useState(submission?.id);
 
-  useEffect(() => {
+  if (submission?.id !== prevSubmissionId) {
+    setPrevSubmissionId(submission?.id);
     setLocalSubmission(submission);
-  }, [submission]);
+  }
 
   const [docsExpanded, setDocsExpanded] = useState(true);
   const [profileExpanded, setProfileExpanded] = useState(false);
@@ -188,6 +192,7 @@ export default function NotificationModal({
   useEffect(() => {
     if (localSubmission) {
       const step = getTimelineStep(localSubmission.progress_status);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDocsExpanded(step < 3); // Expand by default if not approved
       setProfileExpanded(false);
     }
@@ -419,8 +424,8 @@ export default function NotificationModal({
     : 1;
   const steps = ["Diajukan", "Verifikasi", "Disetujui", "Selesai"];
   const isDataAwal = localSubmission
-    ? localSubmission.research_type.toLowerCase().includes("data awal") ||
-      localSubmission.research_type.toLowerCase().includes("studi pendahuluan")
+    ? localSubmission.research_type?.toLowerCase().includes("data awal") ||
+      localSubmission.research_type?.toLowerCase().includes("studi pendahuluan")
     : false;
   const recommendationAvailable =
     localSubmission && isValidHttpUrl(localSubmission.recommendation_letter);

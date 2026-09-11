@@ -15,7 +15,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { downloadAndOpenDocument } from "@/services/document";
 import { IPoster, IPublishedSubmission } from "@/types/submission";
 import { Image } from "expo-image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Animated,
@@ -35,10 +35,10 @@ export default function LibraryScreen() {
   const borderColor = useThemeColor({}, "components.supportCard.border");
   const flyers = submissions?.poster ?? [];
   const bookmarks = useBookmarks();
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const searchFocusAnim = useRef(new Animated.Value(0)).current;
-  const titleVisibilityAnim = useRef(new Animated.Value(0)).current;
-  const filterButtonScale = useRef(new Animated.Value(1)).current;
+  const [scrollY] = useState(() => new Animated.Value(0));
+  const [searchFocusAnim] = useState(() => new Animated.Value(0));
+  const [titleVisibilityAnim] = useState(() => new Animated.Value(0));
+  const [filterButtonScale] = useState(() => new Animated.Value(1));
   const [query, setQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [selectedPublication, setSelectedPublication] =
@@ -53,7 +53,7 @@ export default function LibraryScreen() {
 
   // Image skeleton animation
   const [loaded, setLoaded] = useState(false);
-  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+  const [pulseAnim] = useState(() => new Animated.Value(0.3));
 
   useEffect(() => {
     if (loaded) return;
@@ -73,7 +73,7 @@ export default function LibraryScreen() {
     );
     animation.start();
     return () => animation.stop();
-  }, [loaded, pulseAnim]);
+  }, [loaded]);
 
   const published = useMemo(
     () => submissions?.publishedSubmissions ?? [],
@@ -179,7 +179,7 @@ export default function LibraryScreen() {
   // Flyer Card Component
   const FlyerCard = ({ data }: { data: IPoster }) => {
     const [loaded, setLoaded] = useState(false);
-    const pulseAnim = useRef(new Animated.Value(0.3)).current;
+    const [pulseAnim] = useState(() => new Animated.Value(0.3));
 
     useEffect(() => {
       if (loaded) return;
@@ -199,7 +199,7 @@ export default function LibraryScreen() {
       );
       animation.start();
       return () => animation.stop();
-    }, [loaded, pulseAnim]);
+    }, [loaded]);
 
     return (
       <Pressable
@@ -247,7 +247,7 @@ export default function LibraryScreen() {
         bounciness: 4,
       }),
     ]).start();
-  }, [showBookmarksOnly, filterButtonScale]);
+  }, [showBookmarksOnly]);
 
   // Handler for pull-to-refresh action
   const handleRefresh = async () => {
@@ -666,7 +666,7 @@ export default function LibraryScreen() {
                 const dateB = new Date(b.created_at).getTime();
                 return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
               })
-              .map((item, index) => renderCard(item))
+              .map((item) => renderCard(item))
           )}
         </View>
       )}
