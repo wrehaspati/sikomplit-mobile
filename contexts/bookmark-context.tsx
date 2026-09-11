@@ -1,7 +1,14 @@
-import * as SecureStore from 'expo-secure-store';
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import * as SecureStore from "expo-secure-store";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-const BOOKMARK_STORAGE_KEY = 'library-bookmarks';
+const BOOKMARKS_STORAGE_KEY = "library_bookmarks";
 
 interface IBookmarkContext {
   bookmarkedIds: string[];
@@ -13,77 +20,86 @@ interface IBookmarkContext {
 const BookmarkContext = createContext<IBookmarkContext | null>(null);
 
 export function BookmarkProvider({ children }: { children: React.ReactNode }) {
-  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
-  const [bookmarksLoaded, setBookmarksLoaded] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[] | null>(null);
 
-  // Load bookmarks from secure storage on mount
+  // Load bookmarks from SecureStore on mount
   useEffect(() => {
-    let isActive = true
-    const loadBookmarks = async () => {
+    async function loadBookmarks() {
       try {
-        const storedBookmarks = await SecureStore.getItemAsync(BOOKMARK_STORAGE_KEY);
-        if (!isActive) return;
-        if (storedBookmarks) {
-          const parsedBookmarks = JSON.parse(storedBookmarks);
-          if (Array.isArray(parsedBookmarks)) {
-            setBookmarkedIds([
-              ...new Set(parsedBookmarks.filter((bookmarkId): bookmarkId is string => typeof bookmarkId === 'string')),
-            ]);
+        const raw = await SecureStore.getItemAsync(BOOKMARKS_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            setBookmarkedIds([...new Set(parsed)]);
+            return;
           }
         }
-      } catch {
-        if (isActive) {
-          setBookmarkedIds([]);
-        }
-      } finally {
-        if (isActive) {
-          setBookmarksLoaded(true);
-        }
+        setBookmarkedIds([]);
+      } catch (error) {
+        console.error("Failed to load bookmarks from SecureStore:", error);
+        setBookmarkedIds([]);
       }
-    };
-
+    }
     loadBookmarks();
-    return () => {
-      isActive = false;
-    };
   }, []);
 
-  // Persist bookmarks to secure storage whenever they change
+  // Persist bookmarks to SecureStore whenever they change (but only after they are loaded)
   useEffect(() => {
-    if (!bookmarksLoaded) return
-    SecureStore.setItemAsync(BOOKMARK_STORAGE_KEY, JSON.stringify(bookmarkedIds)).catch(() => undefined);
-  }, [bookmarkedIds, bookmarksLoaded]);
+    if (bookmarkedIds === null) return;
+    async function saveBookmarks() {
+      try {
+        await SecureStore.setItemAsync(
+          BOOKMARKS_STORAGE_KEY,
+          JSON.stringify(bookmarkedIds),
+        );
+      } catch (error) {
+        console.error("Failed to save bookmarks to SecureStore:", error);
+      }
+    }
+    saveBookmarks();
+  }, [bookmarkedIds]);
 
   /**
    * Toggle bookmark status for a given ID.
-   * @param id 
    */
-  const toggleBookmark = (id: string) => {
+  const toggleBookmark = useCallback((id: string) => {
     setBookmarkedIds((prev) => {
-      const exists = prev.includes(id);
-      return exists ? prev.filter((bookmarkId) => bookmarkId !== id) : [...new Set([...prev, id])];
+      const current = prev ?? [];
+      const exists = current.includes(id);
+      return exists
+        ? current.filter((bookmarkId) => bookmarkId !== id)
+        : [...new Set([...current, id])];
     });
-  };
+  }, []);
 
   /**
-   * Set the list of valid bookmark IDs
-   * @param validIds 
+   * Remove bookmarks whose IDs no longer exist in the valid set.
    */
-  const setValidBookmarks = (validIds: string[]) => {
+  const setValidBookmarks = useCallback((validIds: string[]) => {
     setBookmarkedIds((prev) => {
+      if (prev === null) return null;
       const validSet = new Set(validIds);
       const next = prev.filter((id) => validSet.has(id));
       return next.length === prev.length ? prev : next;
     });
-  };
+  }, []);
 
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo(
-    () => ({ bookmarkedIds, bookmarksLoaded, toggleBookmark, setValidBookmarks }),
-    [bookmarkedIds, bookmarksLoaded]
+    () => ({
+      bookmarkedIds: bookmarkedIds ?? [],
+      bookmarksLoaded: bookmarkedIds !== null,
+      toggleBookmark,
+      setValidBookmarks,
+    }),
+    [bookmarkedIds, toggleBookmark, setValidBookmarks],
   );
 
-  return <BookmarkContext.Provider value={value}>{children}</BookmarkContext.Provider>;
+  return (
+    <BookmarkContext.Provider value={value}>
+      {children}
+    </BookmarkContext.Provider>
+  );
 }
 
 export const useBookmarks = () => useContext(BookmarkContext);

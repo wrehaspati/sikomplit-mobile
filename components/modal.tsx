@@ -1,9 +1,16 @@
-import React, { type ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { type ReactNode } from "react";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { ThemedText } from "@/components/themed-text";
+import { Colors, SCREEN_MARGIN_HORIZONTAL } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 type Props = {
   visible: boolean;
@@ -11,7 +18,7 @@ type Props = {
   onClose: () => void;
   children: ReactNode;
   cancelLabel?: string;
-  height?: ViewStyle['height'];
+  height?: ViewStyle["height"];
   sheetStyle?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
 };
@@ -21,12 +28,12 @@ export default function BottomSheetModal({
   title,
   onClose,
   children,
-  cancelLabel = 'Batal',
-  height = '70%',
+  cancelLabel = "Batal",
+  height = "70%",
   sheetStyle,
   contentStyle,
 }: Props) {
-  const backgroundColor = useThemeColor({}, 'background');
+  const backgroundColor = useThemeColor({}, "background");
 
   return (
     <Modal
@@ -39,17 +46,24 @@ export default function BottomSheetModal({
     >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <Pressable style={[styles.sheet, { backgroundColor, height }, sheetStyle]} onPress={() => undefined}>
+        <Pressable
+          style={[styles.sheet, { backgroundColor, height }, sheetStyle]}
+          onPress={() => undefined}
+        >
           <View style={styles.header}>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <ThemedText type="defaultSemiBold" lightColor={Colors.light.text.secondary} darkColor={Colors.dark.text.secondary}>
-                {cancelLabel}
-              </ThemedText>
-            </Pressable>
+            <View style={styles.spacer} />
             <ThemedText type="defaultSemiBold" style={styles.title}>
               {title}
             </ThemedText>
-            <View style={styles.spacer} />
+            <Pressable onPress={onClose} hitSlop={10}>
+              <ThemedText
+                type="defaultSemiBold"
+                lightColor={Colors.light.text.secondary}
+                darkColor={Colors.dark.text.secondary}
+              >
+                {cancelLabel}
+              </ThemedText>
+            </Pressable>
           </View>
           <View style={[styles.content, contentStyle]}>{children}</View>
         </Pressable>
@@ -61,25 +75,25 @@ export default function BottomSheetModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
   },
   sheet: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 20,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginTop: 8,
     marginBottom: 16,
+    paddingHorizontal: SCREEN_MARGIN_HORIZONTAL,
   },
   title: {
-    textAlign: 'center',
+    textAlign: "center",
     flex: 1,
     marginHorizontal: 12,
   },

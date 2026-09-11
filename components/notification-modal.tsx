@@ -1,13 +1,66 @@
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors, RADIUS } from '@/constants/theme';
-import { formatDateTime } from '@/services/format-date';
-import { ISubmissionData } from '@/types/submission';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+/* eslint-disable react-hooks/static-components */
+import { reuploadDocument, type ReuploadFileType } from "@/api/reapply-api";
+import { uploadResearch } from "@/api/research-api";
+import DocumentRow from "@/components/document-row";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors, RADIUS } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { formatDateTime } from "@/services/format-date";
+import { shortResearchType } from "@/services/format-text";
+import { ISubmissionData } from "@/types/submission";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as Sharing from "expo-sharing";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import {
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { z } from "zod";
+import { FullscreenAlert } from "./alert";
+import FileUploader, { SelectedFile } from "./file-uploader";
+import ImagePreviewModal from "./image-preview-modal";
+import BottomSheetModal from "./modal";
+import ThemedButton from "./themed-button";
+import ThemedTextInput from "./themed-text-input";
 
-type Props = {
+// Zod schema for research upload form
+const selectedFileSchema = z.object({
+  uri: z.string().min(1),
+  name: z.string().min(1),
+  mimeType: z.string().nullish(),
+});
+
+const researchFormSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: "Judul penelitian tidak boleh kosong" }),
+  abstract: z
+    .string()
+    .trim()
+    .min(1, { message: "Abstrak penelitian tidak boleh kosong" }),
+  research_summary: selectedFileSchema.refine((f) => !!f?.uri, {
+    message: "File ringkasan penelitian harus diisi",
+  }),
+  flyer: selectedFileSchema.refine((f) => !!f?.uri, {
+    message: "File flyer penelitian harus diisi",
+  }),
+});
+
+type ResearchFormData = z.infer<typeof researchFormSchema>;
+
+// Define interface for NotificationModal component
+interface Props {
   visible: boolean;
   submission: ISubmissionData | null;
   sectionBackground: string;
@@ -16,8 +69,14 @@ type Props = {
   onClose: () => void;
   onOpenDocument: (url?: string | null) => void;
   downloadProgressMap: Record<string, number>;
-};
+  onReuploadSuccess?: () => void;
+}
 
+/**
+ * Renders a notification modal.
+ * @param props
+ * @returns NotificationModal component
+ */
 export default function NotificationModal({
   visible,
   submission,
@@ -27,161 +86,1767 @@ export default function NotificationModal({
   onClose,
   onOpenDocument,
   downloadProgressMap,
+  onReuploadSuccess,
 }: Props) {
-  const isValidHttpUrl = (value?: string | null) => !!value && /^https?:\/\//i.test(value);
+  const background = useThemeColor({}, "background");
+  const fontColor = useThemeColor({}, "text.primary");
+  const secondary = useThemeColor({}, "card");
+  const borderColor = useThemeColor({}, "components.supportCard.border");
+  const revisionBg = useThemeColor(
+    {
+      light: Colors.notificationBadge.revision.background,
+      dark: "rgba(255, 204, 0, 0.1)",
+    },
+    "background",
+  );
+  const revisionText = useThemeColor(
+    {
+      light: Colors.notificationBadge.revision.text,
+      dark: Colors.accentYellow,
+    },
+    "text.primary",
+  );
+  const revisionBorder = useThemeColor(
+    {
+      light: Colors.notificationBadge.revision.stripe,
+      dark: "rgba(255, 204, 0, 0.3)",
+    },
+    "text.primary",
+  );
+  const approvedBg = useThemeColor(
+    {
+      light: Colors.notificationBadge.approved.background,
+      dark: "rgba(52, 199, 89, 0.15)",
+    },
+    "background",
+  );
+  const approvedText = useThemeColor(
+    {
+      light: Colors.notificationBadge.approved.text,
+      dark: Colors.accentGreen,
+    },
+    "text.primary",
+  );
+  const pendingBg = useThemeColor(
+    {
+      light: Colors.notificationBadge.pending.background,
+      dark: "rgba(0, 122, 255, 0.15)",
+    },
+    "background",
+  );
+  const pendingText = useThemeColor(
+    {
+      light: Colors.notificationBadge.pending.text,
+      dark: Colors.accentBlue,
+    },
+    "text.primary",
+  );
 
-  const DocumentRow = ({ label, url }: { label: string; url?: string | null }) => {
-    const available = isValidHttpUrl(url);
-    const progress = url ? downloadProgressMap[url] ?? null : null;
-    const isDownloading = progress !== null && progress >= 0 && progress < 1;
+  const isValidHttpUrl = (value?: string | null) =>
+    !!value && /^https?:\/\//i.test(value);
+
+  // Local submission state — synced from prop without useEffect to avoid
+  // cascading renders. See: react.dev/learn/you-might-not-need-an-effect
+  const [localSubmission, setLocalSubmission] =
+    useState<ISubmissionData | null>(submission);
+  const [prevSubmissionId, setPrevSubmissionId] = useState(submission?.id);
+
+  if (submission?.id !== prevSubmissionId) {
+    setPrevSubmissionId(submission?.id);
+    setLocalSubmission(submission);
+  }
+
+  const [docsExpanded, setDocsExpanded] = useState(true);
+  const [profileExpanded, setProfileExpanded] = useState(false);
+
+  const getTimelineStep = (progressStatus?: string | null): number => {
+    if (!progressStatus) return 1;
+    const status = progressStatus.toLowerCase();
+
+    if (
+      status.includes("selesai") ||
+      status.includes("diterima") ||
+      status.includes("hasil")
+    ) {
+      return 4;
+    }
+    if (status.includes("setuju") || status.includes("terbit")) {
+      return 3;
+    }
+    if (
+      status.includes("verifikasi") ||
+      status.includes("revisi") ||
+      status.includes("perbaikan") ||
+      status.includes("disposisi") ||
+      status.includes("review")
+    ) {
+      return 2;
+    }
+    if (status.includes("diajukan") || status.includes("submitted")) {
+      return 1;
+    }
+    return 1;
+  };
+
+  // Reset accordion states when submission changes
+  useEffect(() => {
+    if (localSubmission) {
+      const step = getTimelineStep(localSubmission.progress_status);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDocsExpanded(step < 3); // Expand by default if not approved
+      setProfileExpanded(false);
+    }
+  }, [localSubmission?.id]);
+
+  // Re-upload state
+  const [selectedFiles, setSelectedFiles] = useState<
+    Record<string, SelectedFile>
+  >({});
+  const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [previewFile, setPreviewFile] = useState<SelectedFile | null>(null);
+
+  // Research upload form
+  const researchForm = useForm<ResearchFormData>({
+    resolver: zodResolver(researchFormSchema),
+    defaultValues: {
+      title: "",
+      abstract: "",
+      research_summary: undefined,
+      flyer: undefined,
+    },
+  });
+  const [researchUploading, setResearchUploading] = useState(false);
+
+  // Reset research form when modal opens with a different submission
+  useEffect(() => {
+    researchForm.reset();
+  }, [submission?.id]);
+
+  // Cancel a picked file
+  const cancelPickedFile = (fileType: ReuploadFileType) => {
+    setSelectedFiles((prev) => {
+      const copy = { ...prev };
+      delete copy[fileType];
+      return copy;
+    });
+  };
+
+  // Upload a picked file
+  const handleUpload = async (fileType: ReuploadFileType) => {
+    if (!localSubmission) return;
+    const file = selectedFiles[fileType];
+    if (!file) return;
+    setUploadingFiles((prev) => ({ ...prev, [fileType]: true }));
+    try {
+      const response = await reuploadDocument(
+        localSubmission.id,
+        fileType,
+        file,
+      );
+      if (response.data) {
+        setLocalSubmission(response.data);
+      }
+      setSelectedFiles((prev) => {
+        const copy = { ...prev };
+        delete copy[fileType];
+        return copy;
+      });
+      Alert.alert("Berhasil", `Dokumen berhasil diperbarui`);
+      onReuploadSuccess?.();
+    } catch (error) {
+      console.error("Re-upload failed:", error);
+      Alert.alert(
+        "Gagal Mengunggah",
+        "Terjadi kesalahan saat mengunggah dokumen. Silakan coba hubungi admin.",
+      );
+    } finally {
+      setUploadingFiles((prev) => ({ ...prev, [fileType]: false }));
+    }
+  };
+
+  // Submit research upload
+  const handleResearchSubmit = researchForm.handleSubmit(async (data) => {
+    if (!localSubmission) return;
+    Keyboard.dismiss();
+
+    setResearchUploading(true);
+    try {
+      const response = await uploadResearch({
+        recommendation_request_id: localSubmission.id,
+        title: data.title.trim(),
+        abstract: data.abstract.trim(),
+        research_summary: data.research_summary,
+        flyer: data.flyer,
+      });
+      if (response.data) {
+        setLocalSubmission(response.data);
+      }
+      researchForm.reset();
+      onClose();
+      setTimeout(() => {
+        FullscreenAlert({
+          title: "Berhasil Terkirim",
+          description:
+            "Hasil penelitian Anda telah berhasil dikirim. Selamat telah menyelesaikan penelitian Anda!",
+          type: "success",
+          buttonHref: "/",
+          buttonText: "Kembali ke Beranda",
+        });
+        onReuploadSuccess?.();
+      }, 500);
+    } catch (error: any) {
+      const errData = error?.response?.data;
+      console.error(
+        "Research upload failed:",
+        JSON.stringify(errData, null, 2),
+      );
+      console.error("Full error:", error);
+      Alert.alert(
+        "Gagal Mengunggah",
+        errData?.message ??
+          "Pastikan rekomendasi telah diterbitkan terlebih dahulu. Jika masalah tetap berlangsung, silakan hubungi layanan bantuan.",
+      );
+    } finally {
+      setResearchUploading(false);
+    }
+  });
+
+  // Expandable abstract state
+  const [abstractExpanded, setAbstractExpanded] = useState(false);
+
+  // Document row with re-upload wrapper
+  const SubmissionDocumentRow = ({
+    label,
+    url,
+    fileType,
+  }: {
+    label: string;
+    url?: string | null;
+    fileType?: ReuploadFileType;
+  }) => {
+    const isEditable = localSubmission?.editable === true && fileType;
+    const pickedFile = fileType ? selectedFiles[fileType] : undefined;
+    const isUploading = fileType ? (uploadingFiles[fileType] ?? false) : false;
 
     return (
-      <Pressable onPress={() => onOpenDocument(url)} disabled={!available} style={[styles.documentRow, !available && styles.documentRowDisabled]}>
-        <View style={styles.documentLabelBlock}>
-          <IconSymbol name="document.fill" size={16} color={available ? Colors.accentBlue : Colors.light.text.secondary} />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <ThemedText type="subheadline" style={{ fontWeight: '600' }} numberOfLines={1}>
-              {label}
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: available ? Colors.accentBlue : secondaryText }}>
-              {available ? 'Buka / Unduh' : 'Belum tersedia'}
-            </ThemedText>
+      <View>
+        <DocumentRow
+          label={label}
+          url={url}
+          downloadProgressMap={downloadProgressMap}
+          onPress={(u) => onOpenDocument(u)}
+        />
+
+        {/* Re-upload section — only when editable */}
+        {isEditable && (
+          <View style={styles.reuploadSection}>
+            {isUploading ? (
+              <View style={styles.reuploadUploading}>
+                <ActivityIndicator size="small" color={Colors.accentBlue} />
+                <ThemedText
+                  type="caption"
+                  style={{ color: Colors.accentBlue, fontWeight: "600" }}
+                >
+                  Mengunggah...
+                </ThemedText>
+              </View>
+            ) : (
+              <View style={{ gap: 14 }}>
+                <FileUploader
+                  selectedFile={pickedFile ?? null}
+                  onFileSelect={(file) => {
+                    if (file) {
+                      setSelectedFiles((prev) => ({
+                        ...prev,
+                        [fileType]: file,
+                      }));
+                    } else {
+                      cancelPickedFile(fileType);
+                    }
+                  }}
+                  onPreview={(file) => setPreviewFile(file)}
+                />
+                {pickedFile && (
+                  <View style={styles.reuploadActions}>
+                    <Pressable
+                      onPress={() => handleUpload(fileType)}
+                      style={({ pressed }) => [
+                        styles.uploadConfirmButton,
+                        pressed && { opacity: 0.8 },
+                      ]}
+                    >
+                      <IconSymbol
+                        name="arrow.up.circle.fill"
+                        size={16}
+                        color="#fff"
+                      />
+                      <ThemedText
+                        type="caption"
+                        style={{
+                          color: "#fff",
+                          fontWeight: "700",
+                        }}
+                      >
+                        Unggah
+                      </ThemedText>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => cancelPickedFile(fileType)}
+                      style={({ pressed }) => [
+                        styles.uploadCancelButton,
+                        pressed && { opacity: 0.7 },
+                      ]}
+                    >
+                      <ThemedText
+                        type="caption"
+                        style={{
+                          color: Colors.light.text.secondary,
+                          fontWeight: "600",
+                        }}
+                      >
+                        Batal
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
-        </View>
-        {isDownloading ? (
-          <ThemedText type="caption" style={{ color: Colors.accentBlue, fontWeight: '700' }}>
-            {Math.round((progress ?? 0) * 100)}%
-          </ThemedText>
-        ) : (
-          available && <IconSymbol name="chevron.right" size={16} color={Colors.accentBlue} />
         )}
-      </Pressable>
+      </View>
     );
   };
 
+  const currentStep = localSubmission
+    ? getTimelineStep(localSubmission.progress_status)
+    : 1;
+  const steps = ["Diajukan", "Verifikasi", "Disetujui", "Selesai"];
+  const isDataAwal = localSubmission
+    ? localSubmission.research_type?.toLowerCase().includes("data awal") ||
+      localSubmission.research_type?.toLowerCase().includes("studi pendahuluan")
+    : false;
+  const recommendationAvailable =
+    localSubmission && isValidHttpUrl(localSubmission.recommendation_letter);
+
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <ThemedView style={styles.modalContainer}>
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.modalTopBar}>
-            <ThemedText type="title4">Detail Pengajuan</ThemedText>
-            <Pressable style={styles.closeButton} onPress={onClose}>
-              <ThemedText type="subheadline" style={{ color: Colors.accentBlue, fontWeight: '700' }}>
-                Tutup
-              </ThemedText>
-            </Pressable>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+    >
+      <SafeAreaProvider>
+        <SafeAreaView
+          style={[styles.modalContainer, { backgroundColor: background }]}
+        >
+          <View style={{ flex: 1 }}>
+            {/* Refined Header */}
+            <View
+              style={[
+                styles.modalTopBar,
+                { borderBottomColor: Colors.light.fill.secondary },
+              ]}
+            >
+              <View style={styles.headerTitleBlock}>
+                <View style={styles.headerIconCircle}>
+                  <IconSymbol
+                    name="document.fill"
+                    size={14}
+                    color={Colors.accentBlue}
+                  />
+                </View>
+                <ThemedText type="title4" style={{ fontWeight: "700" }}>
+                  Detail Pengajuan
+                </ThemedText>
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.closeButton,
+                  pressed && { opacity: 0.6 },
+                ]}
+                onPress={onClose}
+              >
+                <IconSymbol
+                  name="xmark.circle.fill"
+                  size={28}
+                  color={Colors.light.text.tertiary}
+                />
+              </Pressable>
+            </View>
+
+            {localSubmission && (
+              <ScrollView
+                contentContainerStyle={[
+                  styles.modalContent,
+                  { backgroundColor: background },
+                ]}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Progress Step Timeline */}
+                <ThemedView
+                  variant="card"
+                  style={[
+                    styles.timelineCard,
+                    {
+                      backgroundColor: sectionBackground,
+                      borderColor: borderColor,
+                    },
+                  ]}
+                >
+                  <View style={styles.sectionHeader}>
+                    <IconSymbol
+                      name="circle.fill"
+                      size={8}
+                      color={Colors.accentBlue}
+                    />
+                    <ThemedText type="subheadline" style={styles.sectionLabel}>
+                      Status Pengajuan
+                    </ThemedText>
+                  </View>
+
+                  <View style={styles.timelineRow}>
+                    {/* Connecting Lines (behind circles) */}
+                    {steps.map((_, idx) => {
+                      if (idx === steps.length - 1) return null;
+                      const segmentCompleted = currentStep > idx + 1;
+                      return (
+                        <View
+                          key={`line-${idx}`}
+                          style={[
+                            styles.timelineSegment,
+                            {
+                              left: `${((idx + 0.5) / steps.length) * 100}%`,
+                              width: `${(1 / steps.length) * 100}%`,
+                              backgroundColor: segmentCompleted
+                                ? Colors.accentGreen
+                                : Colors.light.fill.secondary,
+                            },
+                          ]}
+                        />
+                      );
+                    })}
+                    {steps.map((stepLabel, idx) => {
+                      const stepNum = idx + 1;
+                      const isCompleted = currentStep > stepNum;
+                      const isActive = currentStep === stepNum;
+
+                      return (
+                        <View key={idx} style={styles.timelineNode}>
+                          <View
+                            style={[
+                              styles.timelineCircle,
+                              isCompleted && styles.timelineCircleCompleted,
+                              isActive && styles.timelineCircleActive,
+                            ]}
+                          >
+                            {isCompleted ? (
+                              <IconSymbol
+                                name="checkmark.shield.fill"
+                                size={14}
+                                color="#fff"
+                              />
+                            ) : (
+                              <ThemedText
+                                type="caption"
+                                style={{
+                                  color: isActive ? "#fff" : secondaryText,
+                                  fontWeight: "800",
+                                  fontSize: 11,
+                                }}
+                              >
+                                {stepNum}
+                              </ThemedText>
+                            )}
+                          </View>
+                          <ThemedText
+                            type="caption"
+                            numberOfLines={1}
+                            style={[
+                              styles.timelineLabel,
+                              isActive && styles.timelineLabelActive,
+                              isCompleted && styles.timelineLabelCompleted,
+                            ]}
+                          >
+                            {stepLabel}
+                          </ThemedText>
+                        </View>
+                      );
+                    })}
+                  </View>
+
+                  {/* Visual Status Text badge */}
+                  <View style={styles.statusBadgeRow}>
+                    <ThemedText
+                      type="caption"
+                      style={{ color: tertiaryText, fontWeight: "500" }}
+                    >
+                      Status saat ini
+                    </ThemedText>
+                    <View
+                      style={[
+                        styles.statusBadgeTextContainer,
+                        {
+                          backgroundColor:
+                            currentStep === 4
+                              ? approvedBg
+                              : currentStep === 3
+                                ? approvedBg
+                                : localSubmission.editable
+                                  ? revisionBg
+                                  : pendingBg,
+                        },
+                      ]}
+                    >
+                      <ThemedText
+                        type="caption"
+                        style={{
+                          fontWeight: "700",
+                          color:
+                            currentStep === 4
+                              ? approvedText
+                              : currentStep === 3
+                                ? approvedText
+                                : localSubmission.editable
+                                  ? revisionText
+                                  : pendingText,
+                        }}
+                      >
+                        {localSubmission.progress_status}
+                      </ThemedText>
+                    </View>
+                  </View>
+                </ThemedView>
+
+                {/* Summary Card */}
+                <ThemedView
+                  variant="card"
+                  style={[
+                    styles.modalCard,
+                    {
+                      backgroundColor: sectionBackground,
+                      borderColor: borderColor,
+                    },
+                  ]}
+                >
+                  <View style={styles.sectionHeader}>
+                    <IconSymbol
+                      name="circle.fill"
+                      size={8}
+                      color={Colors.accentBlue}
+                    />
+                    <ThemedText type="subheadline" style={styles.sectionLabel}>
+                      Ringkasan
+                    </ThemedText>
+                  </View>
+
+                  <View style={styles.gridContainer}>
+                    <View style={styles.gridRow}>
+                      <DetailColumn
+                        label="Nomor Permintaan"
+                        value={localSubmission.request_number}
+                        tertiaryText={tertiaryText}
+                      />
+                      <DetailColumn
+                        label="Jenis Penelitian"
+                        value={shortResearchType(localSubmission.research_type)}
+                        tertiaryText={tertiaryText}
+                      />
+                    </View>
+                    <View style={styles.gridDivider} />
+                    <View style={styles.gridRow}>
+                      <DetailColumn
+                        label="Dibuat"
+                        value={formatDateTime(localSubmission.created_at)}
+                        tertiaryText={tertiaryText}
+                      />
+                      <DetailColumn
+                        label="Terakhir Diperbarui"
+                        value={formatDateTime(localSubmission.updated_at)}
+                        tertiaryText={tertiaryText}
+                      />
+                    </View>
+                  </View>
+                </ThemedView>
+
+                {/* Revision Banner */}
+                {localSubmission.editable && (
+                  <ThemedView
+                    variant="card"
+                    style={[
+                      styles.revisionBanner,
+                      {
+                        backgroundColor: revisionBg,
+                        borderColor: revisionBorder,
+                      },
+                    ]}
+                  >
+                    <View style={styles.revisionContent}>
+                      <IconSymbol
+                        name="exclamationmark.triangle.fill"
+                        size={22}
+                        color={revisionText}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <ThemedText
+                          type="subheadline"
+                          style={{
+                            fontWeight: "700",
+                            color: revisionText,
+                          }}
+                        >
+                          Revisi Diperlukan
+                        </ThemedText>
+                        <ThemedText
+                          type="caption"
+                          style={{
+                            color: revisionText,
+                            marginTop: 2,
+                            lineHeight: 16,
+                            opacity: 0.85,
+                          }}
+                        >
+                          Silakan unggah ulang dokumen di bawah ini sesuai
+                          instruksi revisi yang diberikan.
+                        </ThemedText>
+                      </View>
+                    </View>
+                  </ThemedView>
+                )}
+
+                {/* Surat Rekomendasi Section */}
+                <ThemedView
+                  variant="card"
+                  style={[
+                    styles.modalCard,
+                    { backgroundColor: sectionBackground, borderColor },
+                  ]}
+                >
+                  <View style={styles.sectionHeader}>
+                    <IconSymbol
+                      name="circle.fill"
+                      size={8}
+                      color={Colors.accentGreen}
+                    />
+                    <ThemedText type="subheadline" style={styles.sectionLabel}>
+                      Surat Rekomendasi
+                    </ThemedText>
+                  </View>
+
+                  {recommendationAvailable ? (
+                    <View style={styles.recommendationBoxActive}>
+                      <View style={styles.recommendationHeaderRow}>
+                        <View style={styles.successIconCircle}>
+                          <IconSymbol
+                            name="checkmark.shield.fill"
+                            size={20}
+                            color={Colors.accentGreen}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <ThemedText
+                            type="subheadline"
+                            style={{ fontWeight: "700" }}
+                          >
+                            Surat Rekomendasi Terbit
+                          </ThemedText>
+                          <ThemedText
+                            type="caption"
+                            style={{ color: tertiaryText, marginTop: 2 }}
+                          >
+                            Ketuk tombol di bawah untuk membuka atau mengunduh
+                            Surat Rekomendasi resmi Anda.
+                          </ThemedText>
+                        </View>
+                      </View>
+
+                      <ThemedButton
+                        onPress={() =>
+                          onOpenDocument(localSubmission.recommendation_letter)
+                        }
+                        lightColor={Colors.accentGreen}
+                        darkColor={Colors.accentGreen}
+                        icon={
+                          <IconSymbol
+                            name="arrow.down.app.fill"
+                            size={20}
+                            color="#fff"
+                          />
+                        }
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <ThemedText
+                          style={{
+                            color: "#fff",
+                            fontWeight: "700",
+                          }}
+                        >
+                          Surat Rekomendasi
+                        </ThemedText>
+                      </ThemedButton>
+                    </View>
+                  ) : (
+                    <ThemedView
+                      style={[
+                        styles.recommendationBoxDisabled,
+                        {
+                          backgroundColor: secondary,
+                          borderColor: borderColor,
+                        },
+                      ]}
+                      variant="card"
+                    >
+                      <View style={styles.recommendationHeaderRow}>
+                        <View style={styles.lockedIconCircle}>
+                          <IconSymbol
+                            name="lock.fill"
+                            size={16}
+                            color={fontColor}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <ThemedText
+                            type="subheadline"
+                            style={{ fontWeight: "600" }}
+                          >
+                            Belum Diterbitkan
+                          </ThemedText>
+                          <ThemedText
+                            type="caption"
+                            style={{ color: tertiaryText, marginTop: 2 }}
+                          >
+                            Surat Rekomendasi akan aktif di sini setelah seluruh
+                            proses verifikasi dan disposisi selesai.
+                          </ThemedText>
+                        </View>
+                      </View>
+                      <View style={styles.disabledActionButton}>
+                        <IconSymbol
+                          name="clock"
+                          size={12}
+                          color={Colors.light.text.secondary}
+                        />
+                        <ThemedText
+                          type="caption"
+                          style={{
+                            color: Colors.light.text.secondary,
+                            fontWeight: "600",
+                          }}
+                        >
+                          Menunggu Penerbitan Surat
+                        </ThemedText>
+                      </View>
+                    </ThemedView>
+                  )}
+                </ThemedView>
+
+                {/* Prerequisite Documents (Accordion) */}
+                <ThemedView
+                  variant="card"
+                  style={[
+                    styles.accordionCard,
+                    {
+                      backgroundColor: sectionBackground,
+                      borderColor: borderColor,
+                    },
+                  ]}
+                >
+                  <Pressable
+                    onPress={() => setDocsExpanded(!docsExpanded)}
+                    style={({ pressed }) => [
+                      styles.accordionHeader,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <ThemedText type="headline" style={{ fontWeight: "700" }}>
+                        Berkas Persyaratan
+                      </ThemedText>
+                      <View style={styles.accordionMeta}>
+                        <View style={styles.countPill}>
+                          <ThemedText
+                            type="caption"
+                            style={styles.countPillText}
+                          >
+                            {isDataAwal ? "1" : "4"}
+                          </ThemedText>
+                        </View>
+                        <ThemedText
+                          type="caption"
+                          style={{ color: tertiaryText }}
+                        >
+                          Dokumen Terlampir
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <View style={styles.chevronCircle}>
+                      <IconSymbol
+                        name={docsExpanded ? "chevron.up" : "chevron.down"}
+                        size={14}
+                        color={Colors.accentBlue}
+                      />
+                    </View>
+                  </Pressable>
+
+                  {docsExpanded && (
+                    <View style={styles.accordionBody}>
+                      <SubmissionDocumentRow
+                        label="Surat Permohonan"
+                        url={localSubmission.application_letter}
+                        fileType="application_letter"
+                      />
+                      {!isDataAwal && (
+                        <>
+                          <SubmissionDocumentRow
+                            label="Proposal Penelitian"
+                            url={localSubmission.research_proposal}
+                            fileType="research_proposal"
+                          />
+                          <SubmissionDocumentRow
+                            label="Surat Keterangan Etik"
+                            url={localSubmission.ethics_clearance_letter}
+                            fileType="ethics_clearance_letter"
+                          />
+                          <SubmissionDocumentRow
+                            label="Surat Pernyataan Laporan Akhir"
+                            url={localSubmission.final_report_statement_letter}
+                            fileType="final_report_statement_letter"
+                          />
+                        </>
+                      )}
+                    </View>
+                  )}
+                </ThemedView>
+
+                {/* Hasil Penelitian (Research Upload) Section */}
+                {currentStep >= 3 && (
+                  <ThemedView
+                    variant="card"
+                    style={[
+                      styles.modalCard,
+                      {
+                        backgroundColor: sectionBackground,
+                        borderColor: borderColor,
+                      },
+                    ]}
+                  >
+                    <View style={styles.sectionHeader}>
+                      <IconSymbol
+                        name="circle.fill"
+                        size={8}
+                        color={Colors.accentBlue}
+                      />
+                      <ThemedText
+                        type="subheadline"
+                        style={styles.sectionLabel}
+                      >
+                        Hasil Penelitian
+                      </ThemedText>
+                    </View>
+
+                    {localSubmission.research_upload != null ? (
+                      /* Display existing research upload data */
+                      <View style={{ gap: 10, marginTop: 4 }}>
+                        <DetailRow
+                          label="Judul Penelitian"
+                          value={localSubmission.research_upload.title}
+                          tertiaryText={tertiaryText}
+                        />
+
+                        {/* Compact expandable abstract */}
+                        {localSubmission.research_upload.abstract ? (
+                          <Pressable
+                            onPress={() =>
+                              setAbstractExpanded(!abstractExpanded)
+                            }
+                            style={({ pressed }) => [
+                              styles.abstractCard,
+                              {
+                                backgroundColor: secondary,
+                                borderColor: borderColor,
+                              },
+                              pressed && { opacity: 0.8 },
+                            ]}
+                          >
+                            <View style={styles.abstractHeader}>
+                              <IconSymbol
+                                name="document.fill"
+                                size={12}
+                                color={Colors.accentBlue}
+                              />
+                              <ThemedText
+                                type="caption"
+                                style={styles.abstractHeaderLabel}
+                              >
+                                Abstrak Penelitian
+                              </ThemedText>
+                              <IconSymbol
+                                name={
+                                  abstractExpanded
+                                    ? "chevron.up"
+                                    : "chevron.down"
+                                }
+                                size={12}
+                                color={Colors.accentBlue}
+                              />
+                            </View>
+                            <ThemedText
+                              type="caption"
+                              style={[
+                                styles.abstractText,
+                                { color: fontColor },
+                              ]}
+                              numberOfLines={abstractExpanded ? undefined : 2}
+                            >
+                              {localSubmission.research_upload.abstract}
+                            </ThemedText>
+                            {!abstractExpanded && (
+                              <ThemedText
+                                type="caption"
+                                style={styles.abstractReadMore}
+                              >
+                                Ketuk untuk selengkapnya
+                              </ThemedText>
+                            )}
+                          </Pressable>
+                        ) : null}
+
+                        <SubmissionDocumentRow
+                          label="Ringkasan Penelitian"
+                          url={localSubmission.research_upload.research_summary}
+                        />
+                        <SubmissionDocumentRow
+                          label="Flyer Penelitian"
+                          url={localSubmission.research_upload.flyer}
+                        />
+                        <DetailRow
+                          label="Status Publikasi"
+                          value={
+                            localSubmission.research_upload.is_published ===
+                            "Published"
+                              ? "Dipublikasikan"
+                              : "Belum Dipublikasikan"
+                          }
+                          tertiaryText={tertiaryText}
+                        />
+                      </View>
+                    ) : (
+                      /* Research upload form */
+                      <View style={styles.researchForm}>
+                        <View
+                          style={[
+                            styles.researchFormNotice,
+                            {
+                              backgroundColor: background,
+                              borderColor: borderColor,
+                            },
+                          ]}
+                        >
+                          <IconSymbol
+                            name="arrow.up.doc.fill"
+                            size={16}
+                            color={fontColor}
+                          />
+                          <ThemedText
+                            type="caption"
+                            style={{
+                              flex: 1,
+                              color: fontColor,
+                              lineHeight: 18,
+                            }}
+                          >
+                            Silakan unggah hasil penelitian Anda. Pastikan file
+                            tidak melebihi batas ukuran 2 MB.
+                          </ThemedText>
+                        </View>
+
+                        {/* Title */}
+                        <Controller
+                          control={researchForm.control}
+                          name="title"
+                          render={({ field, fieldState }) => (
+                            <ThemedTextInput
+                              title="Judul Penelitian"
+                              required
+                              variant="transparent"
+                              placeholder="Masukkan judul penelitian"
+                              value={field.value}
+                              onChangeText={field.onChange}
+                              onBlur={field.onBlur}
+                              errorMessage={fieldState.error?.message}
+                              lightColor={background}
+                              darkColor={background}
+                              underline
+                            />
+                          )}
+                        />
+
+                        {/* Abstract */}
+                        <Controller
+                          control={researchForm.control}
+                          name="abstract"
+                          render={({ field, fieldState }) => (
+                            <ThemedTextInput
+                              title="Abstrak Penelitian"
+                              variant="transparent"
+                              placeholder="Masukkan abstrak penelitian"
+                              value={field.value}
+                              onChangeText={field.onChange}
+                              onBlur={field.onBlur}
+                              errorMessage={fieldState.error?.message}
+                              lightColor={background}
+                              darkColor={background}
+                              underline
+                              required
+                              multiline
+                              textAlignVertical="top"
+                              style={styles.researchTextarea}
+                            />
+                          )}
+                        />
+
+                        {/* Research summary PDF */}
+                        <Controller
+                          control={researchForm.control}
+                          name="research_summary"
+                          render={({ field, fieldState }) => (
+                            <View style={styles.researchFieldGroup}>
+                              <ThemedText style={styles.fieldLabel}>
+                                Ringkasan Penelitian (PDF)
+                              </ThemedText>
+                              <FileUploader
+                                selectedFile={field.value as any}
+                                onFileSelect={(file) => {
+                                  researchForm.setValue(
+                                    "research_summary",
+                                    file as any,
+                                    {
+                                      shouldValidate: true,
+                                      shouldDirty: true,
+                                      shouldTouch: true,
+                                    },
+                                  );
+                                }}
+                                onPreview={(file) => setPreviewFile(file)}
+                                allowCamera={false}
+                                allowedTypes={["application/pdf"]}
+                              />
+                              <ThemedText
+                                type="caption"
+                                style={styles.fieldHint}
+                              >
+                                File PDF, maks. 2 MB.
+                              </ThemedText>
+                              {fieldState.error?.message && (
+                                <ThemedText
+                                  type="caption"
+                                  style={styles.fieldError}
+                                >
+                                  {fieldState.error.message}
+                                </ThemedText>
+                              )}
+                            </View>
+                          )}
+                        />
+
+                        {/* Flyer image */}
+                        <Controller
+                          control={researchForm.control}
+                          name="flyer"
+                          render={({ field, fieldState }) => (
+                            <View style={styles.researchFieldGroup}>
+                              <ThemedText style={styles.fieldLabel}>
+                                Flyer Penelitian (JPG/PNG)
+                              </ThemedText>
+                              <FileUploader
+                                selectedFile={field.value as any}
+                                onFileSelect={(file) => {
+                                  researchForm.setValue("flyer", file as any, {
+                                    shouldValidate: true,
+                                    shouldDirty: true,
+                                    shouldTouch: true,
+                                  });
+                                }}
+                                onPreview={(file) => setPreviewFile(file)}
+                                allowedTypes={["image/*"]}
+                              />
+                              <ThemedText
+                                type="caption"
+                                style={styles.fieldHint}
+                              >
+                                Gambar PNG atau JPG, maks. 2 MB.
+                              </ThemedText>
+                              {fieldState.error?.message && (
+                                <ThemedText
+                                  type="caption"
+                                  style={styles.fieldError}
+                                >
+                                  {fieldState.error.message}
+                                </ThemedText>
+                              )}
+                            </View>
+                          )}
+                        />
+
+                        {/* Submit button */}
+                        <View style={styles.researchFormActions}>
+                          <Pressable
+                            onPress={handleResearchSubmit}
+                            disabled={researchUploading}
+                            style={({ pressed }) => [
+                              styles.researchSubmitButton,
+                              researchUploading && { opacity: 0.6 },
+                              pressed && !researchUploading && { opacity: 0.8 },
+                            ]}
+                          >
+                            {researchUploading ? (
+                              <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                              <IconSymbol
+                                name="arrow.up.circle.fill"
+                                size={16}
+                                color="#fff"
+                              />
+                            )}
+                            <ThemedText
+                              type="subheadline"
+                              style={{ color: "#fff", fontWeight: "700" }}
+                            >
+                              {researchUploading
+                                ? "Mengirim..."
+                                : "Kirim Hasil"}
+                            </ThemedText>
+                          </Pressable>
+                        </View>
+                      </View>
+                    )}
+                  </ThemedView>
+                )}
+
+                {/* Applicant Information (Accordion) */}
+                <ThemedView
+                  variant="card"
+                  style={[
+                    styles.accordionCard,
+                    {
+                      backgroundColor: sectionBackground,
+                      borderColor: borderColor,
+                    },
+                  ]}
+                >
+                  <Pressable
+                    onPress={() => setProfileExpanded(!profileExpanded)}
+                    style={({ pressed }) => [
+                      styles.accordionHeader,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <ThemedText type="headline" style={{ fontWeight: "700" }}>
+                        Informasi Pemohon
+                      </ThemedText>
+                      <ThemedText
+                        type="caption"
+                        style={{ color: tertiaryText }}
+                      >
+                        {localSubmission.name}
+                      </ThemedText>
+                    </View>
+                    <View style={styles.chevronCircle}>
+                      <IconSymbol
+                        name={profileExpanded ? "chevron.up" : "chevron.down"}
+                        size={14}
+                        color={Colors.accentBlue}
+                      />
+                    </View>
+                  </Pressable>
+
+                  {profileExpanded && (
+                    <View style={styles.accordionBody}>
+                      <DetailRow
+                        label="Nama Lengkap"
+                        value={localSubmission.name}
+                        tertiaryText={tertiaryText}
+                      />
+                      <DetailRow
+                        label="Email"
+                        value={localSubmission.email}
+                        tertiaryText={tertiaryText}
+                      />
+                      <DetailRow
+                        label="No. Telepon"
+                        value={localSubmission.phone}
+                        tertiaryText={tertiaryText}
+                      />
+                      <DetailRow
+                        label="Tanggal Lahir"
+                        value={localSubmission.date_of_birth}
+                        tertiaryText={tertiaryText}
+                      />
+                      <DetailRow
+                        label="Jenis Kelamin"
+                        value={localSubmission.gender}
+                        tertiaryText={tertiaryText}
+                      />
+                      <DetailRow
+                        label="Pendidikan Terakhir"
+                        value={
+                          localSubmission.last_education
+                            ? localSubmission.last_education.toUpperCase()
+                            : "-"
+                        }
+                        tertiaryText={tertiaryText}
+                      />
+                      <DetailRow
+                        label="Pekerjaan"
+                        value={localSubmission.occupation}
+                        tertiaryText={tertiaryText}
+                      />
+                    </View>
+                  )}
+                </ThemedView>
+              </ScrollView>
+            )}
           </View>
-
-          {submission && (
-            <ScrollView contentContainerStyle={styles.modalContent}>
-              <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
-                <ThemedText type="headline" style={{ marginBottom: 12 }}>
-                  Ringkasan
-                </ThemedText>
-                <DetailRow label="Nomor Permintaan" value={submission.request_number} tertiaryText={tertiaryText} />
-                <DetailRow label="Status" value={submission.progress_status} tertiaryText={tertiaryText} />
-                <DetailRow label="Jenis Penelitian" value={submission.research_type.split('/')[0] ?? submission.research_type} tertiaryText={tertiaryText} />
-                <DetailRow label="Judul Penelitian" value={submission.research_upload?.title} tertiaryText={tertiaryText} />
-                <DetailRow label="Dibuat" value={formatDateTime(submission.created_at)} tertiaryText={tertiaryText} />
-                <DetailRow label="Terakhir Diperbarui" value={formatDateTime(submission.updated_at)} tertiaryText={tertiaryText} />
-              </ThemedView>
-
-              <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
-                <ThemedText type="headline" style={{ marginBottom: 12 }}>
-                  Informasi Pemohon
-                </ThemedText>
-                <DetailRow label="Nama" value={submission.name} tertiaryText={tertiaryText} />
-                <DetailRow label="Email" value={submission.email} tertiaryText={tertiaryText} />
-                <DetailRow label="No. Telepon" value={submission.phone} tertiaryText={tertiaryText} />
-                <DetailRow label="NIK" value={submission.national_identity_number} tertiaryText={tertiaryText} />
-                <DetailRow label="Tanggal Lahir" value={submission.date_of_birth} tertiaryText={tertiaryText} />
-                <DetailRow label="Gender" value={submission.gender} tertiaryText={tertiaryText} />
-                <DetailRow label="Pendidikan Terakhir" value={submission.last_education} tertiaryText={tertiaryText} />
-                <DetailRow label="Pekerjaan" value={submission.occupation} tertiaryText={tertiaryText} />
-              </ThemedView>
-
-              <ThemedView style={[styles.modalCard, { backgroundColor: sectionBackground }]}>
-                <ThemedText type="headline" style={{ marginBottom: 12 }}>
-                  Dokumen
-                </ThemedText>
-                <DocumentRow label="Surat Permohonan" url={submission.application_letter} />
-                <DocumentRow label="Proposal Penelitian" url={submission.research_proposal} />
-                <DocumentRow label="Ethics Clearance" url={submission.ethics_clearance_letter} />
-                <DocumentRow label="Surat Pernyataan Laporan Akhir" url={submission.final_report_statement_letter} />
-                <DocumentRow label="Surat Rekomendasi" url={submission.recommendation_letter} />
-              </ThemedView>
-            </ScrollView>
-          )}
         </SafeAreaView>
-      </ThemedView>
+      </SafeAreaProvider>
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        visible={!!previewFile && !!previewFile.mimeType?.startsWith("image/")}
+        uri={previewFile?.uri}
+        onClose={() => setPreviewFile(null)}
+      />
+
+      {/* PDF Preview Modal */}
+      <BottomSheetModal
+        visible={!!previewFile && previewFile.mimeType === "application/pdf"}
+        title="Preview Dokumen"
+        onClose={() => setPreviewFile(null)}
+        height="35%"
+      >
+        <View style={{ paddingTop: 16 }}>
+          <ThemedText
+            type="caption"
+            darkColor={Colors.dark.text.secondary}
+            lightColor={Colors.light.text.secondary}
+            style={{ marginBottom: 16 }}
+          >
+            Ketuk dokumen di bawah ini untuk melihat isinya melalui aplikasi
+            penampil dokumen di perangkat Anda.
+          </ThemedText>
+          {previewFile && (
+            <DocumentRow
+              label={previewFile.name}
+              url={previewFile.uri}
+              downloadProgressMap={{}}
+              onPress={async () => {
+                if (await Sharing.isAvailableAsync()) {
+                  await Sharing.shareAsync(previewFile.uri);
+                } else {
+                  Alert.alert(
+                    "Gagal",
+                    "Fitur berbagi tidak tersedia di perangkat ini.",
+                  );
+                }
+              }}
+            />
+          )}
+        </View>
+      </BottomSheetModal>
     </Modal>
   );
 }
 
-function DetailRow({ label, value, tertiaryText }: { label: string; value?: string | null; tertiaryText: string }) {
+// Detail Row Component
+function DetailRow({
+  label,
+  value,
+  tertiaryText,
+}: {
+  label: string;
+  value?: string | null;
+  tertiaryText: string;
+}) {
   return (
     <View style={styles.detailRow}>
-      <ThemedText type="caption" style={{ color: tertiaryText, marginBottom: 2 }}>
+      <ThemedText
+        type="caption"
+        style={[styles.detailLabel, { color: tertiaryText }]}
+      >
         {label}
       </ThemedText>
-      <ThemedText type="subheadline" style={{ fontWeight: '600' }}>
-        {value && value.trim().length > 0 ? value : '-'}
+      <ThemedText type="subheadline" style={{ fontWeight: "700" }}>
+        {value && value.trim().length > 0 ? value.toUpperCase() : "-"}
+      </ThemedText>
+    </View>
+  );
+}
+
+// Detail Column Component
+function DetailColumn({
+  label,
+  value,
+  tertiaryText,
+}: {
+  label: string;
+  value?: string | null;
+  tertiaryText: string;
+}) {
+  return (
+    <View style={styles.detailColumn}>
+      <ThemedText
+        type="caption"
+        style={[styles.detailLabel, { color: tertiaryText }]}
+      >
+        {label}
+      </ThemedText>
+      <ThemedText type="subheadline" style={{ fontWeight: "700" }}>
+        {value && value.trim().length > 0 ? value : "-"}
       </ThemedText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  /* Modal Container */
   modalContainer: {
+    paddingTop: 14,
     flex: 1,
-    paddingTop: 24,
   },
+
+  /* Header */
   modalTopBar: {
     paddingHorizontal: 24,
     paddingBottom: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.fill.secondary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  closeButton: {
-    paddingVertical: 4,
-  },
-  modalContent: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 32,
-    gap: 12,
-  },
-  modalCard: {
-    borderRadius: RADIUS.DEFAULT,
-    padding: 16,
-    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.2)'
-  },
-  detailRow: {
-    marginBottom: 10,
-  },
-  documentRow: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerTitleBlock: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
-  documentRowDisabled: {
-    opacity: 0.6,
+  headerIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 136, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  documentLabelBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  closeButton: {
+    padding: 4,
+  },
+
+  /* Content */
+  modalContent: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 40,
+    gap: 16,
+  },
+
+  /* Section Header (icon + label) */
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
+    marginBottom: 12,
+  },
+  sectionLabel: {
+    fontWeight: "700",
+  },
+
+  /* Cards */
+  modalCard: {
+    borderRadius: RADIUS.DEFAULT,
+    padding: 18,
+    borderWidth: 1,
+  },
+
+  /* Detail Rows/Columns */
+  detailRow: {
+    marginBottom: 4,
+  },
+  detailLabel: {
+    marginBottom: 2,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+  detailColumn: {
     flex: 1,
-    minWidth: 0,
+  },
+  gridContainer: {
+    gap: 4,
+  },
+  gridRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+  gridDivider: {
+    height: 1,
+    backgroundColor: Colors.light.fill.secondary,
+    marginVertical: 8,
+  },
+
+  /* Abstract Card */
+  abstractCard: {
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  abstractHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  abstractHeaderLabel: {
+    flex: 1,
+    fontWeight: "700",
+    color: Colors.accentBlue,
+    textTransform: "uppercase",
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+  abstractText: {
+    lineHeight: 18,
+    color: Colors.light.text.primary,
+  },
+  abstractReadMore: {
+    color: Colors.accentBlue,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+
+  /* Revision Banner */
+  revisionBanner: {
+    flexDirection: "row",
+    borderRadius: RADIUS.DEFAULT,
+    backgroundColor: Colors.notificationBadge.revision.background,
+    borderWidth: 1,
+    borderColor: Colors.notificationBadge.revision.stripe,
+    overflow: "hidden",
+  },
+  revisionStripe: {
+    width: 5,
+    backgroundColor: Colors.notificationBadge.revision.stripe,
+  },
+  revisionContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    padding: 16,
+  },
+
+  /* Re-upload */
+  reuploadSection: {
+    marginTop: 8,
+    paddingLeft: 4,
+  },
+  reuploadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: Colors.accentBlue,
+    alignSelf: "flex-start",
+  },
+  reuploadConfirmation: {
+    gap: 10,
+  },
+  pickedFileChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  reuploadActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16,
+  },
+  uploadConfirmButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: Colors.accentBlue,
+  },
+  uploadCancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Colors.light.fill.secondary,
+  },
+  reuploadUploading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingBottom: 8,
+  },
+
+  /* Accordion */
+  accordionCard: {
+    borderRadius: RADIUS.DEFAULT,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderWidth: 1,
+  },
+  accordionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  accordionMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 2,
+  },
+  countPill: {
+    backgroundColor: Colors.accentBlue,
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    minWidth: 20,
+    alignItems: "center",
+  },
+  countPillText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 10,
+  },
+  chevronCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 136, 255, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  accordionBody: {
+    marginTop: 14,
+    gap: 10,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.fill.secondary,
+  },
+
+  /* Timeline */
+  timelineCard: {
+    borderRadius: RADIUS.DEFAULT,
+    padding: 18,
+    borderWidth: 1,
+  },
+  timelineRow: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    alignItems: "center",
+    position: "relative",
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  timelineNode: {
+    alignItems: "center",
+    flex: 1,
+    zIndex: 1,
+  },
+  timelineCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.light.fill.vibrant.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2.5,
+    borderColor: Colors.light.fill.vibrant.secondary,
+    marginBottom: 6,
+  },
+  timelineCircleActive: {
+    backgroundColor: Colors.accentBlue,
+    borderColor: "rgba(0, 136, 255, 0.25)",
+  },
+  timelineCircleCompleted: {
+    backgroundColor: Colors.accentGreen,
+    borderColor: "rgba(52, 199, 89, 0.25)",
+  },
+  timelineSegment: {
+    position: "absolute",
+    top: 26,
+    height: 3,
+    borderRadius: 1.5,
+    zIndex: 0,
+  },
+  timelineLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: Colors.light.text.secondary,
+    textAlign: "center",
+  },
+  timelineLabelActive: {
+    color: Colors.accentBlue,
+    fontWeight: "700",
+  },
+  timelineLabelCompleted: {
+    color: Colors.accentGreen,
+    fontWeight: "700",
+  },
+
+  /* Status Badge */
+  statusBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    gap: 10,
+  },
+  statusBadgeTextContainer: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+
+  /* Recommendation */
+  recommendationBoxActive: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: "rgba(52, 199, 89, 0.25)",
+    backgroundColor: "rgba(52, 199, 89, 0.04)",
+    gap: 14,
+  },
+  recommendationBoxDisabled: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    gap: 14,
+    boxShadow: "0px 4px 16px rgba(0, 0, 0, 0)",
+  },
+  recommendationHeaderRow: {
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+  },
+  successIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(52, 199, 89, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lockedIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.light.fill.tertiary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  disabledActionButton: {
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.light.fill.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
+  },
+
+  /* Research Form */
+  researchForm: {
+    gap: 16,
+    marginTop: 8,
+  },
+  researchFormNotice: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: Colors.notificationBadge.pending.background,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.notificationBadge.pending.stripe,
+  },
+  researchFieldGroup: {
+    gap: 0,
+  },
+  fieldLabel: {
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  fieldHint: {
+    color: Colors.light.text.tertiary,
+    marginTop: 4,
+  },
+  fieldError: {
+    color: Colors.accentRed,
+    marginTop: 3,
+  },
+  researchInput: {
+    borderWidth: 1,
+    borderColor: Colors.light.fill.secondary,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: Colors.light.text.primary,
+    backgroundColor: Colors.backgroundSecondary,
+  },
+  researchTextarea: {
+    minHeight: 100,
+    maxHeight: 180,
+  },
+  researchInputError: {
+    borderColor: Colors.accentRed,
+    borderWidth: 1.5,
+  },
+  researchPickButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: Colors.accentBlue,
+    alignSelf: "flex-start",
+  },
+  researchFormActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 6,
+  },
+  researchSubmitButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 999,
+    backgroundColor: Colors.accentBlue,
   },
 });

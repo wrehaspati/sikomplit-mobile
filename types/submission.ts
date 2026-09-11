@@ -12,7 +12,6 @@ export interface ISubmissionData {
   name: string;
   email: string;
   phone: string;
-  national_identity_number: string;
   date_of_birth: string;
   gender: string;
   last_education: string;
@@ -22,6 +21,7 @@ export interface ISubmissionData {
   research_upload: {
     recommendation_request_id: string;
     title: string;
+    abstract?: string | null;
     research_summary: string;
     flyer: string;
     is_published?: string;
@@ -37,7 +37,6 @@ export interface ISubmissionPost {
   name: string;
   email: string;
   phone: string;
-  national_identity_number: string;
   date_of_birth: string;
   gender: string;
   last_education: string;
@@ -58,6 +57,13 @@ export interface IPublishedSubmission {
   flyer: string;
   abstract?: string | null;
   is_published: "Published" | "Unpublished";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IPoster {
+  id: string;
+  image_url: string;
   created_at: string;
   updated_at: string;
 }

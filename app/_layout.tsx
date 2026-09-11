@@ -1,22 +1,30 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
-import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { AuthProvider, useAuth } from '@/contexts/auth-context';
-import { BookmarkProvider } from '@/contexts/bookmark-context';
-import { ThemePreferenceProvider } from '@/contexts/theme-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { BookmarkProvider } from "@/contexts/bookmark-context";
+import {
+  SubmissionProvider,
+  useSubmissions,
+} from "@/contexts/submission-context";
+import { ThemePreferenceProvider } from "@/contexts/theme-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import * as Notifications from "expo-notifications";
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+  useRouter,
+} from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import "react-native-reanimated";
 import {
   getPushNotificationData,
   getPushNotificationRoute,
   registerAndStorePushTokenAsync,
-} from '../services/push-notifications';
+} from "../services/push-notifications";
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: "(tabs)",
 };
 
 export default function RootLayout() {
@@ -32,72 +40,110 @@ function RootLayoutContent() {
   return (
     <AuthProvider>
       <BookmarkProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <StatusBar style="auto" />
-          <PushNotificationBootstrap />
-          <RootLayoutNav />
-        </ThemeProvider>
+        <SubmissionProvider>
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <StatusBar style="auto" />
+            <PushNotificationBootstrap />
+            <RootLayoutNav />
+          </ThemeProvider>
+        </SubmissionProvider>
       </BookmarkProvider>
     </AuthProvider>
   );
 }
 
+/**
+ * Register the device for push notifications and listen for incoming notifications
+ */
 function PushNotificationBootstrap() {
   const auth = useAuth();
   const router = useRouter();
+  const submissions = useSubmissions();
 
   useEffect(() => {
     if (auth?.state.isLoading || !auth?.state.token) {
-      console.log('Skipping push notification registration');
       return;
     }
 
-    registerAndStorePushTokenAsync()
-      .then((token) => {
-        console.log('FCM device token stored:', token);
-      })
-      .catch((error) => {
-        console.warn('Push notification registration failed:', error);
+    registerAndStorePushTokenAsync();
+
+    const receivedListener = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        getPushNotificationData(notification);
+        submissions?.refreshAllSubmissions();
+      },
+    );
+
+    const responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = getPushNotificationData(response.notification);
+        const route = getPushNotificationRoute(data);
+
+        submissions?.refreshAllSubmissions();
+
+        if (route) {
+          router.push(route as never);
+        }
       });
-
-    const receivedListener = Notifications.addNotificationReceivedListener((notification) => {
-      const data = getPushNotificationData(notification);
-      console.log('Push notification received:', data ?? notification.request.content);
-    });
-
-    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = getPushNotificationData(response.notification);
-      const route = getPushNotificationRoute(data);
-
-      if (route) {
-        router.push(route as never);
-      }
-    });
 
     return () => {
       receivedListener.remove();
       responseListener.remove();
     };
-  }, [auth?.state.isLoading, auth?.state.token, router]);
+  }, [auth?.state.isLoading, auth?.state.token, router, submissions]);
 
   return null;
 }
 
+/**
+ * Stack navigation for the application
+ */
 function RootLayoutNav() {
   const auth = useAuth();
   return (
     <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Beranda' }} />
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false, title: "Beranda" }}
+      />
       <Stack.Protected guard={!!auth?.state.token}>
-        <Stack.Screen name="form" options={{ presentation: 'card', title: 'Formulir Rekomendasi' }} />
+        <Stack.Screen
+          name="form"
+          options={{ presentation: "card", title: "Formulir Rekomendasi" }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!auth?.state.token}>
-        <Stack.Screen name="login" options={{ presentation: 'card', title: 'Masuk SIKOMPLIT' }} />
-        <Stack.Screen name="register" options={{ presentation: 'card', title: 'Daftar SIKOMPLIT' }} />
-        <Stack.Screen name="reset-password" options={{ presentation: 'card', title: 'Reset Kata Sandi' }} />
-        <Stack.Screen name="email-verify" options={{ presentation: 'card', title: 'Verifikasi Email' }} />
+        <Stack.Screen
+          name="login"
+          options={{ presentation: "card", title: "Login" }}
+        />
+        <Stack.Screen
+          name="register"
+          options={{ presentation: "card", title: "Registrasi" }}
+        />
+        <Stack.Screen
+          name="send-reset-password"
+          options={{ presentation: "card", title: "Reset Kata Sandi" }}
+        />
+        <Stack.Screen
+          name="email-verify"
+          options={{ presentation: "card", title: "Verifikasi Email" }}
+        />
+        <Stack.Screen
+          name="reset-password"
+          options={{ presentation: "card", title: "Reset Kata Sandi" }}
+        />
       </Stack.Protected>
-      <Stack.Screen name="fullscreen-alert" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+      <Stack.Screen
+        name="fullscreen-alert"
+        options={{ presentation: "fullScreenModal", headerShown: false }}
+      />
+      <Stack.Screen
+        name="term"
+        options={{ presentation: "card", title: "Syarat dan Ketentuan" }}
+      />
     </Stack>
   );
 }

@@ -1,80 +1,120 @@
-import { applySubmission } from '@/api/submission-api';
-import { FullscreenAlert } from '@/components/alert';
-import Combobox from '@/components/combobox';
-import SelectCard from '@/components/select-card';
+import { applySubmission } from "@/api/submission-api";
+import { FullscreenAlert } from "@/components/alert";
+import Combobox from "@/components/combobox";
+import DocumentRow from "@/components/document-row";
+import ImagePreviewModal from "@/components/image-preview-modal";
+import BottomSheetModal from "@/components/modal";
+import SelectCard from "@/components/select-card";
 import ThemedButton from "@/components/themed-button";
 import { ThemedText } from "@/components/themed-text";
 import ThemedTextInput from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { PHONE_NUMBER } from "@/constants/contact-person";
 import { Colors, RADIUS } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+import { useSubmissions } from "@/contexts/submission-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { ISubmissionPost } from '@/types/submission';
-import { zodResolver } from '@hookform/resolvers/zod';
-import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Checkbox } from 'expo-checkbox';
-import * as DocumentPicker from 'expo-document-picker';
+import { ISubmissionPost } from "@/types/submission";
+import { zodResolver } from "@hookform/resolvers/zod";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  type DateTimePickerChangeEvent,
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import { Checkbox } from "expo-checkbox";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
 import { Image } from "expo-image";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
+import * as Sharing from "expo-sharing";
 import { useState } from "react";
-import { Controller, useForm } from 'react-hook-form';
-import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Controller, useForm } from "react-hook-form";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { z } from 'zod';
+import { z } from "zod";
 
-// Define the structure of a selected file, including its name, URI, size, and MIME type
-type SelectedFile = {
-  name: string;
-  uri: string;
-  size?: number | null;
-  mimeType?: string | null;
-}
+import FileUploader, { SelectedFile } from "@/components/file-uploader";
 
-// Define the options for the "Pendidikan Terakhir" field in the form
+// Define the options for the "Pendidikan Terakhir" field
 const LastEducationOption = [
-  { label: 'SMA/SMK', value: 'sma' },
-  { label: 'Diploma', value: 'diploma' },
-  { label: 'S1', value: 's1' },
-  { label: 'S2', value: 's2' },
-  { label: 'S3', value: 's3' },
+  { label: "SMA/SMK", value: "sma" },
+  { label: "Diploma", value: "diploma" },
+  { label: "S1", value: "s1" },
+  { label: "S2", value: "s2" },
+  { label: "S3", value: "s3" },
 ];
 
-// Define the options for the "Pekerjaan" field in the form
+// Define the options for the "Pekerjaan" field
 const OccupationOption = [
-  { label: 'Pegawai Negeri', value: 'pns' },
-  { label: 'Pegawai Swasta', value: 'swasta' },
-  { label: 'Wiraswasta', value: 'wiraswasta' },
-  { label: 'Pelajar/Mahasiswa', value: 'pelajar' },
-  { label: 'Dosen', value: 'dosen' },
-  { label: 'Dokter', value: 'dokter' },
-  { label: 'Lainnya', value: 'lainnya' },
-]
+  { label: "Pegawai Negeri", value: "pns" },
+  { label: "Pegawai Swasta", value: "swasta" },
+  { label: "Wiraswasta", value: "wiraswasta" },
+  { label: "Pelajar/Mahasiswa", value: "pelajar" },
+  { label: "Dosen", value: "dosen" },
+  { label: "Dokter", value: "dokter" },
+  { label: "Lainnya", value: "lainnya" },
+];
 
+// Define the possible file field names
+type FileFieldName =
+  | "application_letter"
+  | "research_proposal"
+  | "ethics_clearance_letter"
+  | "final_report_statement_letter";
 
-// Define the possible file field names for type safety in the document picker function
-type FileFieldName = 'application_letter' | 'research_proposal' | 'ethics_clearance_letter' | 'final_report_statement_letter';
-
-// Define a base schema for file uploads, which will be extended with custom validation logic
+// Define a base schema for file uploads
 const fileBaseSchema = z.object({
-  research_type_id: z.string().min(1, { message: "Jenis penelitian wajib dipilih." }),
+  research_type_id: z
+    .string()
+    .min(1, { message: "Jenis penelitian wajib dipilih." }),
   application_letter: z.any(),
   research_proposal: z.any(),
   ethics_clearance_letter: z.any(),
   final_report_statement_letter: z.any(),
-})
-
-// Define the validation schema for the personal information section of the form
-const personalInfoSchema = z.object({
-  name: z.string().trim().min(1, { message: "Nama lengkap harus diisi." }),
-  email: z.email({ message: "Periksa kembali email yang Anda masukkan." }).trim(),
-  phone: z.string().trim().min(1, { message: "Nomor telepon harus diisi." }),
-  national_identity_number: z.string().trim().min(1, { message: "NIK harus diisi." }),
-  date_of_birth: z.date({ error: "Tanggal lahir harus diisi." }),
-  gender: z.enum(['pria', 'wanita'], { error: () => ({ message: "Jenis kelamin harus dipilih." }) }),
-  last_education: z.string().trim().min(1, { message: "Pendidikan terakhir harus dipilih." }),
-  occupation: z.string().trim().min(1, { message: "Pekerjaan harus dipilih." }),
-  research_type_id: z.string().min(1, { message: "Jenis penelitian wajib dipilih." }),
 });
 
-// Define a custom validation schema for file uploads, ensuring they are PDFs and within size limits
+// Define the validation schema for the personal information section
+const personalInfoSchema = z.object({
+  name: z.string().trim().min(1, { message: "Nama lengkap harus diisi." }),
+  email: z
+    .email({ message: "Periksa kembali email yang Anda masukkan." })
+    .trim(),
+  phone: z
+    .string()
+    .trim()
+    .min(10, { message: "Nomor telepon minimal terdiri dari 10 karakter." })
+    .max(15, { message: "Nomor telepon tidak boleh lebih dari 15 karakter." })
+    .refine((value) => /^[0-9]+$/.test(value), {
+      message: "Nomor telepon tidak boleh mengandung huruf atau simbol.",
+    }),
+  date_of_birth: z.date({ error: "Tanggal lahir harus diisi." }),
+  gender: z.enum(["pria", "wanita"], {
+    error: () => ({ message: "Jenis kelamin harus dipilih." }),
+  }),
+  last_education: z
+    .string()
+    .trim()
+    .min(1, { message: "Pendidikan terakhir harus dipilih." }),
+  occupation: z.string().trim().min(1, { message: "Pekerjaan harus dipilih." }),
+  research_type_id: z
+    .string()
+    .min(1, { message: "Jenis penelitian wajib dipilih." }),
+});
+
+// Define a custom validation schema for file uploads
 const fileSchema = fileBaseSchema.superRefine((data, ctx) => {
   const fileValid = (file: SelectedFile | undefined, maxSizeMB: number) => {
     if (!file) {
@@ -84,66 +124,80 @@ const fileSchema = fileBaseSchema.superRefine((data, ctx) => {
     const mimeType = file.mimeType;
     const size = file.size ?? 0;
 
-    return mimeType === "application/pdf" && size <= maxSizeMB * 1024 * 1024;
+    return (
+      (mimeType === "application/pdf" ||
+        mimeType === "image/jpeg" ||
+        mimeType === "image/png" ||
+        mimeType === "image/jpg") &&
+      size <= maxSizeMB * 1024 * 1024
+    );
   };
 
   if (!fileValid(data.application_letter, 2)) {
     ctx.addIssue({
-      path: ['application_letter'],
-      message: "Surat permohonan harus berupa PDF maksimal 2MB",
+      path: ["application_letter"],
+      message:
+        "Surat permohonan wajib dan harus berupa PDF/JPG/PNG maksimal 2MB",
       code: "custom",
     });
   }
 
-  if (data.research_type_id !== '1' && !fileValid(data.research_proposal, 2)) {
+  if (data.research_type_id !== "1" && !fileValid(data.research_proposal, 10)) {
     ctx.addIssue({
-      path: ['research_proposal'],
-      message: "Proposal penelitian harus berupa PDF maksimal 2MB",
+      path: ["research_proposal"],
+      message: "Proposal penelitian harus berupa PDF/JPG/PNG maksimal 10MB",
       code: "custom",
     });
   }
 
-  if (data.research_type_id !== '1' && !fileValid(data.ethics_clearance_letter, 2)) {
+  if (
+    data.research_type_id !== "1" &&
+    !fileValid(data.ethics_clearance_letter, 2)
+  ) {
     ctx.addIssue({
-      path: ['ethics_clearance_letter'],
-      message: "Surat etik wajib dan harus berupa PDF maksimal 2MB",
+      path: ["ethics_clearance_letter"],
+      message: "Surat etik wajib dan harus berupa PDF/JPG/PNG maksimal 2MB",
       code: "custom",
     });
   }
 
-  if (data.research_type_id !== '1' && !fileValid(data.final_report_statement_letter, 2)) {
+  if (
+    data.research_type_id !== "1" &&
+    !fileValid(data.final_report_statement_letter, 2)
+  ) {
     ctx.addIssue({
-      path: ['final_report_statement_letter'],
-      message: "Surat pernyataan wajib dan harus berupa PDF maksimal 2MB",
+      path: ["final_report_statement_letter"],
+      message:
+        "Surat pernyataan wajib dan harus berupa PDF/JPG/PNG maksimal 2MB",
       code: "custom",
     });
   }
-})
-
-// Define the validation schema for the agreement checkboxes at the end of the form
-const agreementSchema = z.object({
-  agree1: z.boolean().refine(val => val === true, 'Harus disetujui'),
-  agree2: z.boolean().refine(val => val === true, 'Harus disetujui'),
 });
 
-// Combine all the individual schemas into a single schema for the entire form
-const FormSchema = [
-  personalInfoSchema,
-  fileSchema,
-  agreementSchema,
-] as const;
+// Define the validation schema for the agreement checkboxes
+const agreementSchema = z.object({
+  agree1: z.boolean().refine((val) => val === true, "Harus disetujui"),
+  agree2: z.boolean().refine((val) => val === true, "Harus disetujui"),
+});
 
-// Create an intersection of all the schemas to form the complete validation schema for the form
+// Combine all the individual schemas
+const FormSchema = [personalInfoSchema, fileSchema, agreementSchema] as const;
+
+// Create an intersection of all the schemas
 const fullSchema = z.intersection(
   z.intersection(FormSchema[0], FormSchema[1]),
-  FormSchema[2]
+  FormSchema[2],
 );
 
-// Infer the TypeScript type for the form data based on the full validation schema
-export type FormDataType = z.infer<typeof fullSchema>
+// Infer the TypeScript type for the form data
+export type FormDataType = z.infer<typeof fullSchema>;
 
 export default function FormScreen() {
-  const backgroundColor = useThemeColor({}, 'background');
+  const auth = useAuth();
+  const submissionContext = useSubmissions();
+  const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text.primary");
+  const borderColor = useThemeColor({}, "components.supportCard.border");
   const today = new Date();
   const defaultBirthDate = new Date(2000, 0, 1);
   const [isLoading, setIsLoading] = useState(false);
@@ -151,173 +205,128 @@ export default function FormScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [step, setStep] = useState(1);
   const [birthDate, setBirthDate] = useState<Date | null>(null);
-  const [selectedRequestLetter, setRequestLetter] = useState<SelectedFile | null>(null);
-  const [selectedProposalLetter, setProposalLetter] = useState<SelectedFile | null>(null);
-  const [selectedConductLetter, setConductLetter] = useState<SelectedFile | null>(null);
-  const [selectedStatementLetter, setStatementLetter] = useState<SelectedFile | null>(null);
+  const [selectedRequestLetter, setRequestLetter] =
+    useState<SelectedFile | null>(null);
+  const [selectedProposalLetter, setProposalLetter] =
+    useState<SelectedFile | null>(null);
+  const [selectedConductLetter, setConductLetter] =
+    useState<SelectedFile | null>(null);
+  const [selectedStatementLetter, setStatementLetter] =
+    useState<SelectedFile | null>(null);
+  const [previewFile, setPreviewFile] = useState<SelectedFile | null>(null);
 
-  // Initialize the form with react-hook-form, using zod for validation and setting default values
+  // Initialize the form with react-hook-form
   const form = useForm<FormDataType>({
     resolver: zodResolver(fullSchema),
-    mode: 'onTouched',
+    mode: "onTouched",
     defaultValues: {
-      name: 'user',
-      email: 'userx1@example.com',
-      phone: '08123456789',
-      national_identity_number: '1234567890123456',
-      last_education: 'sma',
-      occupation: 'pelajar',
-      gender: 'pria',
-      date_of_birth: new Date() || undefined,
-      research_type_id: '1',
+      name: auth?.state.user?.name,
+      email: auth?.state.user?.email,
+      phone: auth?.state.user?.phone || "",
+      last_education: "",
+      occupation: "",
+      gender: undefined,
+      date_of_birth: undefined,
+      research_type_id: "",
       application_letter: undefined,
       research_proposal: undefined,
       ethics_clearance_letter: undefined,
       final_report_statement_letter: undefined,
       agree1: false,
       agree2: false,
-    }
-  })
+    },
+  });
 
   // Watch the selected research type to conditionally require certain file uploads
-  const selectedPurpose = form.watch('research_type_id');
+  const selectedPurpose = form.watch("research_type_id");
 
-  /**
-   * Formats a date value for display
-   * @param value
-   * @returns 
-   */
+  // Handles date formatting for display
   const formatBirthDate = (value: Date | null) => {
-    if (!value) {
-      return 'Pilih tanggal lahir';
-    }
-
-    return value.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
+    if (!value) return "Pilih tanggal lahir";
+    return value.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
     });
   };
 
-  /**
-   * Opens the birth date picker
-   * @returns 
-   */
+  // Handles birth date picking
   const openBirthDatePicker = () => {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       DateTimePickerAndroid.open({
         value: birthDate ?? defaultBirthDate,
-        mode: 'date',
-        display: 'calendar',
+        mode: "date",
+        display: "calendar",
         maximumDate: today,
         onChange: (event: DateTimePickerEvent, selectedDate?: Date) => {
-          if (event.type === 'set' && selectedDate) {
-            form.setValue('date_of_birth', selectedDate, { shouldTouch: true, shouldDirty: true });
+          if (event.type === "set" && selectedDate) {
+            form.setValue("date_of_birth", selectedDate, {
+              shouldTouch: true,
+              shouldDirty: true,
+            });
             setBirthDate(selectedDate);
           }
         },
       });
-
       return;
     }
-
     setDraftBirthDate(birthDate ?? defaultBirthDate);
     setShowDatePicker(true);
   };
 
-  /**
-   * Handles date changes on iOS, updating the draft birth date state
-   * @param _event 
-   * @param selectedDate 
-   */
-  const handleIOSDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+  // Handles date changes on iOS, updating the draft birth date state
+  const handleIOSDateChange = (
+    _event: DateTimePickerChangeEvent,
+    selectedDate: Date,
+  ) => {
     if (selectedDate) {
       setDraftBirthDate(selectedDate);
     }
   };
 
-  /**
-   * Opens the document picker for a specific file field
-   * @param fieldName 
-   * @param setSelectedFile 
-   * @returns 
-   */
-  const pickDocument = async (fieldName: FileFieldName, setSelectedFile: React.Dispatch<React.SetStateAction<SelectedFile | null>>) => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: 'application/pdf',
-      multiple: false,
-      copyToCacheDirectory: true,
-    });
 
-    if (result.canceled || !result.assets?.length) {
-      return;
-    }
 
-    const file = result.assets[0];
-    const selectedFile = {
-      name: file.name ?? 'Berkas tidak bernama',
-      uri: file.uri,
-      size: file.size,
-      mimeType: file.mimeType,
-    };
-
-    setSelectedFile(selectedFile);
-    form.setValue(fieldName, selectedFile, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
-  };
-
-  /**
-   * Renders a card component
-   * @param selectedFile 
-   * @returns 
-   */
-  const fileCard = (selectedFile: SelectedFile | null) => (
-    <View style={styles.fileCard}>
-      <ThemedText type="defaultSemiBold">
-        {selectedFile ? selectedFile.name : 'Belum ada file dipilih'}
-      </ThemedText>
-      <ThemedText
-        type="caption"
-        darkColor={Colors.dark.text.secondary}
-        lightColor={Colors.light.text.secondary}
-        style={{ marginTop: 4 }}>
-        {selectedFile
-          ? `${selectedFile.mimeType ?? 'Jenis file tidak terdeteksi'}${selectedFile.size ? ` · ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB` : ''}`
-          : 'File akan tampil di sini setelah dipilih.'}
-      </ThemedText>
-    </View>
-  )
-
-  /**
-   * Changes the current step/section in the form
-   * @param newStep
-   * @returns
-   */
+  // Handles step navigation in the form
   const changeStep = async (newStep: number) => {
     if (newStep < step) {
-      setStep(newStep)
+      setStep(newStep);
       return;
     }
 
     const stepFields: Record<number, string[]> = {
-      1: ['name', 'email', 'phone', 'national_identity_number', 'date_of_birth', 'gender', 'last_education', 'occupation', 'research_type_id'],
-      2: ['application_letter', 'research_proposal', 'ethics_clearance_letter', 'final_report_statement_letter'],
-      3: ['agree1', 'agree2'],
+      1: [
+        "name",
+        "email",
+        "phone",
+        "national_identity_number",
+        "date_of_birth",
+        "gender",
+        "last_education",
+        "occupation",
+        "research_type_id",
+      ],
+      2: [
+        "application_letter",
+        "research_proposal",
+        "ethics_clearance_letter",
+        "final_report_statement_letter",
+      ],
+      3: ["agree1", "agree2"],
     };
 
     const currentFields = stepFields[step] ?? [];
-    const isValid = await form.trigger(currentFields as any, { shouldFocus: true });
+    const isValid = await form.trigger(currentFields as any, {
+      shouldFocus: true,
+    });
 
     if (isValid && newStep !== step) {
       setStep(newStep);
     }
 
     return;
-  }
+  };
 
-  /**
-   * Handles the form submission, sending the data to the API and managing success/error responses
-   * @param data 
-   */
+  // Handling form submission
   const onSubmit = async (data: FormDataType) => {
     try {
       const payload: ISubmissionPost = {
@@ -329,564 +338,852 @@ export default function FormScreen() {
         name: data.name,
         email: data.email,
         phone: data.phone,
-        national_identity_number: data.national_identity_number,
-        date_of_birth: data.date_of_birth.toISOString().split('T')[0],
+        date_of_birth: data.date_of_birth.toISOString().split("T")[0],
         gender: data.gender,
         last_education: data.last_education,
         occupation: data.occupation,
       };
       setIsLoading(true);
       await applySubmission(payload);
+      await submissionContext?.refreshUserSubmissions();
       form.reset();
       FullscreenAlert({
         title: "Berhasil Terkirim",
-        description: "Rekomendasi penelitian telah berhasil diajukan. Permohonan akan diproses selama 3 hari kerja. Silakan untuk selalu mengecek status pengajuan.",
+        description:
+          "Rekomendasi penelitian telah berhasil diajukan. Permohonan akan diproses selama 3 hari kerja. Silakan untuk selalu mengecek status pengajuan.",
         type: "success",
         buttonHref: "/",
         buttonText: "Kembali ke Beranda",
-      })
+      });
     } catch (error) {
-      console.error('Submission failed:', (error as any).response?.data?.message || error);
-      Alert.alert("Error", "Terjadi kesalahan saat mengajukan rekomendasi. Silakan coba lagi nanti.");
+      console.error(
+        "Submission failed:",
+        (error as any).response?.data?.message || error,
+      );
+      Alert.alert(
+        "Error",
+        "Terjadi kesalahan saat mengajukan rekomendasi. Silakan coba lagi nanti.",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <ScrollView style={{ paddingVertical: 20 }} contentInsetAdjustmentBehavior="automatic">
-      <View style={{ gap: 8, paddingHorizontal: 24, paddingBottom: 100 }}>
+    <>
+      <ScrollView
+        style={{ paddingVertical: 20, backgroundColor: backgroundColor }}
+        contentInsetAdjustmentBehavior="automatic"
+      >
+        <ThemedView
+          style={{ gap: 8, paddingHorizontal: 24, paddingBottom: 100 }}
+        >
+          {/* Header */}
+          <ThemedView
+            variant="card"
+            style={[styles.card, { gap: 8, marginBottom: 8 }]}
+          >
+            <ThemedText type="title4" style={{}}>
+              Formulir Rekomendasi Penelitian
+            </ThemedText>
+            <ThemedText
+              type="subheadline"
+              darkColor={Colors.dark.text.secondary}
+              lightColor={Colors.light.text.secondary}
+              style={{ textAlign: "left" }}
+            >
+              Silakan isi formulir di bawah ini untuk mengajukan rekomendasi.
+              Rekomendasi akan kami proses dalam waktu 1x24 jam, dan selesai
+              dalam waktu 3 Hari Kerja. Pastikan semua informasi yang Anda
+              berikan akurat dan lengkap untuk mempercepat proses pengajuan.
+            </ThemedText>
+            <ThemedText
+              type="subheadline"
+              darkColor={Colors.dark.text.secondary}
+              lightColor={Colors.light.text.secondary}
+              style={{ textAlign: "left" }}
+            >
+              Jika Anda memiliki pertanyaan atau membutuhkan bantuan, hubungi
+              kami melalui tombol Whatsapp di bawah.
+            </ThemedText>
+            <ThemedButton
+              variant="secondary"
+              icon={
+                <Image
+                  source={require("@/assets/images/whatsapp.png")}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    marginEnd: 4,
+                    marginStart: -2,
+                  }}
+                />
+              }
+              size="small"
+              style={{ alignSelf: "flex-start" }}
+              onPress={() => {
+                Linking.openURL(
+                  `http://api.whatsapp.com/send?phone=${PHONE_NUMBER}`,
+                );
+              }}
+            >
+              Whatsapp
+            </ThemedButton>
+            <ThemedText
+              type="caption"
+              darkColor={Colors.accentRed}
+              lightColor={Colors.accentRed}
+            >
+              Kolom *) wajib diisi
+            </ThemedText>
+          </ThemedView>
 
-        {/* Header */}
-        <ThemedView style={[styles.card, { gap: 8, marginBottom: 8 }]}>
-          <ThemedText type="title4" style={{}}>
-            Formulir Rekomendasi Penelitian
-          </ThemedText>
-          <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary} style={{ textAlign: 'left' }}>
-            Silakan isi formulir di bawah ini untuk mengajukan rekomendasi. Rekomendasi akan kami proses dalam waktu 1x24 jam, dan selesai dalam waktu 3 Hari Kerja. Pastikan semua informasi yang Anda berikan akurat dan lengkap untuk mempercepat proses pengajuan.
-          </ThemedText>
-          <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary} style={{ textAlign: 'left' }}>
-            Jika Anda memiliki pertanyaan atau membutuhkan bantuan, hubungi kami melalui tombol Whatsapp di bawah.
-          </ThemedText>
-          <ThemedButton
-            variant="secondary"
-            icon={(<Image source={require('@/assets/images/whatsapp.png')} style={{ width: 20, height: 20, marginEnd: 4, marginStart: -2 }} />)}
-            size="small"
-            style={{ alignSelf: 'flex-start' }}
-            onPress={() => { }}>
-            Whatsapp
-          </ThemedButton>
-          <ThemedText type="caption" darkColor={Colors.accentRed} lightColor={Colors.accentRed}>
-            Kolom *) wajib diisi
-          </ThemedText>
-        </ThemedView>
-
-        {/* Step 1 Fields */}
-        {step === 1 && (
-          <View style={{ gap: 16 }}>
-            {/* Email */}
-            <ThemedView style={styles.card}>
-              <Controller
-                control={form.control}
-                name="email"
-                render={({ field, fieldState }) => (
-                  <ThemedTextInput
-                    title="Email"
-                    variant="transparent"
-                    placeholder="Masukan email"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    errorMessage={fieldState.error?.message}
-                    autoComplete="email"
-                    keyboardType="email-address"
-                    lightColor={backgroundColor}
-                    darkColor={backgroundColor}
-                    underline
-                    required />
-                )} />
-            </ThemedView>
-            {/* Nama Lengkap */}
-            <ThemedView style={styles.card}>
-              <Controller
-                control={form.control}
-                name="name"
-                render={({ field, fieldState }) => (
-                  <ThemedTextInput
-                    title="Nama Lengkap"
-                    variant="transparent"
-                    placeholder="Masukan nama lengkap"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    autoComplete="name"
-                    lightColor={backgroundColor}
-                    darkColor={backgroundColor}
-                    underline
-                    errorMessage={fieldState.error?.message}
-                    required />
-                )} />
-            </ThemedView>
-            {/* Nomor Telepon */}
-            <ThemedView style={styles.card}>
-              <Controller
-                control={form.control}
-                name="phone"
-                render={({ field, fieldState }) => (
-                  <ThemedTextInput
-                    title="Nomor Telepon"
-                    variant="transparent"
-                    placeholder="Masukan nomor telepon"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    autoComplete="tel"
-                    keyboardType="phone-pad"
-                    lightColor={backgroundColor}
-                    darkColor={backgroundColor}
-                    errorMessage={fieldState.error?.message}
-                    underline
-                    required />
-                )} />
-            </ThemedView>
-            {/* NIK */}
-            <ThemedView style={styles.card}>
-              <Controller
-                control={form.control}
-                name="national_identity_number"
-                render={({ field, fieldState }) => (
-                  <ThemedTextInput
-                    title="Nomor Induk Kependudukan (NIK)"
-                    variant="transparent"
-                    placeholder="Masukan nomor induk kependudukan"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    autoComplete="off"
-                    keyboardType="number-pad"
-                    lightColor={backgroundColor}
-                    darkColor={backgroundColor}
-                    errorMessage={fieldState.error?.message}
-                    underline
-                    required />
-                )} />
-            </ThemedView>
-            {/* Tanggal Lahir */}
-            <ThemedView style={styles.card}>
-              <Controller
-                control={form.control}
-                name="date_of_birth"
-                render={({ field, fieldState }) => (
-                  <>
-                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                      Tanggal Lahir
-                      <Text style={{ color: Colors.accentRed }}>
-                        {' *'}
-                      </Text>
-                    </ThemedText>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={openBirthDatePicker}
-                      style={({ pressed }) => [
-                        styles.dateField,
-                        fieldState.error ? { borderColor: Colors.accentRed, borderWidth: 1 } : null,
-                        { backgroundColor },
-                        pressed && styles.dateFieldPressed,
-                      ]}>
-                      <View style={styles.dateFieldContent}>
-                        <ThemedText
-                          type={'default'}
-                          lightColor={field.value ? undefined : Colors.light.text.secondary}
-                          darkColor={field.value ? undefined : Colors.dark.text.secondary}
-                        >
-                          {formatBirthDate(field.value)}
-                        </ThemedText>
-                        <ThemedText lightColor={Colors.light.text.secondary} darkColor={Colors.dark.text.secondary}>
-                          ▾
-                        </ThemedText>
-                      </View>
-                    </Pressable>
-                    {fieldState.error?.message && (
-                      <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
-                        {fieldState.error.message}
-                      </Text>
-                    )}
-                  </>
-                )} />
-
-            </ThemedView>
-            {/* Jenis Kelamin */}
-            <ThemedView style={styles.card}>
-              <Controller
-                control={form.control}
-                name="gender"
-                render={({ field, fieldState }) => (
-                  <>
-                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                      Jenis Kelamin
-                      <Text style={{ color: Colors.accentRed }}>
-                        {' *'}
-                      </Text>
-                    </ThemedText>
-                    <SelectCard
-                      options={[
-                        { label: 'Laki-laki', value: 'pria' },
-                        { label: 'Perempuan', value: 'wanita' },
-                      ]}
-                      selectedValue={field.value}
-                      onError={!!fieldState.error}
-                      onValueChange={field.onChange}
-                    />
-                    {fieldState.error?.message && (
-                      <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
-                        {fieldState.error.message}
-                      </Text>
-                    )}
-                  </>
-                )} />
-            </ThemedView>
-            {/* Pendidikan Terakhir */}
-            <ThemedView style={styles.card}>
-              <Controller
-                control={form.control}
-                name="last_education"
-                render={({ field, fieldState }) => (
-                  <>
-                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                      Pendidikan Terakhir
-                      <Text style={{ color: Colors.accentRed }}>
-                        {' *'}
-                      </Text>
-                    </ThemedText>
-                    <SelectCard
-                      options={LastEducationOption}
-                      onError={!!fieldState.error}
-                      selectedValue={field.value}
-                      onValueChange={field.onChange}
-                    />
-                  </>
-                )} />
-            </ThemedView>
-            {/* Pekerjaan */}
-            <ThemedView style={styles.card}>
-              <Controller
-                control={form.control}
-                name="occupation"
-                render={({ field, fieldState }) => (
-                  <>
-                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                      Pekerjaan
-                      <Text style={{ color: Colors.accentRed }}>
-                        {' *'}
-                      </Text>
-                    </ThemedText>
-                    <Combobox
-                      options={OccupationOption}
-                      selectedValue={field.value}
-                      onValueChange={field.onChange}
+          {/* Step 1 Fields */}
+          {step === 1 && (
+            <View style={{ gap: 16 }}>
+              {/* Email */}
+              <ThemedView style={styles.card} variant="card">
+                <Controller
+                  control={form.control}
+                  name="email"
+                  render={({ field, fieldState }) => (
+                    <ThemedTextInput
+                      title="Email"
+                      variant="transparent"
+                      placeholder="Masukan email"
+                      value={field.value}
+                      onChangeText={field.onChange}
                       errorMessage={fieldState.error?.message}
-                      placeholder="Pilih pekerjaan"
-                      searchPlaceholder="Cari pekerjaan"
-                      titlePlaceholder="Pilih Pekerjaan Anda"
+                      autoComplete="email"
+                      keyboardType="email-address"
+                      lightColor={backgroundColor}
+                      darkColor={backgroundColor}
+                      underline
+                      required
                     />
-                  </>
-                )} />
-            </ThemedView>
-            {/* Pekerjaan */}
-            <ThemedView style={styles.card}>
-              <Controller
-                control={form.control}
-                name="research_type_id"
-                render={({ field, fieldState }) => (
-                  <>
-                    <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-                      Tujuan Pengajuan
-                      <Text style={{ color: Colors.accentRed }}>
-                        {' *'}
-                      </Text>
-                    </ThemedText>
-                    <SelectCard
-                      options={[
-                        { label: 'Permohonan Data Awal/Studi Pendahuluan', value: '1' },
-                        { label: 'Penelitian Tugas Akhir', value: '2' },
-                        { label: 'Penelitian dengan pendanaan APBD/APBN', value: '3' },
-                        { label: 'Penelitian mendapatkan SKP dari DPMPTSP', value: '4' },
-                      ]}
-                      selectedValue={field.value}
-                      column={1}
-                      onError={!!fieldState.error}
-                      textAlign='flex-start'
-                      onValueChange={field.onChange}
+                  )}
+                />
+              </ThemedView>
+              {/* Nama Lengkap */}
+              <ThemedView style={styles.card} variant="card">
+                <Controller
+                  control={form.control}
+                  name="name"
+                  render={({ field, fieldState }) => (
+                    <ThemedTextInput
+                      title="Nama Lengkap"
+                      variant="transparent"
+                      placeholder="Masukan nama lengkap"
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      autoComplete="name"
+                      lightColor={backgroundColor}
+                      darkColor={backgroundColor}
+                      underline
+                      errorMessage={fieldState.error?.message}
+                      required
                     />
-                    {fieldState.error?.message && (
-                      <Text style={{ marginTop: 4, color: Colors.accentRed, fontSize: 12 }}>
-                        {fieldState.error.message}
-                      </Text>
-                    )}
-                  </>
-                )} />
-            </ThemedView>
-            {/* Birthdate Modal */}
-            <Modal
-              animationType="fade"
-              transparent
-              visible={showDatePicker}
-              onRequestClose={() => setShowDatePicker(false)}>
-              <Pressable style={styles.modalBackdrop} onPress={() => setShowDatePicker(false)}>
-                <Pressable style={[styles.modalSheet, { backgroundColor }]} onPress={() => undefined}>
-                  <SafeAreaView>
-                    <View style={styles.modalHeader}>
-                      <Pressable onPress={() => setShowDatePicker(false)} hitSlop={10}>
-                        <ThemedText type="defaultSemiBold" lightColor={Colors.light.text.secondary} darkColor={Colors.dark.text.secondary}>
-                          Batal
-                        </ThemedText>
-                      </Pressable>
-                      <ThemedText type="defaultSemiBold">
-                        Pilih tanggal lahir
+                  )}
+                />
+              </ThemedView>
+              {/* Nomor Telepon */}
+              <ThemedView style={styles.card} variant="card">
+                <Controller
+                  control={form.control}
+                  name="phone"
+                  render={({ field, fieldState }) => (
+                    <ThemedTextInput
+                      title="Nomor Telepon"
+                      variant="transparent"
+                      placeholder="Masukan nomor telepon"
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      autoComplete="tel"
+                      onBlur={() => {
+                        field.onBlur();
+                        form.trigger("phone");
+                      }}
+                      keyboardType="phone-pad"
+                      lightColor={backgroundColor}
+                      darkColor={backgroundColor}
+                      errorMessage={fieldState.error?.message}
+                      underline
+                      required
+                    />
+                  )}
+                />
+              </ThemedView>
+              {/* Tanggal Lahir */}
+              <ThemedView style={styles.card} variant="card">
+                <Controller
+                  control={form.control}
+                  name="date_of_birth"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <ThemedText
+                        type="defaultSemiBold"
+                        style={{ marginBottom: 8 }}
+                      >
+                        Tanggal Lahir
+                        <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
                       </ThemedText>
                       <Pressable
-                        onPress={() => {
-                          form.setValue('date_of_birth', draftBirthDate, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
-                          setBirthDate(draftBirthDate);
-                          setShowDatePicker(false);
-                        }}
-                        hitSlop={10}
+                        accessibilityRole="button"
+                        onPress={openBirthDatePicker}
+                        style={({ pressed }) => [
+                          styles.dateField,
+                          fieldState.error
+                            ? { borderColor: Colors.accentRed, borderWidth: 1 }
+                            : null,
+                          { borderColor: borderColor },
+                          pressed && styles.dateFieldPressed,
+                        ]}
                       >
-                        <ThemedText type="defaultSemiBold" lightColor={Colors.accentBlue} darkColor={Colors.accentBlue}>
-                          Simpan
-                        </ThemedText>
+                        <View style={styles.dateFieldContent}>
+                          <ThemedText
+                            type={"default"}
+                            lightColor={
+                              field.value
+                                ? undefined
+                                : Colors.light.text.secondary
+                            }
+                            darkColor={
+                              field.value
+                                ? undefined
+                                : Colors.dark.text.secondary
+                            }
+                          >
+                            {formatBirthDate(field.value)}
+                          </ThemedText>
+                          <ThemedText
+                            lightColor={Colors.light.text.secondary}
+                            darkColor={Colors.dark.text.secondary}
+                          >
+                            ▾
+                          </ThemedText>
+                        </View>
                       </Pressable>
-                    </View>
-                    <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                      <DateTimePicker
-                        value={draftBirthDate}
-                        mode="date"
-                        display="spinner"
-                        onChange={handleIOSDateChange}
-                        maximumDate={today}
-                        style={{ backgroundColor }}
+                      {fieldState.error?.message && (
+                        <Text
+                          style={{
+                            marginTop: 4,
+                            color: Colors.accentRed,
+                            fontSize: 12,
+                          }}
+                        >
+                          {fieldState.error.message}
+                        </Text>
+                      )}
+                    </>
+                  )}
+                />
+              </ThemedView>
+              {/* Jenis Kelamin */}
+              <ThemedView style={styles.card} variant="card">
+                <Controller
+                  control={form.control}
+                  name="gender"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <ThemedText
+                        type="defaultSemiBold"
+                        style={{ marginBottom: 8 }}
+                      >
+                        Jenis Kelamin
+                        <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
+                      </ThemedText>
+                      <SelectCard
+                        background="transparent"
+                        options={[
+                          { label: "Laki-laki", value: "pria" },
+                          { label: "Perempuan", value: "wanita" },
+                        ]}
+                        selectedValue={field.value}
+                        onError={!!fieldState.error}
+                        onValueChange={field.onChange}
                       />
-                    </View>
-                  </SafeAreaView>
+                      {fieldState.error?.message && (
+                        <Text
+                          style={{
+                            marginTop: 4,
+                            color: Colors.accentRed,
+                            fontSize: 12,
+                          }}
+                        >
+                          {fieldState.error.message}
+                        </Text>
+                      )}
+                    </>
+                  )}
+                />
+              </ThemedView>
+              {/* Pendidikan Terakhir */}
+              <ThemedView style={styles.card} variant="card">
+                <Controller
+                  control={form.control}
+                  name="last_education"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <ThemedText
+                        type="defaultSemiBold"
+                        style={{ marginBottom: 8 }}
+                      >
+                        Pendidikan Terakhir
+                        <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
+                      </ThemedText>
+                      <SelectCard
+                        background="transparent"
+                        options={LastEducationOption}
+                        onError={!!fieldState.error}
+                        selectedValue={field.value}
+                        onValueChange={field.onChange}
+                      />
+                    </>
+                  )}
+                />
+              </ThemedView>
+              {/* Pekerjaan */}
+              <ThemedView style={styles.card} variant="card">
+                <Controller
+                  control={form.control}
+                  name="occupation"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <ThemedText
+                        type="defaultSemiBold"
+                        style={{ marginBottom: 8 }}
+                      >
+                        Pekerjaan
+                        <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
+                      </ThemedText>
+                      <Combobox
+                        background="transparent"
+                        options={OccupationOption}
+                        selectedValue={field.value}
+                        onValueChange={field.onChange}
+                        errorMessage={fieldState.error?.message}
+                        placeholder="Pilih pekerjaan"
+                        searchPlaceholder="Cari pekerjaan"
+                        titlePlaceholder="Pilih Pekerjaan Anda"
+                      />
+                    </>
+                  )}
+                />
+              </ThemedView>
+              {/* Pekerjaan */}
+              <ThemedView style={styles.card} variant="card">
+                <Controller
+                  control={form.control}
+                  name="research_type_id"
+                  render={({ field, fieldState }) => (
+                    <>
+                      <ThemedText
+                        type="defaultSemiBold"
+                        style={{ marginBottom: 8 }}
+                      >
+                        Tujuan Pengajuan
+                        <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
+                      </ThemedText>
+                      <SelectCard
+                        background="transparent"
+                        options={[
+                          {
+                            label: "Permohonan Data Awal/Studi Pendahuluan",
+                            value: "1",
+                          },
+                          { label: "Penelitian Tugas Akhir", value: "2" },
+                          {
+                            label: "Penelitian dengan pendanaan APBD/APBN",
+                            value: "3",
+                          },
+                          {
+                            label: "Penelitian mendapatkan SKP dari DPMPTSP",
+                            value: "4",
+                          },
+                        ]}
+                        selectedValue={field.value}
+                        column={1}
+                        onError={!!fieldState.error}
+                        textAlign="flex-start"
+                        onValueChange={field.onChange}
+                      />
+                      {fieldState.error?.message && (
+                        <Text
+                          style={{
+                            marginTop: 4,
+                            color: Colors.accentRed,
+                            fontSize: 12,
+                          }}
+                        >
+                          {fieldState.error.message}
+                        </Text>
+                      )}
+                    </>
+                  )}
+                />
+              </ThemedView>
+              {/* Birthdate Modal */}
+              <Modal
+                animationType="fade"
+                transparent
+                visible={showDatePicker}
+                onRequestClose={() => setShowDatePicker(false)}
+              >
+                <Pressable
+                  style={styles.modalBackdrop}
+                  onPress={() => setShowDatePicker(false)}
+                >
+                  <Pressable
+                    style={[styles.modalSheet, { backgroundColor }]}
+                    onPress={() => undefined}
+                  >
+                    <SafeAreaView>
+                      <View style={styles.modalHeader}>
+                        <Pressable
+                          onPress={() => setShowDatePicker(false)}
+                          hitSlop={10}
+                        >
+                          <ThemedText
+                            type="defaultSemiBold"
+                            lightColor={Colors.light.text.secondary}
+                            darkColor={Colors.dark.text.secondary}
+                          >
+                            Batal
+                          </ThemedText>
+                        </Pressable>
+                        <ThemedText type="defaultSemiBold">
+                          Pilih tanggal lahir
+                        </ThemedText>
+                        <Pressable
+                          onPress={() => {
+                            form.setValue("date_of_birth", draftBirthDate, {
+                              shouldTouch: true,
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                            setBirthDate(draftBirthDate);
+                            setShowDatePicker(false);
+                          }}
+                          hitSlop={10}
+                        >
+                          <ThemedText
+                            type="defaultSemiBold"
+                            lightColor={Colors.accentBlue}
+                            darkColor={Colors.accentBlue}
+                          >
+                            Simpan
+                          </ThemedText>
+                        </Pressable>
+                      </View>
+                      <View
+                        style={{
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <DateTimePicker
+                          value={draftBirthDate}
+                          mode="date"
+                          display="spinner"
+                          onValueChange={handleIOSDateChange}
+                          maximumDate={today}
+                          style={{ backgroundColor }}
+                          textColor={textColor}
+                        />
+                      </View>
+                    </SafeAreaView>
+                  </Pressable>
                 </Pressable>
-              </Pressable>
-            </Modal>
-          </View>
-        )}
-
-        {/* Step 2 Fields */}
-        {step === 2 && (
-          <View style={{ gap: 8 }}>
-            <ThemedView style={[styles.card, { gap: 14 }]}>
-              <View style={{ gap: 4 }}>
-                <ThemedText type="defaultSemiBold">
-                  Surat Permohonan Rekomendasi
-                  <Text style={{ color: Colors.accentRed }}>
-                    {' *'}
-                  </Text>
-                </ThemedText>
-                <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-                  Unggah berkas dalam format PDF, dengan ukuran maksimal 2 MB.
-                </ThemedText>
-              </View>
-              <ThemedButton variant="secondary" onPress={() => pickDocument('application_letter', setRequestLetter)} style={{ alignSelf: 'flex-start' }}>
-                Pilih file dari perangkat
-              </ThemedButton>
-              {fileCard(selectedRequestLetter)}
-            </ThemedView>
-            {selectedPurpose !== '1' && (
-              <View style={{ gap: 8 }}>
-                <ThemedView style={[styles.card, { gap: 14 }]}>
-                  <View style={{ gap: 4 }}>
-                    <ThemedText type="defaultSemiBold">
-                      Surat Proposal Penelitian
-                      <Text style={{ color: Colors.accentRed }}>
-                        {' *'}
-                      </Text>
-                    </ThemedText>
-                    <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-                      Unggah berkas dalam format PDF, dengan ukuran maksimal 2 MB.
-                    </ThemedText>
-                  </View>
-                  <ThemedButton variant="secondary" onPress={() => pickDocument('research_proposal', setProposalLetter)} style={{ alignSelf: 'flex-start' }}>
-                    Pilih file dari perangkat
-                  </ThemedButton>
-                  {fileCard(selectedProposalLetter)}
-                </ThemedView>
-                <ThemedView style={[styles.card, { gap: 14 }]}>
-                  <View style={{ gap: 4 }}>
-                    <ThemedText type="defaultSemiBold">
-                      Surat Keterangan Etik
-                      <Text style={{ color: Colors.accentRed }}>
-                        {' *'}
-                      </Text>
-                    </ThemedText>
-                    <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-                      Unggah berkas dalam format PDF, dengan ukuran maksimal 2 MB.
-                    </ThemedText>
-                  </View>
-                  <ThemedButton variant="secondary" onPress={() => pickDocument('ethics_clearance_letter', setConductLetter)} style={{ alignSelf: 'flex-start' }}>
-                    Pilih file dari perangkat
-                  </ThemedButton>
-                  {fileCard(selectedConductLetter)}
-                </ThemedView>
-                <ThemedView style={[styles.card, { gap: 14 }]}>
-                  <View style={{ gap: 4 }}>
-                    <ThemedText type="defaultSemiBold">
-                      Surat Pernyataan Laporan Akhir
-                      <Text style={{ color: Colors.accentRed }}>
-                        {' *'}
-                      </Text>
-                    </ThemedText>
-                    <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-                      Unggah berkas dalam format PDF, dengan ukuran maksimal 2 MB.
-                    </ThemedText>
-                  </View>
-                  <ThemedButton variant="secondary" onPress={() => pickDocument('final_report_statement_letter', setStatementLetter)} style={{ alignSelf: 'flex-start' }}>
-                    Pilih file dari perangkat
-                  </ThemedButton>
-                  {fileCard(selectedStatementLetter)}
-                </ThemedView>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Step 3 Fields */}
-        {step === 3 && (
-          <View style={{ gap: 8 }}>
-            <ThemedView style={[styles.card, { gap: 16 }]}>
-              <ThemedText type="subheadline">
-                Dengan mengisi formulir ini, Anda menyetujui syarat dan ketentuan yang berlaku. Pastikan semua informasi yang Anda berikan akurat dan lengkap untuk mempercepat proses pengajuan. Pengajuan akan kami proses dalam waktu 1x24 jam, dan selesai dalam waktu 3 Hari Kerja.
-              </ThemedText>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
-                <Controller control={form.control} name="agree1" render={({ field }) => {
-                  return (
-                    <>
-                      <Checkbox
-                        hitSlop={10}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        style={{ marginTop: 4 }}
-                      />
-                      <Pressable style={{ flex: 1, minWidth: 0 }} onPress={() => {
-                        field.onChange(!field.value);
-                      }}>
-                        <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-                          Saya mengetahui bahwa proses pengajuan membutuhkan waktu maximal 3 hari kerja
-                        </ThemedText>
-                      </Pressable>
-                    </>
-
-                  );
-                }} />
-
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
-                <Controller control={form.control} name="agree2" render={({ field }) => {
-                  return (
-                    <>
-                      <Checkbox
-                        hitSlop={10}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        style={{ marginTop: 4 }}
-                      />
-                      <Pressable style={{ flex: 1, minWidth: 0 }} onPress={() => {
-                        field.onChange(!field.value);
-                      }}>
-                        <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-                          Saya menyetujui bahwa segala bentuk pengajuan ini akan menjadi hak milik dinas
-                        </ThemedText>
-                      </Pressable>
-                    </>
-                  );
-                }} />
-              </View>
-            </ThemedView>
-          </View>
-        )}
-
-        {/* Step Indicator & Button */}
-        <View style={{ marginStart: 20 }}>
-          <ThemedText type="subheadline" darkColor={Colors.dark.text.secondary} lightColor={Colors.light.text.secondary}>
-            Langkah {step} dari 3
-          </ThemedText>
-        </View>
-        <View style={{ marginTop: 4, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
-          {step > 1 && (
-            <ThemedButton variant="secondary" onPress={() => {
-              if (step > 1) {
-                changeStep(step - 1);
-              }
-            }}>
-              Kembali
-            </ThemedButton>
+              </Modal>
+            </View>
           )}
-          {step < 3 && (
-            <ThemedButton variant="primary" onPress={() => {
-              if (step < 3) {
-                changeStep(step + 1);
-              }
-            }}>
-              Selanjutnya
-            </ThemedButton>
-          )}
-          {step === 3 && (
-            <ThemedButton
-              variant="primary"
-              disabled={isLoading}
-              onPress={() => {
-                form.handleSubmit(onSubmit)();
-              }}>
-              {isLoading ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+
+          {/* Step 2 Fields */}
+          {step === 2 && (
+            <View style={{ gap: 8 }}>
+              <ThemedView variant="card" style={[styles.card, { gap: 14 }]}>
+                <View style={{ gap: 4 }}>
                   <ThemedText type="defaultSemiBold">
-                    {" "}
+                    Surat Permohonan Rekomendasi
+                    <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
                   </ThemedText>
-                  <ActivityIndicator size="small" color="white" />
-                  <ThemedText type="defaultSemiBold">
-                    {" "}
+                  <ThemedText
+                    type="subheadline"
+                    darkColor={Colors.dark.text.secondary}
+                    lightColor={Colors.light.text.secondary}
+                  >
+                    Unggah berkas dalam format JPG/PDF, dengan ukuran maksimal 2
+                    MB.
                   </ThemedText>
                 </View>
-              ) : (
-                'Kirim'
+                <FileUploader
+                  selectedFile={selectedRequestLetter}
+                  onFileSelect={(file) => {
+                    setRequestLetter(file);
+                    form.setValue("application_letter", file as any, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                  }}
+                  onPreview={(file) => setPreviewFile(file)}
+                  textColor={textColor}
+                />
+                {form.formState.errors.application_letter?.message && (
+                  <ThemedText
+                    type="caption"
+                    style={{ color: Colors.accentRed, marginTop: -6 }}
+                  >
+                    {form.formState.errors.application_letter.message as string}
+                  </ThemedText>
+                )}
+              </ThemedView>
+              {selectedPurpose !== "1" && (
+                <View style={{ gap: 8 }}>
+                  <ThemedView variant="card" style={[styles.card, { gap: 14 }]}>
+                    <View style={{ gap: 4 }}>
+                      <ThemedText type="defaultSemiBold">
+                        Surat Proposal Penelitian
+                        <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
+                      </ThemedText>
+                      <ThemedText
+                        type="subheadline"
+                        darkColor={Colors.dark.text.secondary}
+                        lightColor={Colors.light.text.secondary}
+                      >
+                        Unggah berkas dalam format PDF, dengan ukuran maksimal
+                        10 MB.
+                      </ThemedText>
+                    </View>
+                    <FileUploader
+                      selectedFile={selectedProposalLetter}
+                      onFileSelect={(file) => {
+                        setProposalLetter(file);
+                        form.setValue("research_proposal", file as any, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                      }}
+                      onPreview={(file) => setPreviewFile(file)}
+                      allowCamera={false}
+                      allowedTypes={["application/pdf"]}
+                      maxSizeMB={10}
+                      textColor={textColor}
+                    />
+                    {form.formState.errors.research_proposal?.message && (
+                      <ThemedText
+                        type="caption"
+                        style={{ color: Colors.accentRed, marginTop: -6 }}
+                      >
+                        {
+                          form.formState.errors.research_proposal
+                            .message as string
+                        }
+                      </ThemedText>
+                    )}
+                  </ThemedView>
+                  <ThemedView variant="card" style={[styles.card, { gap: 14 }]}>
+                    <View style={{ gap: 4 }}>
+                      <ThemedText type="defaultSemiBold">
+                        Surat Keterangan Etik
+                        <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
+                      </ThemedText>
+                      <ThemedText
+                        type="subheadline"
+                        darkColor={Colors.dark.text.secondary}
+                        lightColor={Colors.light.text.secondary}
+                      >
+                        Unggah berkas dalam format PDF, dengan ukuran maksimal 2
+                        MB.
+                      </ThemedText>
+                    </View>
+                    <FileUploader
+                      selectedFile={selectedConductLetter}
+                      onFileSelect={(file) => {
+                        setConductLetter(file);
+                        form.setValue("ethics_clearance_letter", file as any, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                      }}
+                      onPreview={(file) => setPreviewFile(file)}
+                      textColor={textColor}
+                    />
+                    {form.formState.errors.ethics_clearance_letter?.message && (
+                      <ThemedText
+                        type="caption"
+                        style={{ color: Colors.accentRed, marginTop: -6 }}
+                      >
+                        {
+                          form.formState.errors.ethics_clearance_letter
+                            .message as string
+                        }
+                      </ThemedText>
+                    )}
+                  </ThemedView>
+                  <ThemedView variant="card" style={[styles.card, { gap: 14 }]}>
+                    <View style={{ gap: 4 }}>
+                      <ThemedText type="defaultSemiBold">
+                        Surat Pernyataan Laporan Akhir
+                        <Text style={{ color: Colors.accentRed }}>{" *"}</Text>
+                      </ThemedText>
+                      <ThemedText
+                        type="subheadline"
+                        darkColor={Colors.dark.text.secondary}
+                        lightColor={Colors.light.text.secondary}
+                      >
+                        Unggah berkas dalam format PDF, dengan ukuran maksimal 2
+                        MB.
+                      </ThemedText>
+                    </View>
+                    <FileUploader
+                      selectedFile={selectedStatementLetter}
+                      onFileSelect={(file) => {
+                        setStatementLetter(file);
+                        form.setValue("final_report_statement_letter", file as any, { shouldTouch: true, shouldDirty: true, shouldValidate: true });
+                      }}
+                      onPreview={(file) => setPreviewFile(file)}
+                      textColor={textColor}
+                    />
+                    {form.formState.errors.final_report_statement_letter
+                      ?.message && (
+                      <ThemedText
+                        type="caption"
+                        style={{ color: Colors.accentRed, marginTop: -6 }}
+                      >
+                        {
+                          form.formState.errors.final_report_statement_letter
+                            .message as string
+                        }
+                      </ThemedText>
+                    )}
+                  </ThemedView>
+                </View>
               )}
-            </ThemedButton>
+            </View>
+          )}
+
+          {/* Step 3 Fields */}
+          {step === 3 && (
+            <View style={{ gap: 8 }}>
+              <ThemedView variant={"card"} style={[styles.card, { gap: 16 }]}>
+                <ThemedText type="subheadline">
+                  Dengan mengisi formulir ini, Anda menyetujui syarat dan
+                  ketentuan yang berlaku. Pastikan semua informasi yang Anda
+                  berikan akurat dan lengkap untuk mempercepat proses pengajuan.
+                  Pengajuan akan kami proses dalam waktu 1x24 jam, dan selesai
+                  dalam waktu 3 Hari Kerja.
+                </ThemedText>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: 16,
+                  }}
+                >
+                  <Controller
+                    control={form.control}
+                    name="agree1"
+                    render={({ field }) => {
+                      return (
+                        <>
+                          <Checkbox
+                            hitSlop={10}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            style={{ marginTop: 4 }}
+                          />
+                          <Pressable
+                            style={{ flex: 1, minWidth: 0 }}
+                            onPress={() => {
+                              field.onChange(!field.value);
+                            }}
+                          >
+                            <ThemedText type="subheadline">
+                              Saya mengetahui bahwa proses pengajuan membutuhkan
+                              waktu maximal 3 hari kerja
+                            </ThemedText>
+                          </Pressable>
+                        </>
+                      );
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: 16,
+                  }}
+                >
+                  <Controller
+                    control={form.control}
+                    name="agree2"
+                    render={({ field }) => {
+                      return (
+                        <>
+                          <Checkbox
+                            hitSlop={10}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            style={{ marginTop: 4 }}
+                          />
+                          <Pressable
+                            style={{ flex: 1, minWidth: 0 }}
+                            onPress={() => {
+                              field.onChange(!field.value);
+                            }}
+                          >
+                            <ThemedText type="subheadline">
+                              Saya menyetujui bahwa segala bentuk pengajuan ini
+                              akan menjadi hak milik dinas
+                            </ThemedText>
+                          </Pressable>
+                        </>
+                      );
+                    }}
+                  />
+                </View>
+              </ThemedView>
+            </View>
+          )}
+
+          {/* Step Indicator & Button */}
+          <View style={{ marginStart: 20 }}>
+            <ThemedText
+              type="subheadline"
+              darkColor={Colors.dark.text.secondary}
+              lightColor={Colors.light.text.secondary}
+            >
+              Langkah {step} dari 3
+            </ThemedText>
+          </View>
+          <View
+            style={{
+              marginTop: 4,
+              flexDirection: "row",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            {step > 1 && (
+              <ThemedButton
+                variant="secondary"
+                onPress={() => {
+                  if (step > 1) {
+                    changeStep(step - 1);
+                  }
+                }}
+              >
+                Kembali
+              </ThemedButton>
+            )}
+            {step < 3 && (
+              <ThemedButton
+                variant="primary"
+                onPress={() => {
+                  if (step < 3) {
+                    changeStep(step + 1);
+                  }
+                }}
+              >
+                Selanjutnya
+              </ThemedButton>
+            )}
+            {step === 3 && (
+              <ThemedButton
+                variant="primary"
+                disabled={isLoading}
+                onPress={() => {
+                  form.handleSubmit(onSubmit)();
+                }}
+              >
+                {isLoading ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <ThemedText type="defaultSemiBold"> </ThemedText>
+                    <ActivityIndicator size="small" color="white" />
+                    <ThemedText type="defaultSemiBold"> </ThemedText>
+                  </View>
+                ) : (
+                  "Kirim"
+                )}
+              </ThemedButton>
+            )}
+          </View>
+        </ThemedView>
+      </ScrollView>
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        visible={!!previewFile && !!previewFile.mimeType?.startsWith("image/")}
+        uri={previewFile?.uri}
+        onClose={() => setPreviewFile(null)}
+      />
+
+      {/* PDF Preview Modal */}
+      <BottomSheetModal
+        visible={!!previewFile && previewFile.mimeType === "application/pdf"}
+        title="Preview Dokumen"
+        onClose={() => setPreviewFile(null)}
+        height="35%"
+      >
+        <View style={{ paddingTop: 16 }}>
+          <ThemedText
+            type="caption"
+            darkColor={Colors.dark.text.secondary}
+            lightColor={Colors.light.text.secondary}
+            style={{ marginBottom: 16 }}
+          >
+            Ketuk dokumen di bawah ini untuk melihat isinya melalui aplikasi
+            penampil dokumen di perangkat Anda.
+          </ThemedText>
+          {previewFile && (
+            <DocumentRow
+              label={previewFile.name}
+              url={previewFile.uri}
+              downloadProgressMap={{}}
+              onPress={async () => {
+                if (await Sharing.isAvailableAsync()) {
+                  await Sharing.shareAsync(previewFile.uri);
+                } else {
+                  Alert.alert(
+                    "Gagal",
+                    "Perangkat Anda tidak mendukung fitur berbagi/membuka file ini.",
+                  );
+                }
+              }}
+            />
           )}
         </View>
-      </View >
-    </ScrollView >
+      </BottomSheetModal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: RADIUS.DEFAULT,
     padding: 18,
-    borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
   },
   dateField: {
     borderRadius: RADIUS.DEFAULT,
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderWidth: 1,
-    borderColor: Colors.light.fill.secondary,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
-    shadowRadius: 10
+    shadowRadius: 10,
   },
   dateFieldPressed: {
     opacity: 0.85,
   },
   dateFieldContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 16,
   },
   modalBackdrop: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
   },
   modalSheet: {
     borderTopLeftRadius: 28,
@@ -896,9 +1193,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginVertical: 8,
   },
   fileCard: {
